@@ -8,6 +8,9 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import Index from "./pages/Index";
 import AuthPage from "./pages/auth";
 import NotFound from "./pages/NotFound";
+import RecipesPage from "./pages/recipes";
+import RecipeDetailPage from "./pages/recipes/[id]";
+import NewRecipePage from "./pages/recipes/new";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +27,30 @@ const App = () => (
             element={
               <AuthGuard>
                 <Index />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/recipes"
+            element={
+              <AuthGuard>
+                <RecipesPage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/recipes/new"
+            element={
+              <AuthGuard>
+                <NewRecipePage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/recipes/:id"
+            element={
+              <AuthGuard>
+                <RecipeDetailPage />
               </AuthGuard>
             }
           />

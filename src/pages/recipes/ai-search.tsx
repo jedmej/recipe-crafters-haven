@@ -24,21 +24,34 @@ export default function AIRecipeSearchPage() {
 
   const searchRecipe = useMutation({
     mutationFn: async (query: string) => {
-      const response = await supabase.functions.invoke('ai-recipe-search', {
-        body: { query }
+      const { data, error } = await supabase.functions.invoke('ai-recipe-search', {
+        body: { query },
+        headers: {
+          'Content-Type': 'application/json',
+        }
       });
 
-      if (response.error) throw new Error(response.error.message);
-      return response.data;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message);
+      }
+      if (!data) throw new Error('No recipe data returned');
+      return data;
     },
     onSuccess: (data) => {
       setSuggestedRecipe(data);
     },
     onError: (error: Error) => {
+      let message = "Failed to generate recipe. Please try again.";
+      
+      if (error.message.includes('503') || error.message.includes('overloaded')) {
+        message = "The recipe service is currently busy. Please try again in a few moments.";
+      }
+      
       toast({
         variant: "destructive",
         title: "Search failed",
-        description: error.message || "Failed to search for recipes. Please try again.",
+        description: message,
       });
     }
   });
@@ -83,8 +96,11 @@ export default function AIRecipeSearchPage() {
     e.preventDefault();
     setIsSearching(true);
     setSuggestedRecipe(null);
-    await searchRecipe.mutateAsync(query);
-    setIsSearching(false);
+    try {
+      await searchRecipe.mutateAsync(query);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (

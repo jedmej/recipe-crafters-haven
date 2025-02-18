@@ -10,6 +10,7 @@ import AuthPage from "./pages/auth";
 import NotFound from "./pages/NotFound";
 import RecipesPage from "./pages/recipes";
 import RecipeDetailPage from "./pages/recipes/[id]";
+import EditRecipePage from "./pages/recipes/edit";
 import NewRecipePage from "./pages/recipes/new";
 import ImportRecipeAIPage from "./pages/recipes/import-ai";
 import AIRecipeSearchPage from "./pages/recipes/ai-search";
@@ -72,6 +73,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <RecipeDetailPage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/recipes/:id/edit"
+            element={
+              <AuthGuard>
+                <EditRecipePage />
               </AuthGuard>
             }
           />

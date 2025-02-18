@@ -76,10 +76,16 @@ export default function EditRecipePage() {
       const { data: updatedRecipe, error } = await supabase
         .from('recipes')
         .update({
-          ...data,
-          ingredients: data.ingredients?.filter(i => i.trim() !== ""),
-          instructions: data.instructions?.filter(i => i.trim() !== ""),
-          updated_at: new Date().toISOString()
+          title: data.title,
+          description: data.description,
+          ingredients: (data.ingredients as string[])?.filter(i => i.trim() !== ""),
+          instructions: (data.instructions as string[])?.filter(i => i.trim() !== ""),
+          prep_time: data.prep_time,
+          cook_time: data.cook_time,
+          estimated_calories: data.estimated_calories,
+          servings: data.servings,
+          source_url: data.source_url,
+          language: data.language
         })
         .eq('id', id)
         .select()
@@ -117,7 +123,7 @@ export default function EditRecipePage() {
       return;
     }
 
-    if (!formData.ingredients?.some(i => i.trim() !== "")) {
+    if (!(formData.ingredients as string[])?.some(i => i.trim() !== "")) {
       toast({
         variant: "destructive",
         title: "Invalid form",
@@ -126,7 +132,7 @@ export default function EditRecipePage() {
       return;
     }
 
-    if (!formData.instructions?.some(i => i.trim() !== "")) {
+    if (!(formData.instructions as string[])?.some(i => i.trim() !== "")) {
       toast({
         variant: "destructive",
         title: "Invalid form",
@@ -146,21 +152,21 @@ export default function EditRecipePage() {
   const addListItem = (key: "ingredients" | "instructions") => {
     setFormData(prev => ({
       ...prev,
-      [key]: [...(prev[key] || []), ""]
+      [key]: [...((prev[key] as string[]) || []), ""]
     }));
   };
 
   const updateListItem = (key: "ingredients" | "instructions", index: number, value: string) => {
     setFormData(prev => ({
       ...prev,
-      [key]: (prev[key] || []).map((item, i) => i === index ? value : item)
+      [key]: ((prev[key] as string[]) || []).map((item, i) => i === index ? value : item)
     }));
   };
 
   const removeListItem = (key: "ingredients" | "instructions", index: number) => {
     setFormData(prev => ({
       ...prev,
-      [key]: (prev[key] || []).filter((_, i) => i !== index)
+      [key]: ((prev[key] as string[]) || []).filter((_, i) => i !== index)
     }));
   };
 
@@ -227,7 +233,7 @@ export default function EditRecipePage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Ingredients</label>
-              {formData.ingredients?.map((ingredient, index) => (
+              {(formData.ingredients as string[])?.map((ingredient, index) => (
                 <div key={index} className="flex gap-2">
                   <Input
                     value={ingredient}
@@ -256,7 +262,7 @@ export default function EditRecipePage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Instructions</label>
-              {formData.instructions?.map((instruction, index) => (
+              {(formData.instructions as string[])?.map((instruction, index) => (
                 <div key={index} className="flex gap-2">
                   <Input
                     value={instruction}

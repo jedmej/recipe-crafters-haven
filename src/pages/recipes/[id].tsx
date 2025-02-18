@@ -4,12 +4,16 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, Trash, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
+import { convertMeasurement } from "@/lib/unit-conversions";
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
+type MeasurementSystem = 'imperial' | 'metric';
 
 function parseQuantity(ingredient: string): { quantity: number | null; unit: string; item: string } {
   const regex = /^((?:\d+\s+)?(?:\d+\/\d+|\d*\.?\d+))?\s*([a-zA-Z]*)\s*(.*)/;
@@ -72,6 +76,30 @@ function scaleIngredient(ingredient: string, scaleFactor: number): string {
   return `${formattedQuantity}${unit ? ' ' + unit : ''} ${item}`;
 }
 
+function convertIngredient(ingredient: string, targetSystem: MeasurementSystem): string {
+  const { quantity, unit, item } = parseQuantity(ingredient);
+  
+  if (!quantity || !unit) {
+    return ingredient;
+  }
+
+  const converted = convertMeasurement(quantity, unit, targetSystem);
+  if (!converted) {
+    return ingredient;
+  }
+
+  return `${formatQuantity(converted.quantity)} ${converted.unit} ${item}`;
+}
+
+function scaleAndConvertIngredient(
+  ingredient: string, 
+  scaleFactor: number, 
+  targetSystem: MeasurementSystem
+): string {
+  const scaled = scaleIngredient(ingredient, scaleFactor);
+  return convertIngredient(scaled, targetSystem);
+}
+
 export default function RecipeDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -79,6 +107,7 @@ export default function RecipeDetailPage() {
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
   const [desiredServings, setDesiredServings] = useState<number | ''>(1);
+  const [measurementSystem, setMeasurementSystem] = useState<MeasurementSystem>('imperial');
 
   const { data: recipe, isLoading } = useQuery({
     queryKey: ['recipes', id],
@@ -135,6 +164,10 @@ export default function RecipeDetailPage() {
     } else if (value === '') {
       setDesiredServings('');
     }
+  };
+
+  const toggleMeasurementSystem = () => {
+    setMeasurementSystem(prev => prev === 'imperial' ? 'metric' : 'imperial');
   };
 
   const scaleFactor = typeof desiredServings === 'number' && recipe 
@@ -197,6 +230,16 @@ export default function RecipeDetailPage() {
                 (Original: {recipe.servings})
               </span>
             </div>
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="measurement-system"
+                checked={measurementSystem === 'metric'}
+                onCheckedChange={toggleMeasurementSystem}
+              />
+              <Label htmlFor="measurement-system">
+                {measurementSystem === 'imperial' ? 'Imperial' : 'Metric'} Units
+              </Label>
+            </div>
           </div>
           <div className="flex gap-2">
             <Button
@@ -234,7 +277,7 @@ export default function RecipeDetailPage() {
             <ul className="list-disc pl-5 space-y-1">
               {(recipe.ingredients as string[]).map((ingredient, index) => (
                 <li key={index}>
-                  {scaleFactor !== 1 ? scaleIngredient(ingredient, scaleFactor) : ingredient}
+                  {scaleAndConvertIngredient(ingredient, scaleFactor, measurementSystem)}
                 </li>
               ))}
             </ul>

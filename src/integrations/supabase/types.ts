@@ -70,36 +70,45 @@ export type Database = {
       }
       recipes: {
         Row: {
+          cook_time: number | null
           created_at: string
           description: string | null
+          estimated_calories: number | null
           id: string
           image_url: string | null
           ingredients: Json
           instructions: Json
+          prep_time: number | null
           servings: number
           source_url: string | null
           title: string
           user_id: string
         }
         Insert: {
+          cook_time?: number | null
           created_at?: string
           description?: string | null
+          estimated_calories?: number | null
           id?: string
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
+          prep_time?: number | null
           servings?: number
           source_url?: string | null
           title: string
           user_id: string
         }
         Update: {
+          cook_time?: number | null
           created_at?: string
           description?: string | null
+          estimated_calories?: number | null
           id?: string
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
+          prep_time?: number | null
           servings?: number
           source_url?: string | null
           title?: string

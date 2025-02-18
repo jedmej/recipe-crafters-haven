@@ -9,24 +9,20 @@ const corsHeaders = {
 };
 
 function cleanJsonResponse(text: string): string {
-  // First try to find JSON within markdown code blocks
   const jsonBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (jsonBlockMatch) {
     return jsonBlockMatch[1].trim();
   }
   
-  // If no code blocks, try to find a JSON object directly
   const jsonMatch = text.match(/\{[\s\S]*\}/);
   if (jsonMatch) {
     return jsonMatch[0].trim();
   }
   
-  // If no JSON found, return cleaned text
   return text.replace(/```/g, '').trim();
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -51,15 +47,21 @@ serve(async (req) => {
     {
       "title": "Recipe title",
       "description": "A brief description of the dish",
-      "ingredients": ["List of ingredients with quantities"],
-      "instructions": ["Step by step cooking instructions"]
+      "ingredients": ["List of ingredients with precise quantities"],
+      "instructions": ["Step by step cooking instructions"],
+      "prep_time": integer (estimated preparation time in minutes),
+      "cook_time": integer (estimated cooking time in minutes),
+      "estimated_calories": integer (estimated total calories for the entire recipe)
     }
 
     Important rules:
-    1. Format quantities clearly (e.g., "2 cups flour", "1 tablespoon olive oil")
+    1. Format quantities precisely (e.g., "2 cups flour", "1 tablespoon olive oil")
     2. Make instructions detailed and numbered
     3. Return ONLY valid JSON - no markdown, no text before or after
-    4. All fields must be present and properly formatted`;
+    4. All fields must be present and properly formatted
+    5. Prep and cook times must be realistic estimates in minutes
+    6. Calorie estimation should be based on standard ingredient calories
+    7. If you're unsure about exact calories, provide a reasonable estimate based on similar recipes`;
 
     console.log('Sending prompt to Gemini');
     const result = await model.generateContent(prompt);
@@ -73,7 +75,9 @@ serve(async (req) => {
       const recipeData = JSON.parse(cleanedJson);
 
       if (!recipeData.title || !recipeData.description || 
-          !Array.isArray(recipeData.ingredients) || !Array.isArray(recipeData.instructions)) {
+          !Array.isArray(recipeData.ingredients) || !Array.isArray(recipeData.instructions) ||
+          typeof recipeData.prep_time !== 'number' || typeof recipeData.cook_time !== 'number' ||
+          typeof recipeData.estimated_calories !== 'number') {
         throw new Error('Invalid recipe format');
       }
 

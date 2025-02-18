@@ -5,9 +5,19 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Plus } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, Clock, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+
+interface RecipeData {
+  title: string;
+  description: string;
+  ingredients: string[];
+  instructions: string[];
+  prep_time?: number;
+  cook_time?: number;
+  estimated_calories?: number;
+}
 
 export default function AIRecipeSearchPage() {
   const navigate = useNavigate();
@@ -15,12 +25,7 @@ export default function AIRecipeSearchPage() {
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [suggestedRecipe, setSuggestedRecipe] = useState<{
-    title: string;
-    description: string;
-    ingredients: string[];
-    instructions: string[];
-  } | null>(null);
+  const [suggestedRecipe, setSuggestedRecipe] = useState<RecipeData | null>(null);
 
   const searchRecipe = useMutation({
     mutationFn: async (query: string) => {
@@ -37,7 +42,7 @@ export default function AIRecipeSearchPage() {
         throw new Error('No recipe data received');
       }
 
-      return response.data;
+      return response.data as RecipeData;
     },
     onSuccess: (data) => {
       setSuggestedRecipe(data);
@@ -158,6 +163,27 @@ export default function AIRecipeSearchPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <p className="text-muted-foreground">{suggestedRecipe.description}</p>
+
+            <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+              {suggestedRecipe.prep_time && (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  <span>Prep: {suggestedRecipe.prep_time} mins</span>
+                </div>
+              )}
+              {suggestedRecipe.cook_time && (
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  <span>Cook: {suggestedRecipe.cook_time} mins</span>
+                </div>
+              )}
+              {suggestedRecipe.estimated_calories && (
+                <div className="flex items-center gap-1">
+                  <Flame className="h-4 w-4" />
+                  <span>{suggestedRecipe.estimated_calories} cal total</span>
+                </div>
+              )}
+            </div>
 
             <div className="space-y-2">
               <h3 className="font-semibold">Ingredients:</h3>

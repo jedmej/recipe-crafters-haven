@@ -1,6 +1,5 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from '@supabase/supabase-js';
 import FirecrawlApp from 'npm:@mendable/firecrawl-js@latest';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
@@ -11,8 +10,17 @@ const corsHeaders = {
 
 const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
 const geminiApiKey = Deno.env.get('GOOGLE_GEMINI_KEY');
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+
+async function fetchWebContent(url: string): Promise<string> {
+  console.log('Fetching web content from:', url);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`);
+  }
+  const text = await response.text();
+  console.log('Successfully fetched web content');
+  return text;
+}
 
 async function extractRecipeWithGemini(url: string): Promise<any> {
   if (!geminiApiKey) {
@@ -21,36 +29,49 @@ async function extractRecipeWithGemini(url: string): Promise<any> {
 
   console.log('Attempting to extract recipe with Gemini from URL:', url);
   
-  const genAI = new GoogleGenerativeAI(geminiApiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
-  const prompt = `Visit this URL: ${url} and extract recipe information.
-  Return ONLY a JSON object with these fields:
-  {
-    "title": "Recipe title",
-    "description": "Brief description",
-    "ingredients": ["array", "of", "ingredients"],
-    "instructions": ["array", "of", "step by step", "instructions"]
-  }
-  Ensure the output is valid JSON. Do not include any other text.`;
-
-  const result = await model.generateContent(prompt);
-  const text = result.response.text();
-  
   try {
+    // Fetch the webpage content first
+    const pageContent = await fetchWebContent(url);
+    
+    const genAI = new GoogleGenerativeAI(geminiApiKey);
+    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+    const prompt = `Given the following webpage content, extract the recipe information.
+    Return ONLY a JSON object with these fields:
+    {
+      "title": "Recipe title",
+      "description": "Brief description",
+      "ingredients": ["array", "of", "ingredients"],
+      "instructions": ["array", "of", "step by step", "instructions"]
+    }
+    
+    Webpage content:
+    ${pageContent.slice(0, 10000)} # Limit content length to avoid token limits
+
+    Return valid JSON only, no other text.`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    
     // Extract JSON from the response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('No JSON found in Gemini response');
+      console.error('No JSON found in Gemini response');
+      throw new Error('Failed to extract recipe data');
     }
     
     const recipeData = JSON.parse(jsonMatch[0]);
     console.log('Successfully extracted recipe with Gemini:', recipeData);
+
+    // Validate the recipe data structure
+    if (!recipeData.title || !Array.isArray(recipeData.ingredients) || !Array.isArray(recipeData.instructions)) {
+      throw new Error('Invalid recipe data format');
+    }
     
     return recipeData;
   } catch (error) {
-    console.error('Failed to parse Gemini response:', error);
-    throw new Error('Failed to parse recipe with AI');
+    console.error('Error in Gemini extraction:', error);
+    throw new Error('Unable to extract recipe data');
   }
 }
 
@@ -61,9 +82,15 @@ serve(async (req) => {
   }
 
   try {
-    // Get URL from request body
     const { url } = await req.json();
     console.log('Starting recipe import for URL:', url);
+
+    if (!url || !url.startsWith('http')) {
+      throw new Error('Invalid URL provided');
+    }
+
+    let recipe = null;
+    let usedFallback = false;
 
     // Try Firecrawl first
     try {
@@ -71,13 +98,8 @@ serve(async (req) => {
         throw new Error('Firecrawl API key not configured');
       }
 
-      if (!url || !url.startsWith('http')) {
-        throw new Error('Invalid URL provided');
-      }
-
       console.log('Attempting to extract recipe with Firecrawl');
       const firecrawl = new FirecrawlApp({ apiKey: firecrawlApiKey });
-
       const crawlResponse = await firecrawl.crawlUrl(url, {
         limit: 1,
         scrapeOptions: {
@@ -86,14 +108,12 @@ serve(async (req) => {
         }
       });
 
-      console.log('Firecrawl response:', JSON.stringify(crawlResponse, null, 2));
-
       if (!crawlResponse.success || !crawlResponse.data?.[0]?.content) {
         throw new Error('No content found in webpage');
       }
 
       const content = crawlResponse.data[0].content;
-      const recipe = {
+      recipe = {
         title: content.title || 'Untitled Recipe',
         description: content.description || '',
         image_url: content.images?.[0] || '',
@@ -175,46 +195,43 @@ serve(async (req) => {
         }
       }
 
-      if (recipe.ingredients.length === 0 || recipe.instructions.length === 0) {
-        console.error('Failed to extract recipe content');
-        throw new Error('Could not find recipe content on the page');
+      if (!recipe.ingredients.length || !recipe.instructions.length) {
+        throw new Error('Could not find recipe content');
       }
 
-      return new Response(
-        JSON.stringify(recipe),
-        { 
-          headers: { 
-            ...corsHeaders, 
-            'Content-Type': 'application/json' 
-          } 
-        }
-      );
-
     } catch (scrapingError) {
-      // If Firecrawl fails, try Gemini
-      console.log('Firecrawl extraction failed, falling back to Gemini:', scrapingError);
+      console.log('Firecrawl extraction failed, trying Gemini fallback:', scrapingError);
       
       try {
         const geminiRecipe = await extractRecipeWithGemini(url);
-        
-        return new Response(
-          JSON.stringify({
-            ...geminiRecipe,
-            image_url: '', // Gemini doesn't extract images
-            servings: 1
-          }),
-          { 
-            headers: { 
-              ...corsHeaders, 
-              'Content-Type': 'application/json' 
-            } 
-          }
-        );
+        recipe = {
+          ...geminiRecipe,
+          image_url: '',
+          servings: 1
+        };
+        usedFallback = true;
       } catch (geminiError) {
         console.error('Gemini extraction failed:', geminiError);
-        throw new Error('Unable to extract recipe data. Please try another URL or enter the recipe manually.');
+        throw new Error('Unable to extract recipe data from the webpage');
       }
     }
+
+    if (!recipe) {
+      throw new Error('Failed to extract recipe data');
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        ...recipe,
+        usedFallback 
+      }),
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
+    );
 
   } catch (error) {
     console.error('Error in import-recipe function:', error);
@@ -223,11 +240,11 @@ serve(async (req) => {
         error: error instanceof Error ? error.message : 'Failed to import recipe' 
       }),
       { 
-        status: 400,
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json' 
-        }
+        },
+        status: 400
       }
     );
   }

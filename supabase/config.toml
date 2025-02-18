@@ -1,8 +1,6 @@
 
 project_id = "yorijihyeahhfprgjkvp"
 
-[functions.import-recipe]
-verify_jwt = true
-
 [functions.ai-recipe-search]
 verify_jwt = true
+

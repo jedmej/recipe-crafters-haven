@@ -31,7 +31,22 @@ export default function RecipeDetailPage() {
         .single();
 
       if (error) throw error;
-      setRecipe(data);
+      
+      // Convert the Supabase data to match RecipeData type
+      const formattedRecipe: RecipeData = {
+        title: data.title,
+        description: data.description || "",
+        ingredients: data.ingredients as string[],
+        instructions: data.instructions as string[],
+        prep_time: data.prep_time,
+        cook_time: data.cook_time,
+        estimated_calories: data.estimated_calories,
+        suggested_portions: data.suggested_portions,
+        portion_description: data.portion_description,
+        language: data.language
+      };
+
+      setRecipe(formattedRecipe);
       setIsLoading(false);
       return data;
     }

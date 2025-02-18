@@ -1,15 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SUPPORTED_LANGUAGES } from "@/types/recipe";
+import { EditRecipeForm } from "@/components/recipes/EditRecipeForm";
+import { useRecipeUpdate } from "@/hooks/use-recipe-update";
 import type { Database } from "@/integrations/supabase/types";
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
@@ -18,7 +17,6 @@ export default function EditRecipePage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Recipe>>({
@@ -51,6 +49,8 @@ export default function EditRecipePage() {
     }
   });
 
+  const updateRecipe = useRecipeUpdate(id as string);
+
   useEffect(() => {
     if (recipe) {
       setFormData({
@@ -67,49 +67,6 @@ export default function EditRecipePage() {
       });
     }
   }, [recipe]);
-
-  const updateRecipe = useMutation({
-    mutationFn: async (data: Partial<Recipe>) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
-
-      const { data: updatedRecipe, error } = await supabase
-        .from('recipes')
-        .update({
-          title: data.title,
-          description: data.description,
-          ingredients: (data.ingredients as string[])?.filter(i => i.trim() !== ""),
-          instructions: (data.instructions as string[])?.filter(i => i.trim() !== ""),
-          prep_time: data.prep_time,
-          cook_time: data.cook_time,
-          estimated_calories: data.estimated_calories,
-          servings: data.servings,
-          source_url: data.source_url,
-          language: data.language
-        })
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return updatedRecipe;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['recipes'] });
-      navigate(`/recipes/${data.id}`);
-      toast({
-        title: "Recipe updated",
-        description: "Your recipe has been successfully updated.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message,
-      });
-    }
-  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -194,156 +151,15 @@ export default function EditRecipePage() {
           <CardTitle>Edit Recipe</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <Input
-                value={formData.title}
-                onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <Input
-                value={formData.description}
-                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Language</label>
-              <Select 
-                value={formData.language} 
-                onValueChange={value => setFormData(prev => ({ ...prev, language: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SUPPORTED_LANGUAGES.map((lang) => (
-                    <SelectItem key={lang.value} value={lang.value}>
-                      {lang.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Ingredients</label>
-              {(formData.ingredients as string[])?.map((ingredient, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    value={ingredient}
-                    onChange={e => updateListItem("ingredients", index, e.target.value)}
-                    placeholder={`Ingredient ${index + 1}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => removeListItem("ingredients", index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => addListItem("ingredients")}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Ingredient
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Instructions</label>
-              {(formData.instructions as string[])?.map((instruction, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    value={instruction}
-                    onChange={e => updateListItem("instructions", index, e.target.value)}
-                    placeholder={`Step ${index + 1}`}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => removeListItem("instructions", index)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => addListItem("instructions")}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Step
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Prep Time (minutes)</label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.prep_time}
-                  onChange={e => setFormData(prev => ({ ...prev, prep_time: parseInt(e.target.value) || 0 }))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Cook Time (minutes)</label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.cook_time}
-                  onChange={e => setFormData(prev => ({ ...prev, cook_time: parseInt(e.target.value) || 0 }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Estimated Calories</label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={formData.estimated_calories}
-                  onChange={e => setFormData(prev => ({ ...prev, estimated_calories: parseInt(e.target.value) || 0 }))}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Servings</label>
-                <Input
-                  type="number"
-                  min="1"
-                  value={formData.servings}
-                  onChange={e => setFormData(prev => ({ ...prev, servings: parseInt(e.target.value) || 1 }))}
-                />
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving Changes...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </form>
+          <EditRecipeForm
+            formData={formData}
+            isSubmitting={isSubmitting}
+            onSubmit={handleSubmit}
+            onUpdateFormData={(updates) => setFormData(prev => ({ ...prev, ...updates }))}
+            onAddListItem={addListItem}
+            onUpdateListItem={updateListItem}
+            onRemoveListItem={removeListItem}
+          />
         </CardContent>
       </Card>
     </div>

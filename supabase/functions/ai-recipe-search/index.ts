@@ -22,6 +22,29 @@ function cleanJsonResponse(text: string): string {
   return text.replace(/```/g, '').trim();
 }
 
+async function retryWithBackoff(fn: () => Promise<any>, maxAttempts = 3, initialDelay = 1000): Promise<any> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      console.log(`Attempt ${attempt} failed:`, error);
+
+      if (attempt === maxAttempts) throw error;
+      
+      // If it's a 503 error, wait and retry
+      if (error.message?.includes('503') || error.message?.includes('overloaded')) {
+        const delay = initialDelay * Math.pow(2, attempt - 1); // Exponential backoff
+        console.log(`Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // For other errors, throw immediately
+      throw error;
+    }
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -64,7 +87,12 @@ serve(async (req) => {
     7. If you're unsure about exact calories, provide a reasonable estimate based on similar recipes`;
 
     console.log('Sending prompt to Gemini');
-    const result = await model.generateContent(prompt);
+    
+    // Wrap the Gemini API call in our retry logic
+    const result = await retryWithBackoff(async () => {
+      return await model.generateContent(prompt);
+    });
+
     const rawText = result.response.text();
     console.log('Raw Gemini response:', rawText);
 
@@ -90,8 +118,15 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Edge function error:', error);
+    
+    // Customize error message for overloaded service
+    let errorMessage = error.message;
+    if (error.message?.includes('503') || error.message?.includes('overloaded')) {
+      errorMessage = 'The AI service is temporarily busy. Please try again in a few moments.';
+    }
+
     return new Response(
-      JSON.stringify({ error: error.message }), 
+      JSON.stringify({ error: errorMessage }), 
       { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

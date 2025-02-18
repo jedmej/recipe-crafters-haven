@@ -1,9 +1,17 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2, ArrowLeft, Plus, Clock, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +26,7 @@ interface RecipeData {
   estimated_calories?: number;
   suggested_portions: number;
   portion_description: string;
+  language?: string;
 }
 
 interface ScaledIngredient {
@@ -27,11 +36,21 @@ interface ScaledIngredient {
   originalText: string;
 }
 
+const SUPPORTED_LANGUAGES = [
+  { value: 'pl', label: 'Polish' },
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'fr', label: 'French' },
+  { value: 'de', label: 'German' },
+  { value: 'it', label: 'Italian' },
+] as const;
+
 export default function AIRecipeSearchPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
+  const [language, setLanguage] = useState<string>("pl");
   const [isSearching, setIsSearching] = useState(false);
   const [suggestedRecipe, setSuggestedRecipe] = useState<RecipeData | null>(null);
   const [chosenPortions, setChosenPortions] = useState<number>(0);
@@ -102,7 +121,7 @@ export default function AIRecipeSearchPage() {
   const searchRecipe = useMutation({
     mutationFn: async (query: string) => {
       const response = await supabase.functions.invoke('ai-recipe-search', {
-        body: { query }
+        body: { query, language }
       });
 
       if (response.error) {
@@ -121,7 +140,7 @@ export default function AIRecipeSearchPage() {
         throw new Error('No recipe data received');
       }
 
-      return response.data as RecipeData;
+      return { ...response.data, language } as RecipeData;
     },
     onSuccess: (data) => {
       setSuggestedRecipe(data);
@@ -155,7 +174,8 @@ export default function AIRecipeSearchPage() {
           ...scaledRecipe,
           user_id: user.id,
           suggested_portions: suggestedRecipe?.suggested_portions,
-          portion_size: chosenPortions
+          portion_size: chosenPortions,
+          language
         }])
         .select()
         .single();
@@ -220,8 +240,24 @@ export default function AIRecipeSearchPage() {
                 required
                 className="w-full"
               />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Recipe Language</label>
+              <Select value={language} onValueChange={setLanguage}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-sm text-muted-foreground">
-                Ask for any recipe and our AI will help you find it
+                Choose the language for your recipe
               </p>
             </div>
 

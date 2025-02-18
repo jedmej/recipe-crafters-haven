@@ -28,8 +28,8 @@ serve(async (req) => {
   }
 
   try {
-    const { query } = await req.json();
-    console.log('Received query:', query);
+    const { query, language = 'pl' } = await req.json();
+    console.log('Received query:', query, 'language:', language);
     
     if (!query || typeof query !== 'string') {
       throw new Error('Invalid query provided');
@@ -41,8 +41,6 @@ serve(async (req) => {
       throw new Error('AI service configuration error: Missing API key');
     }
 
-    console.log('Initializing Gemini with API key length:', apiKey.length);
-
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
@@ -50,36 +48,30 @@ serve(async (req) => {
       console.log('Sending prompt to Gemini...');
       const result = await model.generateContent([
         {
-          text: `Create a recipe for: "${query}". Return a JSON object with this structure:
+          text: `Create a recipe for: "${query}". The entire response including the recipe title, description, ingredients, instructions, and all other text should be in ${language} language.
+
+          Return a JSON object with this structure:
           {
-            "title": "Recipe title",
-            "description": "A brief description of the dish",
-            "ingredients": ["List of ingredients with precise quantities"],
-            "instructions": ["Step by step cooking instructions"],
+            "title": "Recipe title in ${language}",
+            "description": "A brief description of the dish in ${language}",
+            "ingredients": ["List of ingredients with precise quantities in ${language}"],
+            "instructions": ["Step by step cooking instructions in ${language}"],
             "prep_time": integer (estimated preparation time in minutes),
             "cook_time": integer (estimated cooking time in minutes),
             "estimated_calories": integer (estimated total calories for the entire recipe),
             "suggested_portions": integer (recommended number of portions based on the dish type),
-            "portion_description": string (brief explanation of what a portion means, e.g., "slices for pizza", "pieces for cookies")
+            "portion_description": string (brief explanation of what a portion means in ${language})
           }
 
-          Important rules for portions:
-          1. Analyze the dish type and suggest a realistic portion count:
-             - Single-serve items (toast, sandwich): typically 1-2 portions
-             - Family meals (casseroles, lasagna): typically 6-8 portions
-             - Baked goods (cookies, muffins): typically 12-24 portions
-             - Pizza: typically 6-8 slices
-          2. The portion suggestion should match common serving sizes for this type of dish
-          3. Include a clear description of what a portion means for this specific recipe
-
-          Other important rules:
-          1. Format quantities precisely (e.g., "2 cups flour", "1 tablespoon olive oil")
-          2. Make instructions detailed and numbered
-          3. Return ONLY valid JSON - no markdown, no text before or after
-          4. All fields must be present and properly formatted
-          5. Prep and cook times must be realistic estimates in minutes
-          6. Calorie estimation should be based on standard ingredient calories
-          7. If you're unsure about exact calories, provide a reasonable estimate based on similar recipes`
+          Important rules:
+          1. ALL text must be in ${language} language
+          2. Use common measurements and ingredient names in ${language}
+          3. Format quantities precisely
+          4. Make instructions detailed and numbered
+          5. Return ONLY valid JSON - no markdown, no text before or after
+          6. All fields must be present and properly formatted
+          7. Prep and cook times must be realistic estimates in minutes
+          8. Calorie estimation should be based on standard ingredient calories`
         }
       ]);
 
@@ -142,7 +134,6 @@ serve(async (req) => {
     let status = 400;
     let errorMessage = error.message;
 
-    // Specific error handling
     if (error.message?.includes('API key')) {
       status = 500;
       errorMessage = 'AI service configuration error. Please contact support.';

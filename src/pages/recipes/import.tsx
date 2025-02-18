@@ -15,14 +15,12 @@ export default function ImportRecipePage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [url, setUrl] = useState("");
-  const [isUsingFallback, setIsUsingFallback] = useState(false);
 
   const importRecipe = useMutation({
     mutationFn: async (url: string) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("User not authenticated");
 
-      setIsUsingFallback(false);
       const response = await supabase.functions.invoke('import-recipe', {
         body: { url },
         headers: {
@@ -55,7 +53,6 @@ export default function ImportRecipePage() {
         throw insertError;
       }
 
-      setIsUsingFallback(response.data.usedFallback || false);
       return recipeData;
     },
     onSuccess: (data) => {
@@ -63,24 +60,14 @@ export default function ImportRecipePage() {
       navigate(`/recipes/${data.id}`);
       toast({
         title: "Recipe imported",
-        description: isUsingFallback 
-          ? "Recipe was imported using AI assistance since we couldn't scrape it directly."
-          : "The recipe has been successfully imported.",
+        description: "The recipe has been successfully imported.",
       });
     },
     onError: (error: Error) => {
-      let errorMessage = error.message;
+      let errorMessage = "Sorry, we couldn't fetch this recipe from the URL. Please try another URL or enter it manually.";
       
-      if (errorMessage.includes('Failed to fetch')) {
-        errorMessage = "Connection error. Please check your internet connection and try again.";
-      } else if (errorMessage.includes('No content found')) {
-        errorMessage = "Could not find recipe content on this page. Please make sure the URL points to a valid recipe page.";
-      } else if (errorMessage.includes('404')) {
-        errorMessage = "The recipe page could not be found. Please check if the URL is correct.";
-      } else if (errorMessage.includes('timeout')) {
-        errorMessage = "The request timed out. Please try again or try a different URL.";
-      } else if (errorMessage.includes('Unable to extract recipe data')) {
-        errorMessage = "Sorry, we couldn't fetch this recipe. Please try another URL or enter it manually.";
+      if (error.message.includes('User not authenticated')) {
+        errorMessage = "Please sign in to import recipes.";
       }
       
       toast({
@@ -155,7 +142,6 @@ export default function ImportRecipePage() {
             <Alert>
               <AlertDescription>
                 Make sure the URL is publicly accessible and contains a recipe with clear ingredients and instructions.
-                If we can't scrape the recipe directly, we'll try to extract it using AI assistance.
               </AlertDescription>
             </Alert>
 
@@ -167,7 +153,7 @@ export default function ImportRecipePage() {
               {importRecipe.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isUsingFallback ? "Using AI to Extract Recipe..." : "Importing Recipe..."}
+                  Importing Recipe...
                 </>
               ) : (
                 "Import Recipe"

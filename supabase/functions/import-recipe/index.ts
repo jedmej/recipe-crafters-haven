@@ -33,8 +33,7 @@ serve(async (req) => {
       limit: 1,
       scrapeOptions: {
         formats: ['markdown', 'html'],
-        timeout: 30000, // 30 second timeout
-        waitUntil: 'networkidle0'
+        timeout: 30000 // 30 second timeout
       }
     });
 

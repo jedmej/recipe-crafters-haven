@@ -1,9 +1,9 @@
-
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Loader2, ArrowLeft, Trash, Edit } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
@@ -11,12 +11,74 @@ import { useToast } from "@/hooks/use-toast";
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
 
+function parseQuantity(ingredient: string): { quantity: number | null; unit: string; item: string } {
+  const regex = /^((?:\d+\s+)?(?:\d+\/\d+|\d*\.?\d+))?\s*([a-zA-Z]*)\s*(.*)/;
+  const match = ingredient.match(regex);
+
+  if (!match) {
+    return { quantity: null, unit: "", item: ingredient.trim() };
+  }
+
+  const [, quantityStr, unit, item] = match;
+  let quantity: number | null = null;
+
+  if (quantityStr) {
+    if (quantityStr.includes("/")) {
+      const [num, denom] = quantityStr.split("/").map(Number);
+      quantity = num / denom;
+    } else {
+      quantity = parseFloat(quantityStr);
+    }
+  }
+
+  return {
+    quantity,
+    unit: unit.toLowerCase(),
+    item: item.trim()
+  };
+}
+
+function formatQuantity(quantity: number): string {
+  const fractions: [number, string][] = [
+    [1/8, "⅛"], [1/4, "¼"], [1/3, "⅓"], [1/2, "½"],
+    [2/3, "⅔"], [3/4, "¾"]
+  ];
+
+  const rounded = Math.round(quantity * 100) / 100;
+
+  for (const [fraction, symbol] of fractions) {
+    if (Math.abs(rounded - fraction) < 0.05) {
+      return symbol;
+    }
+  }
+
+  if (Math.round(rounded) === rounded) {
+    return rounded.toString();
+  }
+
+  return rounded.toFixed(2).replace(/\.?0+$/, '');
+}
+
+function scaleIngredient(ingredient: string, scaleFactor: number): string {
+  const { quantity, unit, item } = parseQuantity(ingredient);
+  
+  if (quantity === null) {
+    return ingredient;
+  }
+
+  const scaledQuantity = quantity * scaleFactor;
+  const formattedQuantity = formatQuantity(scaledQuantity);
+  
+  return `${formattedQuantity}${unit ? ' ' + unit : ''} ${item}`;
+}
+
 export default function RecipeDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [desiredServings, setDesiredServings] = useState<number | ''>(1);
 
   const { data: recipe, isLoading } = useQuery({
     queryKey: ['recipes', id],
@@ -66,6 +128,19 @@ export default function RecipeDetailPage() {
     }
   };
 
+  const handleServingsChange = (value: string) => {
+    const numValue = parseInt(value, 10);
+    if (!isNaN(numValue) && numValue > 0) {
+      setDesiredServings(numValue);
+    } else if (value === '') {
+      setDesiredServings('');
+    }
+  };
+
+  const scaleFactor = typeof desiredServings === 'number' && recipe 
+    ? desiredServings / recipe.servings 
+    : 1;
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -105,7 +180,24 @@ export default function RecipeDetailPage() {
         )}
         
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-3xl">{recipe.title}</CardTitle>
+          <div className="space-y-2">
+            <CardTitle className="text-3xl">{recipe.title}</CardTitle>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Servings:</span>
+                <Input
+                  type="number"
+                  min="1"
+                  value={desiredServings}
+                  onChange={(e) => handleServingsChange(e.target.value)}
+                  className="w-20"
+                />
+              </div>
+              <span className="text-sm text-muted-foreground">
+                (Original: {recipe.servings})
+              </span>
+            </div>
+          </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -141,7 +233,9 @@ export default function RecipeDetailPage() {
             <h3 className="font-semibold mb-2">Ingredients</h3>
             <ul className="list-disc pl-5 space-y-1">
               {(recipe.ingredients as string[]).map((ingredient, index) => (
-                <li key={index}>{ingredient}</li>
+                <li key={index}>
+                  {scaleFactor !== 1 ? scaleIngredient(ingredient, scaleFactor) : ingredient}
+                </li>
               ))}
             </ul>
           </div>

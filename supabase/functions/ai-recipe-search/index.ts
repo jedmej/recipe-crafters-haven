@@ -1,20 +1,11 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenerativeAI } from "npm:@google/generative-ai@^0.1.0";
+import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.1.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const PROMPT = `As a culinary expert, provide a detailed recipe based on the user's request. Format your response as a JSON object with the following structure:
-{
-  "title": "Recipe Title",
-  "description": "A brief description of the dish",
-  "ingredients": ["List of ingredients with measurements"],
-  "instructions": ["Step-by-step cooking instructions"]
-}
-Keep the response focused and make sure it's valid JSON. Do not include any additional text outside the JSON object.`;
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -23,41 +14,55 @@ serve(async (req) => {
 
   try {
     const { query } = await req.json();
-    const apiKey = Deno.env.get('GOOGLE_GEMINI_KEY');
     
+    if (!query || typeof query !== 'string') {
+      throw new Error('Invalid query provided');
+    }
+
+    const apiKey = Deno.env.get('GOOGLE_GEMINI_KEY');
     if (!apiKey) {
-      throw new Error('Google Gemini API key not configured');
+      throw new Error('AI service is not properly configured');
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-    console.log('Searching for recipe:', query);
+    const prompt = `Create a recipe based on this request: "${query}"
+    Return ONLY a valid JSON object with these exact fields:
+    {
+      "title": "Recipe title",
+      "description": "Brief recipe description",
+      "ingredients": ["list of ingredients"],
+      "instructions": ["step by step instructions"],
+      "servings": 1
+    }
+    
+    Make sure all ingredients have quantities and units where applicable.
+    Make instructions clear and detailed.
+    Respond with ONLY the JSON object, no other text.`;
 
-    const result = await model.generateContent([
-      PROMPT,
-      query
-    ]);
-    const response = await result.response;
-    const text = response.text();
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
     
     try {
-      const recipe = JSON.parse(text);
-      console.log('Successfully generated recipe:', recipe);
+      const recipeData = JSON.parse(text);
+      
+      // Validate recipe data
+      if (!recipeData.title || !recipeData.ingredients || !recipeData.instructions) {
+        throw new Error('Invalid recipe data structure');
+      }
 
-      return new Response(
-        JSON.stringify(recipe),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return new Response(JSON.stringify(recipeData), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     } catch (error) {
-      console.error('Failed to parse AI response:', error);
-      throw new Error('Failed to generate a valid recipe format');
+      console.error('JSON parsing error:', error);
+      throw new Error('Failed to parse recipe data');
     }
-
   } catch (error) {
-    console.error('Error generating recipe:', error);
+    console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message }), 
       { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

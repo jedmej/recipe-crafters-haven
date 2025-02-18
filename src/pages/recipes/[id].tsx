@@ -112,6 +112,8 @@ export default function RecipeDetailPage() {
   const { data: recipe, isLoading, error } = useQuery({
     queryKey: ['recipes', id],
     queryFn: async () => {
+      if (!id) throw new Error('Recipe ID is required');
+      
       const { data, error } = await supabase
         .from('recipes')
         .select('*')
@@ -119,8 +121,11 @@ export default function RecipeDetailPage() {
         .maybeSingle();
       
       if (error) throw error;
-      return data as Recipe | null;
-    }
+      if (!data) throw new Error('Recipe not found');
+      
+      return data as Recipe;
+    },
+    enabled: !!id
   });
 
   const deleteRecipe = useMutation({

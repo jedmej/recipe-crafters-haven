@@ -18,35 +18,49 @@ serve(async (req) => {
 
   try {
     const { url } = await req.json();
-    console.log('Importing recipe from URL:', url);
+    console.log('Starting recipe import process for URL:', url);
 
     if (!firecrawlApiKey) {
+      console.error('Firecrawl API key not found in environment variables');
       throw new Error('Firecrawl API key not configured');
     }
 
     if (!url || !url.startsWith('http')) {
+      console.error('Invalid URL provided:', url);
       throw new Error('Invalid URL provided');
     }
 
+    console.log('Initializing Firecrawl with API key');
     const firecrawl = new FirecrawlApp({ apiKey: firecrawlApiKey });
-    const crawlResponse = await firecrawl.crawlUrl(url, {
+
+    console.log('Setting up crawl options');
+    const crawlOptions = {
       limit: 1,
       scrapeOptions: {
         formats: ['markdown', 'html'],
-        timeout: 30000 // 30 second timeout
+        timeout: 30000
       }
-    });
+    };
+    
+    console.log('Crawl options:', JSON.stringify(crawlOptions, null, 2));
 
-    console.log('Crawl response:', JSON.stringify(crawlResponse, null, 2));
+    console.log('Starting webpage crawl');
+    const crawlResponse = await firecrawl.crawlUrl(url, crawlOptions);
+
+    console.log('Raw crawl response:', JSON.stringify(crawlResponse, null, 2));
 
     if (!crawlResponse.success) {
+      console.error('Crawl failed:', crawlResponse.error || 'Unknown error');
       throw new Error('Failed to scrape recipe data: ' + (crawlResponse.error || 'Unknown error'));
     }
 
     const content = crawlResponse.data?.[0]?.content;
     if (!content || !content.markdown) {
+      console.error('No content found in response:', JSON.stringify(content, null, 2));
       throw new Error('No content found in webpage');
     }
+
+    console.log('Successfully retrieved content, parsing recipe data');
 
     // Extract recipe data from the scraped content
     const title = content.title || 'Untitled Recipe';
@@ -61,6 +75,7 @@ serve(async (req) => {
     const sections = content.markdown.split('\n\n');
     let currentSection = '';
 
+    console.log('Processing content sections');
     for (const section of sections) {
       const lowerSection = section.toLowerCase();
       
@@ -96,7 +111,7 @@ serve(async (req) => {
 
     // If we couldn't find structured ingredients/instructions, try a different approach
     if (ingredients.length === 0 || instructions.length === 0) {
-      console.log('Attempting alternative content extraction method');
+      console.log('Using alternative content extraction method');
       
       const allLines = content.markdown.split('\n');
       for (const line of allLines) {
@@ -117,7 +132,11 @@ serve(async (req) => {
       }
     }
 
+    console.log('Found ingredients:', ingredients.length);
+    console.log('Found instructions:', instructions.length);
+
     if (ingredients.length === 0 && instructions.length === 0) {
+      console.error('No recipe content could be extracted');
       throw new Error('Could not extract recipe data from the page');
     }
 
@@ -127,10 +146,10 @@ serve(async (req) => {
       image_url: imageUrl,
       ingredients,
       instructions,
-      servings: 1 // Default serving size
+      servings: 1
     };
 
-    console.log('Successfully extracted recipe:', recipe);
+    console.log('Successfully created recipe object:', JSON.stringify(recipe, null, 2));
 
     return new Response(
       JSON.stringify(recipe),
@@ -143,7 +162,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error importing recipe:', error);
+    console.error('Error in import-recipe function:', error);
     return new Response(
       JSON.stringify({ 
         error: error instanceof Error ? error.message : 'Failed to import recipe' 

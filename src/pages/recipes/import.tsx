@@ -10,30 +10,53 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000; // 1 second
+
 export default function ImportRecipePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [url, setUrl] = useState("");
 
+  const callEdgeFunction = async (url: string, retryCount = 0): Promise<any> => {
+    try {
+      const { data, error } = await supabase.functions.invoke('import-recipe', {
+        body: { url },
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (error) throw error;
+      if (!data) throw new Error('No recipe data returned');
+      
+      return data;
+    } catch (error) {
+      console.error(`Edge function call attempt ${retryCount + 1} failed:`, error);
+      
+      if (retryCount < MAX_RETRIES) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
+        return callEdgeFunction(url, retryCount + 1);
+      }
+      
+      throw error;
+    }
+  };
+
   const importRecipe = useMutation({
     mutationFn: async (url: string) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("User not authenticated");
 
-      // Call our Edge Function to fetch and process the recipe
-      const { data, error } = await supabase.functions.invoke('import-recipe', {
-        body: { url }
-      });
-
-      if (error) throw error;
-      if (!data) throw new Error('No recipe data returned');
+      // Call Edge Function with retry logic
+      const recipeData = await callEdgeFunction(url);
 
       // Save to database
       const { data: savedRecipe, error: insertError } = await supabase
         .from('recipes')
         .insert([{
-          ...data,
+          ...recipeData,
           user_id: session.user.id,
           source_url: url
         }])
@@ -56,10 +79,14 @@ export default function ImportRecipePage() {
       });
     },
     onError: (error: Error) => {
+      console.error('Import error:', error);
+      
       let errorMessage = "Sorry, we couldn't fetch this recipe from the URL. Please try another URL or enter it manually.";
       
       if (error.message.includes('User not authenticated')) {
         errorMessage = "Please sign in to import recipes.";
+      } else if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
+        errorMessage = "Connection error. Please check your internet connection and try again.";
       }
       
       toast({

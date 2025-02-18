@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.1.3';
@@ -23,14 +24,27 @@ function cleanHtml(html: string): string {
   return html.slice(0, 15000);
 }
 
+function getLanguageName(code: string): string {
+  const languages: Record<string, string> = {
+    'en': 'English',
+    'es': 'Spanish',
+    'fr': 'French',
+    'de': 'German',
+    'it': 'Italian',
+    'pl': 'Polish'
+  };
+  return languages[code] || 'English';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { url } = await req.json();
+    const { url, targetLanguage = 'en' } = await req.json();
     console.log('Importing recipe from URL:', url);
+    console.log('Target language:', targetLanguage);
 
     if (!url) {
       throw new Error('No URL provided');
@@ -54,21 +68,22 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const prompt = `Extract recipe information from this webpage content and return it as a JSON object. The webpage content is:
+    const languageName = getLanguageName(targetLanguage);
+    const prompt = `Extract recipe information from this webpage content and translate it into ${languageName}. Return the result as a JSON object. The webpage content is:
 
     ${cleanedContent}
 
-    Return a JSON object with this exact structure:
+    Return a JSON object with this exact structure, with ALL text in ${languageName}:
     {
-      "title": "Recipe title",
-      "description": "Brief description of the dish",
-      "ingredients": ["List of ingredients with quantities"],
-      "instructions": ["Numbered list of cooking steps"],
+      "title": "Recipe title in ${languageName}",
+      "description": "Brief description of the dish in ${languageName}",
+      "ingredients": ["List of ingredients with quantities in ${languageName}"],
+      "instructions": ["Numbered list of cooking steps in ${languageName}"],
       "prep_time": integer (in minutes),
       "cook_time": integer (in minutes),
       "estimated_calories": integer (estimated total calories),
       "suggested_portions": integer (recommended number of portions),
-      "portion_description": string (what a portion means, e.g., "slices" for pizza)
+      "portion_description": string (what a portion means in ${languageName}, e.g., "slices" for pizza)
     }
 
     Important guidelines for portions:
@@ -81,11 +96,12 @@ serve(async (req) => {
     3. Base the suggestion on common serving sizes for this type of dish
 
     Additional rules:
-    1. Extract all measurements and quantities precisely
+    1. Extract all measurements and quantities precisely, converting them if needed
     2. Return ONLY the JSON object, no other text
     3. All number fields should be integers
     4. If any information is missing, use reasonable estimates based on similar recipes
-    5. Clean up any formatting issues in the text`;
+    5. Clean up any formatting issues in the text
+    6. Make sure all text content is properly translated into ${languageName}`;
 
     console.log('Sending prompt to Gemini...');
     const result = await model.generateContent(prompt);

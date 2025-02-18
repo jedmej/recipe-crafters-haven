@@ -9,34 +9,38 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ArrowLeft, Bot } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SUPPORTED_LANGUAGES } from "@/types/recipe";
 
 export default function ImportRecipeAIPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [url, setUrl] = useState("");
+  const [language, setLanguage] = useState("en");
   const [isImporting, setIsImporting] = useState(false);
 
   const importRecipe = useMutation({
-    mutationFn: async (url: string) => {
+    mutationFn: async (data: { url: string; language: string }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("User not authenticated");
 
-      // Call Gemini AI edge function
-      const { data, error } = await supabase.functions.invoke('ai-recipe-import', {
-        body: { url }
+      // Call Gemini AI edge function with language
+      const { data: recipeData, error } = await supabase.functions.invoke('ai-recipe-import', {
+        body: { url: data.url, targetLanguage: data.language }
       });
 
       if (error) throw error;
-      if (!data) throw new Error('No recipe data returned');
+      if (!recipeData) throw new Error('No recipe data returned');
 
       // Save to database
       const { data: savedRecipe, error: insertError } = await supabase
         .from('recipes')
         .insert([{
-          ...data,
+          ...recipeData,
           user_id: session.user.id,
-          source_url: url
+          source_url: data.url,
+          language: data.language
         }])
         .select()
         .single();
@@ -48,7 +52,7 @@ export default function ImportRecipeAIPage() {
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
       navigate(`/recipes/${data.id}`);
       toast({
-        title: "Recipe imported successfully via AI!",
+        title: "Recipe imported and translated successfully!",
         description: "The recipe has been added to your collection.",
       });
     },
@@ -57,7 +61,7 @@ export default function ImportRecipeAIPage() {
       toast({
         variant: "destructive",
         title: "Import failed",
-        description: "We couldn't fetch the recipe. Please try another URL or enter it manually.",
+        description: "We couldn't import or translate this recipe. Please try another URL or a different language.",
       });
     }
   });
@@ -85,7 +89,7 @@ export default function ImportRecipeAIPage() {
 
     setIsImporting(true);
     try {
-      await importRecipe.mutateAsync(url);
+      await importRecipe.mutateAsync({ url, language });
     } finally {
       setIsImporting(false);
     }
@@ -127,9 +131,32 @@ export default function ImportRecipeAIPage() {
               </p>
             </div>
 
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Preferred Language</label>
+              <Select 
+                value={language} 
+                onValueChange={setLanguage}
+                disabled={isImporting}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <SelectItem key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                Choose the language you want the recipe to be translated into
+              </p>
+            </div>
+
             <Alert>
               <AlertDescription>
-                Our AI will attempt to extract the recipe information from the provided URL. 
+                Our AI will extract and translate the recipe information from the provided URL. 
                 This experimental feature might not work with all websites.
               </AlertDescription>
             </Alert>

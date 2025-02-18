@@ -28,13 +28,26 @@ export default function AIRecipeSearchPage() {
         body: { query }
       });
 
-      if (response.error) throw new Error(response.error.message);
+      if (response.error) {
+        console.error('Search error:', response.error);
+        throw new Error(response.error.message || 'Failed to search for recipes');
+      }
+      
+      if (!response.data) {
+        throw new Error('No recipe data received');
+      }
+
       return response.data;
     },
     onSuccess: (data) => {
       setSuggestedRecipe(data);
+      toast({
+        title: "Recipe found",
+        description: "Here's a recipe suggestion based on your search.",
+      });
     },
     onError: (error: Error) => {
+      console.error('Search mutation error:', error);
       toast({
         variant: "destructive",
         title: "Search failed",
@@ -55,6 +68,7 @@ export default function AIRecipeSearchPage() {
         .insert([{
           ...suggestedRecipe,
           user_id: user.id,
+          servings: 4 // Default servings
         }])
         .select()
         .single();
@@ -83,8 +97,13 @@ export default function AIRecipeSearchPage() {
     e.preventDefault();
     setIsSearching(true);
     setSuggestedRecipe(null);
-    await searchRecipe.mutateAsync(query);
-    setIsSearching(false);
+    try {
+      await searchRecipe.mutateAsync(query);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   return (
@@ -161,9 +180,19 @@ export default function AIRecipeSearchPage() {
             <Button 
               onClick={() => saveRecipe.mutate()}
               className="w-full gap-2"
+              disabled={saveRecipe.isPending}
             >
-              <Plus className="h-4 w-4" />
-              Save Recipe
+              {saveRecipe.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-4 w-4" />
+                  Save Recipe
+                </>
+              )}
             </Button>
           </CardContent>
         </Card>

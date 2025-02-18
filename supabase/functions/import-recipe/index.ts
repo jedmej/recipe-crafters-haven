@@ -2,7 +2,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import FirecrawlApp from 'npm:@mendable/firecrawl-js@latest';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.1.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

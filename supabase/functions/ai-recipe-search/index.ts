@@ -66,6 +66,8 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
+    console.log('Initializing Gemini model...');
+
     const prompt = `Create a recipe for: "${query}". Return a JSON object with this structure:
     {
       "title": "Recipe title",
@@ -97,14 +99,18 @@ serve(async (req) => {
     6. Calorie estimation should be based on standard ingredient calories
     7. If you're unsure about exact calories, provide a reasonable estimate based on similar recipes`;
 
-    console.log('Sending prompt to Gemini');
+    console.log('Sending prompt to Gemini...');
     
     const result = await retryWithBackoff(async () => {
-      return await model.generateContent(prompt);
+      const response = await model.generateContent(prompt);
+      console.log('Received response from Gemini');
+      return response;
     });
 
+    console.log('Processing Gemini response...');
+
     const rawText = result.response.text();
-    console.log('Raw Gemini response:', rawText);
+    console.log('Raw response:', rawText);
 
     const cleanedJson = cleanJsonResponse(rawText);
     console.log('Cleaned JSON:', cleanedJson);
@@ -112,20 +118,35 @@ serve(async (req) => {
     try {
       const recipeData = JSON.parse(cleanedJson);
 
-      if (!recipeData.title || !recipeData.description || 
-          !Array.isArray(recipeData.ingredients) || !Array.isArray(recipeData.instructions) ||
-          typeof recipeData.prep_time !== 'number' || typeof recipeData.cook_time !== 'number' ||
-          typeof recipeData.estimated_calories !== 'number' ||
-          typeof recipeData.suggested_portions !== 'number' ||
-          typeof recipeData.portion_description !== 'string') {
-        throw new Error('Invalid recipe format');
+      // Validate all required fields
+      const requiredFields = [
+        'title', 'description', 'ingredients', 'instructions',
+        'prep_time', 'cook_time', 'estimated_calories',
+        'suggested_portions', 'portion_description'
+      ];
+
+      for (const field of requiredFields) {
+        if (recipeData[field] === undefined) {
+          throw new Error(`Missing required field: ${field}`);
+        }
       }
+
+      // Validate field types
+      if (!Array.isArray(recipeData.ingredients)) throw new Error('ingredients must be an array');
+      if (!Array.isArray(recipeData.instructions)) throw new Error('instructions must be an array');
+      if (typeof recipeData.prep_time !== 'number') throw new Error('prep_time must be a number');
+      if (typeof recipeData.cook_time !== 'number') throw new Error('cook_time must be a number');
+      if (typeof recipeData.estimated_calories !== 'number') throw new Error('estimated_calories must be a number');
+      if (typeof recipeData.suggested_portions !== 'number') throw new Error('suggested_portions must be a number');
+      if (typeof recipeData.portion_description !== 'string') throw new Error('portion_description must be a string');
+
+      console.log('Validation passed, returning recipe data');
 
       return new Response(JSON.stringify(recipeData), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      console.error('JSON parsing error:', error);
+      console.error('Recipe data validation error:', error);
       throw new Error(`Invalid recipe format: ${error.message}`);
     }
   } catch (error) {

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Plus, Loader2, Download, Search } from "lucide-react";
+import { Plus, Loader2, Download, Search, Bot } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 
@@ -41,6 +41,10 @@ export default function RecipesPage() {
           <Button onClick={() => navigate("/recipes/ai-search")} variant="outline" className="gap-2">
             <Search className="h-4 w-4" />
             AI Search
+          </Button>
+          <Button onClick={() => navigate("/recipes/import-ai")} variant="outline" className="gap-2">
+            <Bot className="h-4 w-4" />
+            Import from URL (AI)
           </Button>
           <Button onClick={() => navigate("/recipes/import")} variant="outline" className="gap-2">
             <Download className="h-4 w-4" />

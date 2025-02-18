@@ -109,17 +109,17 @@ export default function RecipeDetailPage() {
   const [desiredServings, setDesiredServings] = useState<number | ''>(1);
   const [measurementSystem, setMeasurementSystem] = useState<MeasurementSystem>('imperial');
 
-  const { data: recipe, isLoading } = useQuery({
+  const { data: recipe, isLoading, error } = useQuery({
     queryKey: ['recipes', id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('recipes')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
-      return data as Recipe;
+      return data as Recipe | null;
     }
   });
 
@@ -223,10 +223,32 @@ export default function RecipeDetailPage() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="container mx-auto py-8">
+        <div className="flex flex-col items-center justify-center gap-4">
+          <h1 className="text-2xl font-bold text-red-600">Error Loading Recipe</h1>
+          <p className="text-gray-600">{error.message}</p>
+          <Button onClick={() => navigate("/recipes")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Recipes
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!recipe) {
     return (
       <div className="container mx-auto py-8">
-        <h1 className="text-2xl font-bold">Recipe not found</h1>
+        <div className="flex flex-col items-center justify-center gap-4">
+          <h1 className="text-2xl font-bold">Recipe Not Found</h1>
+          <p className="text-gray-600">The recipe you're looking for doesn't exist or has been deleted.</p>
+          <Button onClick={() => navigate("/recipes")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Recipes
+          </Button>
+        </div>
       </div>
     );
   }

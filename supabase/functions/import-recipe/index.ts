@@ -13,7 +13,17 @@ const geminiApiKey = Deno.env.get('GOOGLE_GEMINI_KEY');
 async function fetchWebContent(url: string): Promise<string> {
   console.log('Fetching web content from:', url);
   try {
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'text/html',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch URL: ${response.status}`);
+    }
+    
     const text = await response.text();
     if (!text || text.trim().length === 0) {
       throw new Error('Empty response from webpage');
@@ -21,129 +31,98 @@ async function fetchWebContent(url: string): Promise<string> {
     return text;
   } catch (error) {
     console.error('Error fetching web content:', error);
-    throw new Error(`Failed to fetch webpage content: ${error.message}`);
+    throw new Error(`Failed to fetch webpage: ${error.message}`);
   }
 }
 
-async function extractRecipeWithGemini(url: string): Promise<any> {
+async function processWithGemini(content: string): Promise<any> {
   if (!geminiApiKey) {
-    console.error('Gemini API key not found');
     throw new Error('Recipe import service is not properly configured');
   }
 
-  console.log('Starting recipe extraction with Gemini');
-  
   try {
-    const pageContent = await fetchWebContent(url);
-    console.log('Successfully fetched webpage content');
-    
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    console.log('Sending content to Gemini for processing');
-    const result = await model.generateContent({
-      contents: [{
-        parts: [{
-          text: `Extract recipe information from this webpage content.
-          Return ONLY a valid JSON object with these exact fields:
-          {
-            "title": "Recipe title",
-            "description": "Brief recipe description",
-            "ingredients": ["list of ingredients"],
-            "instructions": ["step by step instructions"],
-            "servings": 1
-          }
-          
-          Webpage content:
-          ${pageContent.slice(0, 10000)}
-          
-          Respond with ONLY the JSON object, no other text.`
-        }]
-      }]
-    });
+    const prompt = `Extract recipe information from this webpage content.
+    Return ONLY a valid JSON object with these exact fields:
+    {
+      "title": "Recipe title",
+      "description": "Brief recipe description",
+      "ingredients": ["list of ingredients"],
+      "instructions": ["step by step instructions"],
+      "servings": 1
+    }
+    
+    Webpage content:
+    ${content.slice(0, 10000)}
+    
+    Respond with ONLY the JSON object, no other text.`;
 
+    const result = await model.generateContent(prompt);
     const text = result.response.text();
-    console.log('Received response from Gemini:', text);
     
     try {
-      const recipeData = JSON.parse(text);
-      console.log('Successfully parsed recipe data:', recipeData);
-      return recipeData;
-    } catch (parseError) {
-      console.log('Direct JSON parse failed, trying to extract JSON');
+      return JSON.parse(text);
+    } catch (error) {
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new Error('No valid JSON found in Gemini response');
       }
-      
-      const recipeData = JSON.parse(jsonMatch[0]);
-      console.log('Successfully extracted and parsed JSON:', recipeData);
-      return recipeData;
+      return JSON.parse(jsonMatch[0]);
     }
   } catch (error) {
-    console.error('Error in Gemini extraction:', error);
-    throw new Error(`Failed to extract recipe: ${error.message}`);
+    console.error('Error in Gemini processing:', error);
+    throw new Error('Failed to process recipe data');
   }
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('Received import request');
+    const { url } = await req.json();
     
-    let requestBody;
-    try {
-      requestBody = await req.json();
-      console.log('Request body:', requestBody);
-    } catch (error) {
-      console.error('Error parsing request body:', error);
-      throw new Error('Invalid request format');
-    }
-
-    const { url } = requestBody;
     if (!url || typeof url !== 'string' || !url.startsWith('http')) {
       throw new Error('Invalid URL provided');
     }
 
-    console.log('Processing URL:', url);
+    // Fetch webpage content server-side
+    const content = await fetchWebContent(url);
     
-    const recipe = await extractRecipeWithGemini(url);
-    
-    if (!recipe || !recipe.title || !recipe.ingredients || !recipe.instructions) {
-      console.error('Invalid recipe data:', recipe);
-      throw new Error('Failed to extract valid recipe data');
+    // Process with Gemini
+    const recipeData = await processWithGemini(content);
+
+    // Validate recipe data
+    if (!recipeData || !recipeData.title || !recipeData.ingredients || !recipeData.instructions) {
+      throw new Error('Invalid recipe data structure');
     }
 
-    const response = {
-      ...recipe,
-      image_url: '',
-    };
-
-    console.log('Sending successful response:', response);
-
     return new Response(
-      JSON.stringify(response),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
-      }
-    );
-
-  } catch (error) {
-    console.error('Error in import-recipe function:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Failed to import recipe'
+      JSON.stringify({
+        ...recipeData,
+        image_url: '', // No image processing for now
       }),
       { 
         headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: 'Sorry, we couldn\'t fetch this recipe from the URL. Please try another URL or enter it manually.'
+      }),
+      { 
+        headers: { 
+          ...corsHeaders,
+          'Content-Type': 'application/json'
         },
         status: 400
       }

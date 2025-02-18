@@ -9,7 +9,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 export default function ImportRecipePage() {
   const navigate = useNavigate();
@@ -22,71 +21,21 @@ export default function ImportRecipePage() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("User not authenticated");
 
-      // Fetch webpage content
-      const response = await fetch(url);
-      const pageContent = await response.text();
-
-      // Initialize Gemini
-      const { data: { secret }, error: secretError } = await supabase
-        .from('secrets')
-        .select('value')
-        .eq('name', 'GOOGLE_GEMINI_KEY')
-        .single();
-      
-      if (secretError || !secret) {
-        throw new Error('Recipe import service is not properly configured');
-      }
-
-      const genAI = new GoogleGenerativeAI(secret.value);
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
-      // Process with Gemini
-      const result = await model.generateContent({
-        contents: [{
-          parts: [{
-            text: `Extract recipe information from this webpage content.
-            Return ONLY a valid JSON object with these exact fields:
-            {
-              "title": "Recipe title",
-              "description": "Brief recipe description",
-              "ingredients": ["list of ingredients"],
-              "instructions": ["step by step instructions"],
-              "servings": 1
-            }
-            
-            Webpage content:
-            ${pageContent.slice(0, 10000)}
-            
-            Respond with ONLY the JSON object, no other text.`
-          }]
-        }]
+      // Call our Edge Function to fetch and process the recipe
+      const { data, error } = await supabase.functions.invoke('import-recipe', {
+        body: { url }
       });
 
-      const text = result.response.text();
-      let recipeData;
-      
-      try {
-        recipeData = JSON.parse(text);
-      } catch (error) {
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) {
-          throw new Error('Failed to parse recipe data');
-        }
-        recipeData = JSON.parse(jsonMatch[0]);
-      }
-
-      if (!recipeData || !recipeData.title || !recipeData.ingredients || !recipeData.instructions) {
-        throw new Error('Invalid recipe data received');
-      }
+      if (error) throw error;
+      if (!data) throw new Error('No recipe data returned');
 
       // Save to database
       const { data: savedRecipe, error: insertError } = await supabase
         .from('recipes')
         .insert([{
-          ...recipeData,
+          ...data,
           user_id: session.user.id,
-          source_url: url,
-          image_url: '', // No image processing for now
+          source_url: url
         }])
         .select()
         .single();

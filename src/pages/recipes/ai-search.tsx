@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,13 @@ interface RecipeData {
   portion_description: string;
 }
 
+interface ScaledIngredient {
+  quantity: number;
+  unit: string;
+  ingredient: string;
+  originalText: string;
+}
+
 export default function AIRecipeSearchPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -29,6 +36,77 @@ export default function AIRecipeSearchPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [suggestedRecipe, setSuggestedRecipe] = useState<RecipeData | null>(null);
   const [chosenPortions, setChosenPortions] = useState<number>(0);
+  const [scaledRecipe, setScaledRecipe] = useState<RecipeData | null>(null);
+
+  // Parse ingredient quantity from text
+  const parseIngredient = (text: string): ScaledIngredient => {
+    // Match quantity, unit, and ingredient
+    const match = text.match(/^([\d.\/]+)\s*([a-zA-Z]+)?\s+(.+)$/);
+    if (match) {
+      const [, quantity, unit, ingredient] = match;
+      // Convert fractions if present
+      const numericQuantity = quantity.includes('/') 
+        ? eval(quantity) // safely evaluate fractions like "1/2"
+        : parseFloat(quantity);
+      return {
+        quantity: numericQuantity,
+        unit: unit || '',
+        ingredient,
+        originalText: text
+      };
+    }
+    // Return original text if parsing fails
+    return {
+      quantity: 1,
+      unit: '',
+      ingredient: text,
+      originalText: text
+    };
+  };
+
+  // Scale recipe values based on portion size
+  const scaleRecipe = (recipe: RecipeData, newPortions: number, originalPortions: number) => {
+    if (!recipe || newPortions <= 0 || originalPortions <= 0) return recipe;
+
+    const scaleFactor = newPortions / originalPortions;
+
+    // Scale ingredients
+    const scaledIngredients = recipe.ingredients.map(ing => {
+      const parsed = parseIngredient(ing);
+      if (parsed.quantity && parsed.unit) {
+        const scaledQuantity = parsed.quantity * scaleFactor;
+        return `${scaledQuantity.toFixed(2)} ${parsed.unit} ${parsed.ingredient}`;
+      }
+      return ing; // Keep original if parsing failed
+    });
+
+    // Scale time and calories
+    const scaledPrep = recipe.prep_time ? Math.round(recipe.prep_time * Math.sqrt(scaleFactor)) : undefined;
+    const scaledCook = recipe.cook_time ? Math.round(recipe.cook_time * Math.sqrt(scaleFactor)) : undefined;
+    const scaledCalories = recipe.estimated_calories 
+      ? Math.round(recipe.estimated_calories * scaleFactor)
+      : undefined;
+
+    return {
+      ...recipe,
+      ingredients: scaledIngredients,
+      prep_time: scaledPrep,
+      cook_time: scaledCook,
+      estimated_calories: scaledCalories
+    };
+  };
+
+  // Update scaled recipe when portions change
+  useEffect(() => {
+    if (suggestedRecipe && chosenPortions > 0) {
+      const scaled = scaleRecipe(
+        suggestedRecipe,
+        chosenPortions,
+        suggestedRecipe.suggested_portions
+      );
+      setScaledRecipe(scaled);
+    }
+  }, [chosenPortions, suggestedRecipe]);
 
   const searchRecipe = useMutation({
     mutationFn: async (query: string) => {
@@ -49,7 +127,8 @@ export default function AIRecipeSearchPage() {
     },
     onSuccess: (data) => {
       setSuggestedRecipe(data);
-      setChosenPortions(data.suggested_portions); // Initialize with AI suggestion
+      setChosenPortions(data.suggested_portions);
+      setScaledRecipe(data);
       toast({
         title: "Recipe found",
         description: "Here's a recipe suggestion based on your search.",
@@ -67,7 +146,7 @@ export default function AIRecipeSearchPage() {
 
   const saveRecipe = useMutation({
     mutationFn: async () => {
-      if (!suggestedRecipe) throw new Error("No recipe to save");
+      if (!scaledRecipe) throw new Error("No recipe to save");
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
@@ -75,10 +154,10 @@ export default function AIRecipeSearchPage() {
       const { data, error } = await supabase
         .from('recipes')
         .insert([{
-          ...suggestedRecipe,
+          ...scaledRecipe,
           user_id: user.id,
-          suggested_portions: suggestedRecipe.suggested_portions,
-          portion_size: chosenPortions // Save the user's chosen portion size
+          suggested_portions: suggestedRecipe?.suggested_portions,
+          portion_size: chosenPortions
         }])
         .select()
         .single();
@@ -107,6 +186,7 @@ export default function AIRecipeSearchPage() {
     e.preventDefault();
     setIsSearching(true);
     setSuggestedRecipe(null);
+    setScaledRecipe(null);
     try {
       await searchRecipe.mutateAsync(query);
     } catch (error) {
@@ -170,22 +250,37 @@ export default function AIRecipeSearchPage() {
             <p className="text-muted-foreground">{suggestedRecipe.description}</p>
 
             <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-              {suggestedRecipe.prep_time && (
+              {scaledRecipe?.prep_time && (
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
-                  <span>Prep: {suggestedRecipe.prep_time} mins</span>
+                  <span>Prep: {scaledRecipe.prep_time} mins</span>
+                  {chosenPortions !== suggestedRecipe.suggested_portions && (
+                    <span className="text-xs">
+                      (Original: {suggestedRecipe.prep_time} mins)
+                    </span>
+                  )}
                 </div>
               )}
-              {suggestedRecipe.cook_time && (
+              {scaledRecipe?.cook_time && (
                 <div className="flex items-center gap-1">
                   <Clock className="h-4 w-4" />
-                  <span>Cook: {suggestedRecipe.cook_time} mins</span>
+                  <span>Cook: {scaledRecipe.cook_time} mins</span>
+                  {chosenPortions !== suggestedRecipe.suggested_portions && (
+                    <span className="text-xs">
+                      (Original: {suggestedRecipe.cook_time} mins)
+                    </span>
+                  )}
                 </div>
               )}
-              {suggestedRecipe.estimated_calories && (
+              {scaledRecipe?.estimated_calories && (
                 <div className="flex items-center gap-1">
                   <Flame className="h-4 w-4" />
-                  <span>{suggestedRecipe.estimated_calories} cal total</span>
+                  <span>{scaledRecipe.estimated_calories} cal total</span>
+                  {chosenPortions !== suggestedRecipe.suggested_portions && (
+                    <span className="text-xs">
+                      (Original: {suggestedRecipe.estimated_calories} cal)
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -214,7 +309,7 @@ export default function AIRecipeSearchPage() {
             <div className="space-y-2">
               <h3 className="font-semibold">Ingredients:</h3>
               <ul className="list-disc pl-5 space-y-1">
-                {suggestedRecipe.ingredients.map((ingredient, index) => (
+                {(scaledRecipe?.ingredients || []).map((ingredient, index) => (
                   <li key={index}>{ingredient}</li>
                 ))}
               </ul>
@@ -223,7 +318,7 @@ export default function AIRecipeSearchPage() {
             <div className="space-y-2">
               <h3 className="font-semibold">Instructions:</h3>
               <ol className="list-decimal pl-5 space-y-1">
-                {suggestedRecipe.instructions.map((instruction, index) => (
+                {(scaledRecipe?.instructions || []).map((instruction, index) => (
                   <li key={index}>{instruction}</li>
                 ))}
               </ol>

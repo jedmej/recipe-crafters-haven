@@ -16,6 +16,15 @@ type Recipe = {
   servings: number;
 };
 
+function cleanJsonResponse(text: string): string {
+  // Remove markdown code block formatting if present
+  const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  if (jsonMatch) {
+    return jsonMatch[1].trim();
+  }
+  return text.trim();
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -39,7 +48,7 @@ serve(async (req) => {
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
     const prompt = `Create a recipe based on this request: "${query}"
-    Return ONLY a valid JSON object with these exact fields:
+    You must return a JSON object (and nothing else) with exactly these fields:
     {
       "title": "Recipe title",
       "description": "Brief recipe description",
@@ -48,17 +57,21 @@ serve(async (req) => {
       "servings": 4
     }
     
-    Make sure:
-    1. All ingredients have specific quantities and units
-    2. Instructions are clear and detailed
-    3. The response is ONLY the JSON object, no other text
-    4. All fields are present and properly formatted
-    5. The JSON is valid and can be parsed`;
+    Rules:
+    1. All ingredients must include specific quantities and units
+    2. Instructions must be clear and step-by-step
+    3. Return ONLY the JSON object with no additional text or formatting
+    4. Do not include markdown code blocks or ```json formatting
+    5. The response must be valid JSON that can be parsed`;
 
     console.log('Sending prompt to Gemini');
     const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    console.log('Received response from Gemini:', text);
+    const rawText = result.response.text();
+    console.log('Received raw response from Gemini:', rawText);
+
+    // Clean up the response
+    const text = cleanJsonResponse(rawText);
+    console.log('Cleaned response:', text);
     
     try {
       const recipeData = JSON.parse(text);

@@ -174,6 +174,47 @@ export default function RecipeDetailPage() {
     ? desiredServings / recipe.servings 
     : 1;
 
+  const addToGroceryList = useMutation({
+    mutationFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const listTitle = `${recipe.title} - ${new Date().toLocaleDateString()}`;
+      const scaledIngredients = (recipe.ingredients as string[]).map(ingredient => 
+        scaleAndConvertIngredient(ingredient, scaleFactor, measurementSystem)
+      );
+
+      const { data, error } = await supabase
+        .from('grocery_lists')
+        .insert([
+          {
+            title: listTitle,
+            items: scaledIngredients,
+            user_id: user.id,
+          }
+        ])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      navigate(`/grocery-lists/${data.id}`);
+      toast({
+        title: "Grocery list created",
+        description: "Recipe ingredients have been added to a new grocery list.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message,
+      });
+    }
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -192,14 +233,28 @@ export default function RecipeDetailPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <Button
-        variant="ghost"
-        className="mb-6"
-        onClick={() => navigate("/recipes")}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Recipes
-      </Button>
+      <div className="flex justify-between items-center mb-6">
+        <Button
+          variant="ghost"
+          onClick={() => navigate("/recipes")}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Recipes
+        </Button>
+        <Button
+          onClick={() => addToGroceryList.mutate()}
+          disabled={addToGroceryList.isPending}
+        >
+          {addToGroceryList.isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Adding to List...
+            </>
+          ) : (
+            'Add to Grocery List'
+          )}
+        </Button>
+      </div>
 
       <Card>
         {recipe.image_url && (

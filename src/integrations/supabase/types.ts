@@ -79,6 +79,7 @@ export type Database = {
           ingredients: Json
           instructions: Json
           language: string
+          portion_description: string
           portion_size: number
           prep_time: number | null
           servings: number
@@ -97,6 +98,7 @@ export type Database = {
           ingredients?: Json
           instructions?: Json
           language?: string
+          portion_description?: string
           portion_size?: number
           prep_time?: number | null
           servings?: number
@@ -115,6 +117,7 @@ export type Database = {
           ingredients?: Json
           instructions?: Json
           language?: string
+          portion_description?: string
           portion_size?: number
           prep_time?: number | null
           servings?: number

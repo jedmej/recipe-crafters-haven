@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 
@@ -37,10 +37,16 @@ export default function RecipesPage() {
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">My Recipes</h1>
-        <Button onClick={() => navigate("/recipes/new")} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add Recipe
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => navigate("/recipes/import")} variant="outline" className="gap-2">
+            <Download className="h-4 w-4" />
+            Import Recipe
+          </Button>
+          <Button onClick={() => navigate("/recipes/new")} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Recipe
+          </Button>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

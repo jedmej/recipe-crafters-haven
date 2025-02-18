@@ -1,1 +1,5 @@
+
 project_id = "yorijihyeahhfprgjkvp"
+
+[functions.import-recipe]
+verify_jwt = true

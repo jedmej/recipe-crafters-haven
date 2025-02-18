@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,15 +37,12 @@ export default function AIRecipeSearchPage() {
   const [chosenPortions, setChosenPortions] = useState<number>(0);
   const [scaledRecipe, setScaledRecipe] = useState<RecipeData | null>(null);
 
-  // Parse ingredient quantity from text
   const parseIngredient = (text: string): ScaledIngredient => {
-    // Match quantity, unit, and ingredient
     const match = text.match(/^([\d.\/]+)\s*([a-zA-Z]+)?\s+(.+)$/);
     if (match) {
       const [, quantity, unit, ingredient] = match;
-      // Convert fractions if present
       const numericQuantity = quantity.includes('/') 
-        ? eval(quantity) // safely evaluate fractions like "1/2"
+        ? eval(quantity)
         : parseFloat(quantity);
       return {
         quantity: numericQuantity,
@@ -55,7 +51,6 @@ export default function AIRecipeSearchPage() {
         originalText: text
       };
     }
-    // Return original text if parsing fails
     return {
       quantity: 1,
       unit: '',
@@ -64,23 +59,20 @@ export default function AIRecipeSearchPage() {
     };
   };
 
-  // Scale recipe values based on portion size
   const scaleRecipe = (recipe: RecipeData, newPortions: number, originalPortions: number) => {
     if (!recipe || newPortions <= 0 || originalPortions <= 0) return recipe;
 
     const scaleFactor = newPortions / originalPortions;
 
-    // Scale ingredients
     const scaledIngredients = recipe.ingredients.map(ing => {
       const parsed = parseIngredient(ing);
       if (parsed.quantity && parsed.unit) {
         const scaledQuantity = parsed.quantity * scaleFactor;
         return `${scaledQuantity.toFixed(2)} ${parsed.unit} ${parsed.ingredient}`;
       }
-      return ing; // Keep original if parsing failed
+      return ing;
     });
 
-    // Scale time and calories
     const scaledPrep = recipe.prep_time ? Math.round(recipe.prep_time * Math.sqrt(scaleFactor)) : undefined;
     const scaledCook = recipe.cook_time ? Math.round(recipe.cook_time * Math.sqrt(scaleFactor)) : undefined;
     const scaledCalories = recipe.estimated_calories 
@@ -96,7 +88,6 @@ export default function AIRecipeSearchPage() {
     };
   };
 
-  // Update scaled recipe when portions change
   useEffect(() => {
     if (suggestedRecipe && chosenPortions > 0) {
       const scaled = scaleRecipe(
@@ -116,7 +107,14 @@ export default function AIRecipeSearchPage() {
 
       if (response.error) {
         console.error('Search error:', response.error);
-        throw new Error(response.error.message || 'Failed to search for recipes');
+        try {
+          const errorBody = JSON.parse(response.error.message);
+          if (errorBody.error) {
+            throw new Error(errorBody.error);
+          }
+        } catch (e) {
+          throw new Error(response.error.message || 'Failed to search for recipes');
+        }
       }
       
       if (!response.data) {

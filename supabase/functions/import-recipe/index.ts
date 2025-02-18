@@ -13,70 +13,63 @@ const geminiApiKey = Deno.env.get('GOOGLE_GEMINI_KEY');
 async function fetchWebContent(url: string): Promise<string> {
   console.log('Fetching web content from:', url);
   try {
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`);
-    }
-    
-    const contentType = response.headers.get('content-type') || '';
-    if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
-      throw new Error('URL does not point to a valid webpage');
-    }
-    
+    const response = await fetch(url);
     const text = await response.text();
     if (!text || text.trim().length === 0) {
       throw new Error('Empty response from webpage');
     }
-    
     return text;
   } catch (error) {
     console.error('Error fetching web content:', error);
-    throw error;
+    throw new Error(`Failed to fetch webpage content: ${error.message}`);
   }
 }
 
 async function extractRecipeWithGemini(url: string): Promise<any> {
   if (!geminiApiKey) {
-    throw new Error('Gemini API key not configured');
+    console.error('Gemini API key not found');
+    throw new Error('Recipe import service is not properly configured');
   }
 
-  console.log('Extracting recipe with Gemini from URL:', url);
+  console.log('Starting recipe extraction with Gemini');
   
   try {
     const pageContent = await fetchWebContent(url);
+    console.log('Successfully fetched webpage content');
     
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const prompt = `Extract recipe information from this webpage content.
-    Return ONLY a valid JSON object with these exact fields:
-    {
-      "title": "Recipe title",
-      "description": "Brief recipe description",
-      "ingredients": ["list of ingredients"],
-      "instructions": ["step by step instructions"],
-      "servings": 1
-    }
-    
-    Webpage content:
-    ${pageContent.slice(0, 10000)}
-    
-    Respond with ONLY the JSON object, no other text.`;
+    console.log('Sending content to Gemini for processing');
+    const result = await model.generateContent({
+      contents: [{
+        parts: [{
+          text: `Extract recipe information from this webpage content.
+          Return ONLY a valid JSON object with these exact fields:
+          {
+            "title": "Recipe title",
+            "description": "Brief recipe description",
+            "ingredients": ["list of ingredients"],
+            "instructions": ["step by step instructions"],
+            "servings": 1
+          }
+          
+          Webpage content:
+          ${pageContent.slice(0, 10000)}
+          
+          Respond with ONLY the JSON object, no other text.`
+        }]
+      }]
+    });
 
-    const result = await model.generateContent(prompt);
     const text = result.response.text();
+    console.log('Received response from Gemini:', text);
     
     try {
       const recipeData = JSON.parse(text);
-      console.log('Successfully parsed recipe data');
+      console.log('Successfully parsed recipe data:', recipeData);
       return recipeData;
-    } catch (error) {
+    } catch (parseError) {
       console.log('Direct JSON parse failed, trying to extract JSON');
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -84,12 +77,12 @@ async function extractRecipeWithGemini(url: string): Promise<any> {
       }
       
       const recipeData = JSON.parse(jsonMatch[0]);
-      console.log('Successfully extracted and parsed JSON');
+      console.log('Successfully extracted and parsed JSON:', recipeData);
       return recipeData;
     }
   } catch (error) {
     console.error('Error in Gemini extraction:', error);
-    throw new Error('Unable to extract recipe data');
+    throw new Error(`Failed to extract recipe: ${error.message}`);
   }
 }
 
@@ -99,9 +92,12 @@ serve(async (req) => {
   }
 
   try {
+    console.log('Received import request');
+    
     let requestBody;
     try {
       requestBody = await req.json();
+      console.log('Request body:', requestBody);
     } catch (error) {
       console.error('Error parsing request body:', error);
       throw new Error('Invalid request format');
@@ -112,20 +108,21 @@ serve(async (req) => {
       throw new Error('Invalid URL provided');
     }
 
-    console.log('Starting recipe import for URL:', url);
+    console.log('Processing URL:', url);
     
     const recipe = await extractRecipeWithGemini(url);
     
-    if (!recipe) {
-      throw new Error('Failed to extract recipe data');
+    if (!recipe || !recipe.title || !recipe.ingredients || !recipe.instructions) {
+      console.error('Invalid recipe data:', recipe);
+      throw new Error('Failed to extract valid recipe data');
     }
 
     const response = {
       ...recipe,
-      image_url: '', // Gemini doesn't extract images
+      image_url: '',
     };
 
-    console.log('Returning recipe data:', JSON.stringify(response, null, 2));
+    console.log('Sending successful response:', response);
 
     return new Response(
       JSON.stringify(response),
@@ -141,7 +138,7 @@ serve(async (req) => {
     console.error('Error in import-recipe function:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'Sorry, we couldn\'t fetch this recipe from the URL. Please try another URL or enter it manually.' 
+        error: error instanceof Error ? error.message : 'Failed to import recipe'
       }),
       { 
         headers: { 

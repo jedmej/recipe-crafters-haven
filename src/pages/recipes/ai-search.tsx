@@ -17,6 +17,8 @@ interface RecipeData {
   prep_time?: number;
   cook_time?: number;
   estimated_calories?: number;
+  suggested_portions: number;
+  portion_description: string;
 }
 
 export default function AIRecipeSearchPage() {
@@ -26,6 +28,7 @@ export default function AIRecipeSearchPage() {
   const [query, setQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [suggestedRecipe, setSuggestedRecipe] = useState<RecipeData | null>(null);
+  const [chosenPortions, setChosenPortions] = useState<number>(0);
 
   const searchRecipe = useMutation({
     mutationFn: async (query: string) => {
@@ -46,6 +49,7 @@ export default function AIRecipeSearchPage() {
     },
     onSuccess: (data) => {
       setSuggestedRecipe(data);
+      setChosenPortions(data.suggested_portions); // Initialize with AI suggestion
       toast({
         title: "Recipe found",
         description: "Here's a recipe suggestion based on your search.",
@@ -73,7 +77,8 @@ export default function AIRecipeSearchPage() {
         .insert([{
           ...suggestedRecipe,
           user_id: user.id,
-          servings: 4 // Default servings
+          suggested_portions: suggestedRecipe.suggested_portions,
+          portion_size: chosenPortions // Save the user's chosen portion size
         }])
         .select()
         .single();
@@ -183,6 +188,27 @@ export default function AIRecipeSearchPage() {
                   <span>{suggestedRecipe.estimated_calories} cal total</span>
                 </div>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="font-semibold">Portions</h3>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={chosenPortions}
+                    onChange={(e) => setChosenPortions(Number(e.target.value))}
+                    className="w-20"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {suggestedRecipe.portion_description}
+                  </span>
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  (Suggested: {suggestedRecipe.suggested_portions})
+                </span>
+              </div>
             </div>
 
             <div className="space-y-2">

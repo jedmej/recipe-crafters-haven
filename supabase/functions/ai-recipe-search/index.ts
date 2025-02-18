@@ -74,10 +74,21 @@ serve(async (req) => {
       "instructions": ["Step by step cooking instructions"],
       "prep_time": integer (estimated preparation time in minutes),
       "cook_time": integer (estimated cooking time in minutes),
-      "estimated_calories": integer (estimated total calories for the entire recipe)
+      "estimated_calories": integer (estimated total calories for the entire recipe),
+      "suggested_portions": integer (recommended number of portions based on the dish type),
+      "portion_description": string (brief explanation of what a portion means, e.g., "slices for pizza", "pieces for cookies")
     }
 
-    Important rules:
+    Important rules for portions:
+    1. Analyze the dish type and suggest a realistic portion count:
+       - Single-serve items (toast, sandwich): typically 1-2 portions
+       - Family meals (casseroles, lasagna): typically 6-8 portions
+       - Baked goods (cookies, muffins): typically 12-24 portions
+       - Pizza: typically 6-8 slices
+    2. The portion suggestion should match common serving sizes for this type of dish
+    3. Include a clear description of what a "portion" means for this specific recipe
+
+    Other important rules:
     1. Format quantities precisely (e.g., "2 cups flour", "1 tablespoon olive oil")
     2. Make instructions detailed and numbered
     3. Return ONLY valid JSON - no markdown, no text before or after
@@ -88,7 +99,6 @@ serve(async (req) => {
 
     console.log('Sending prompt to Gemini');
     
-    // Wrap the Gemini API call in our retry logic
     const result = await retryWithBackoff(async () => {
       return await model.generateContent(prompt);
     });
@@ -105,7 +115,9 @@ serve(async (req) => {
       if (!recipeData.title || !recipeData.description || 
           !Array.isArray(recipeData.ingredients) || !Array.isArray(recipeData.instructions) ||
           typeof recipeData.prep_time !== 'number' || typeof recipeData.cook_time !== 'number' ||
-          typeof recipeData.estimated_calories !== 'number') {
+          typeof recipeData.estimated_calories !== 'number' ||
+          typeof recipeData.suggested_portions !== 'number' ||
+          typeof recipeData.portion_description !== 'string') {
         throw new Error('Invalid recipe format');
       }
 
@@ -119,7 +131,6 @@ serve(async (req) => {
   } catch (error) {
     console.error('Edge function error:', error);
     
-    // Customize error message for overloaded service
     let errorMessage = error.message;
     if (error.message?.includes('503') || error.message?.includes('overloaded')) {
       errorMessage = 'The AI service is temporarily busy. Please try again in a few moments.';

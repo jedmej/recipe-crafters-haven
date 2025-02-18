@@ -19,12 +19,16 @@ export default function ImportRecipePage() {
 
   const importRecipe = useMutation({
     mutationFn: async (url: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("User not authenticated");
 
       setIsUsingFallback(false);
       const response = await supabase.functions.invoke('import-recipe', {
-        body: { url }
+        body: { url },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        }
       });
 
       if (response.error) {
@@ -40,7 +44,7 @@ export default function ImportRecipePage() {
         .from('recipes')
         .insert([{
           ...response.data,
-          user_id: user.id,
+          user_id: session.user.id,
           source_url: url
         }])
         .select()
@@ -51,6 +55,7 @@ export default function ImportRecipePage() {
         throw insertError;
       }
 
+      setIsUsingFallback(response.data.usedFallback || false);
       return recipeData;
     },
     onSuccess: (data) => {
@@ -66,8 +71,9 @@ export default function ImportRecipePage() {
     onError: (error: Error) => {
       let errorMessage = error.message;
       
-      // Make error messages more user-friendly
-      if (errorMessage.includes('No content found')) {
+      if (errorMessage.includes('Failed to fetch')) {
+        errorMessage = "Connection error. Please check your internet connection and try again.";
+      } else if (errorMessage.includes('No content found')) {
         errorMessage = "Could not find recipe content on this page. Please make sure the URL points to a valid recipe page.";
       } else if (errorMessage.includes('404')) {
         errorMessage = "The recipe page could not be found. Please check if the URL is correct.";
@@ -106,7 +112,11 @@ export default function ImportRecipePage() {
       return;
     }
 
-    await importRecipe.mutateAsync(url);
+    try {
+      await importRecipe.mutateAsync(url);
+    } catch (error) {
+      console.error('Submit error:', error);
+    }
   };
 
   return (

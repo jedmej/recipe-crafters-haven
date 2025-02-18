@@ -24,20 +24,28 @@ serve(async (req) => {
       throw new Error('Firecrawl API key not configured');
     }
 
+    if (!url || !url.startsWith('http')) {
+      throw new Error('Invalid URL provided');
+    }
+
     const firecrawl = new FirecrawlApp({ apiKey: firecrawlApiKey });
     const crawlResponse = await firecrawl.crawlUrl(url, {
       limit: 1,
       scrapeOptions: {
         formats: ['markdown', 'html'],
+        timeout: 30000, // 30 second timeout
+        waitUntil: 'networkidle0'
       }
     });
 
+    console.log('Crawl response:', JSON.stringify(crawlResponse, null, 2));
+
     if (!crawlResponse.success) {
-      throw new Error('Failed to scrape recipe data');
+      throw new Error('Failed to scrape recipe data: ' + (crawlResponse.error || 'Unknown error'));
     }
 
-    const content = crawlResponse.data[0]?.content;
-    if (!content) {
+    const content = crawlResponse.data?.[0]?.content;
+    if (!content || !content.markdown) {
       throw new Error('No content found in webpage');
     }
 
@@ -46,47 +54,40 @@ serve(async (req) => {
     const description = content.description || '';
     const imageUrl = content.images?.[0] || '';
 
-    // Extract ingredients and instructions using common recipe page patterns
+    // Initialize arrays for ingredients and instructions
     const ingredients: string[] = [];
     const instructions: string[] = [];
 
-    // Look for common recipe patterns in the content
+    // Split content into sections and process them
     const sections = content.markdown.split('\n\n');
-    for (const section of sections) {
-      if (section.toLowerCase().includes('ingredients')) {
-        const lines = section.split('\n').slice(1);
-        ingredients.push(...lines.filter(line => line.trim()));
-      }
-      if (section.toLowerCase().includes('instructions') || 
-          section.toLowerCase().includes('directions') || 
-          section.toLowerCase().includes('method')) {
-        const lines = section.split('\n').slice(1);
-        instructions.push(...lines.filter(line => line.trim()));
-      }
-    }
+    let currentSection = '';
 
-    // If we couldn't find structured data, try to extract from the raw content
-    if (ingredients.length === 0 || instructions.length === 0) {
-      const lines = content.markdown.split('\n');
-      let currentSection = '';
+    for (const section of sections) {
+      const lowerSection = section.toLowerCase();
       
+      if (lowerSection.includes('ingredient')) {
+        currentSection = 'ingredients';
+        continue;
+      }
+      if (lowerSection.includes('instruction') || lowerSection.includes('direction') || lowerSection.includes('method')) {
+        currentSection = 'instructions';
+        continue;
+      }
+
+      // Process lines based on current section
+      const lines = section.split('\n');
       for (const line of lines) {
         const trimmedLine = line.trim();
         if (!trimmedLine) continue;
 
-        if (trimmedLine.toLowerCase().includes('ingredients')) {
-          currentSection = 'ingredients';
-          continue;
-        }
-        if (trimmedLine.toLowerCase().includes('instructions') || 
-            trimmedLine.toLowerCase().includes('directions') || 
-            trimmedLine.toLowerCase().includes('method')) {
-          currentSection = 'instructions';
-          continue;
-        }
+        // Skip lines that look like headers
+        if (trimmedLine.startsWith('#')) continue;
 
         if (currentSection === 'ingredients' && !ingredients.includes(trimmedLine)) {
-          ingredients.push(trimmedLine);
+          // Only add if it looks like an ingredient (contains numbers or common measurements)
+          if (/\d/.test(trimmedLine) || /cup|tablespoon|teaspoon|gram|oz|pound|ml|g|tbsp|tsp/i.test(trimmedLine)) {
+            ingredients.push(trimmedLine);
+          }
         }
         if (currentSection === 'instructions' && !instructions.includes(trimmedLine)) {
           instructions.push(trimmedLine);
@@ -94,7 +95,30 @@ serve(async (req) => {
       }
     }
 
+    // If we couldn't find structured ingredients/instructions, try a different approach
     if (ingredients.length === 0 || instructions.length === 0) {
+      console.log('Attempting alternative content extraction method');
+      
+      const allLines = content.markdown.split('\n');
+      for (const line of allLines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+
+        // Try to identify ingredients by common patterns
+        if (/\d/.test(trimmedLine) && 
+            /cup|tablespoon|teaspoon|gram|oz|pound|ml|g|tbsp|tsp/i.test(trimmedLine) &&
+            !ingredients.includes(trimmedLine)) {
+          ingredients.push(trimmedLine);
+        }
+        // Try to identify instructions by sentence structure
+        else if (/^[0-9]+\.|^[•\-\*]|^step/i.test(trimmedLine) && 
+                !instructions.includes(trimmedLine)) {
+          instructions.push(trimmedLine);
+        }
+      }
+    }
+
+    if (ingredients.length === 0 && instructions.length === 0) {
       throw new Error('Could not extract recipe data from the page');
     }
 
@@ -104,22 +128,33 @@ serve(async (req) => {
       image_url: imageUrl,
       ingredients,
       instructions,
+      servings: 1 // Default serving size
     };
 
     console.log('Successfully extracted recipe:', recipe);
 
     return new Response(
       JSON.stringify(recipe),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        } 
+      }
     );
 
   } catch (error) {
     console.error('Error importing recipe:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Failed to import recipe' 
+      }),
       { 
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json' 
+        }
       }
     );
   }

@@ -5,70 +5,41 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
 
 export default function ImportRecipePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [url, setUrl] = useState("");
-
-  const callEdgeFunction = async (url: string, retryCount = 0): Promise<any> => {
-    try {
-      const { data, error } = await supabase.functions.invoke('import-recipe', {
-        body: { url },
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-
-      if (error) throw error;
-      if (!data) throw new Error('No recipe data returned');
-      
-      return data;
-    } catch (error) {
-      console.error(`Edge function call attempt ${retryCount + 1} failed:`, error);
-      
-      if (retryCount < MAX_RETRIES) {
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-        return callEdgeFunction(url, retryCount + 1);
-      }
-      
-      throw error;
-    }
-  };
+  const [isImporting, setIsImporting] = useState(false);
 
   const importRecipe = useMutation({
     mutationFn: async (url: string) => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("User not authenticated");
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
 
-      // Call Edge Function with retry logic
-      const recipeData = await callEdgeFunction(url);
+      const response = await supabase.functions.invoke('import-recipe', {
+        body: { url }
+      });
 
-      // Save to database
-      const { data: savedRecipe, error: insertError } = await supabase
+      if (response.error) throw new Error(response.error.message);
+      
+      const recipe = response.data;
+      const { data, error } = await supabase
         .from('recipes')
         .insert([{
-          ...recipeData,
-          user_id: session.user.id,
+          ...recipe,
+          user_id: user.id,
           source_url: url
         }])
         .select()
         .single();
 
-      if (insertError) {
-        console.error('Database error:', insertError);
-        throw insertError;
-      }
-
-      return savedRecipe;
+      if (error) throw error;
+      return data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
@@ -79,50 +50,19 @@ export default function ImportRecipePage() {
       });
     },
     onError: (error: Error) => {
-      console.error('Import error:', error);
-      
-      let errorMessage = "Sorry, we couldn't fetch this recipe from the URL. Please try another URL or enter it manually.";
-      
-      if (error.message.includes('User not authenticated')) {
-        errorMessage = "Please sign in to import recipes.";
-      } else if (error.message.includes('Failed to fetch') || error.message.includes('network')) {
-        errorMessage = "Connection error. Please check your internet connection and try again.";
-      }
-      
       toast({
         variant: "destructive",
         title: "Import failed",
-        description: errorMessage,
+        description: error.message || "Failed to import recipe. Please try a different URL.",
       });
     }
   });
 
-  const validateUrl = (url: string): boolean => {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateUrl(url)) {
-      toast({
-        variant: "destructive",
-        title: "Invalid URL",
-        description: "Please enter a valid URL starting with http:// or https://",
-      });
-      return;
-    }
-
-    try {
-      await importRecipe.mutateAsync(url);
-    } catch (error) {
-      console.error('Submit error:', error);
-    }
+    setIsImporting(true);
+    await importRecipe.mutateAsync(url);
+    setIsImporting(false);
   };
 
   return (
@@ -151,25 +91,14 @@ export default function ImportRecipePage() {
                 placeholder="https://example.com/recipe"
                 required
                 className="w-full"
-                disabled={importRecipe.isPending}
               />
               <p className="text-sm text-muted-foreground">
                 Enter the URL of any public recipe page to import its contents
               </p>
             </div>
 
-            <Alert>
-              <AlertDescription>
-                Make sure the URL is publicly accessible and contains a recipe with clear ingredients and instructions.
-              </AlertDescription>
-            </Alert>
-
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={importRecipe.isPending || !url.trim()}
-            >
-              {importRecipe.isPending ? (
+            <Button type="submit" className="w-full" disabled={isImporting}>
+              {isImporting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Importing Recipe...

@@ -2,25 +2,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.1.3';
+import { cleanJsonResponse, validateRecipeData } from './utils.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-function cleanJsonResponse(text: string): string {
-  const jsonBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  if (jsonBlockMatch) {
-    return jsonBlockMatch[1].trim();
-  }
-  
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (jsonMatch) {
-    return jsonMatch[0].trim();
-  }
-  
-  return text.replace(/```/g, '').trim();
-}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -89,29 +76,7 @@ serve(async (req) => {
 
       try {
         const recipeData = JSON.parse(cleanedJson);
-
-        // Validate required fields
-        const requiredFields = [
-          'title', 'description', 'ingredients', 'instructions',
-          'prep_time', 'cook_time', 'estimated_calories',
-          'suggested_portions', 'portion_description'
-        ];
-
-        for (const field of requiredFields) {
-          if (recipeData[field] === undefined) {
-            throw new Error(`Missing required field: ${field}`);
-          }
-        }
-
-        // Type validation
-        if (!Array.isArray(recipeData.ingredients)) throw new Error('ingredients must be an array');
-        if (!Array.isArray(recipeData.instructions)) throw new Error('instructions must be an array');
-        if (typeof recipeData.prep_time !== 'number') throw new Error('prep_time must be a number');
-        if (typeof recipeData.cook_time !== 'number') throw new Error('cook_time must be a number');
-        if (typeof recipeData.estimated_calories !== 'number') throw new Error('estimated_calories must be a number');
-        if (typeof recipeData.suggested_portions !== 'number') throw new Error('suggested_portions must be a number');
-        if (typeof recipeData.portion_description !== 'string') throw new Error('portion_description must be a string');
-
+        validateRecipeData(recipeData);
         console.log('Validation passed, returning recipe data');
 
         return new Response(JSON.stringify(recipeData), {

@@ -11,7 +11,6 @@ import NotFound from "./pages/NotFound";
 import RecipesPage from "./pages/recipes";
 import RecipeDetailPage from "./pages/recipes/[id]";
 import NewRecipePage from "./pages/recipes/new";
-import ImportRecipePage from "./pages/recipes/import";
 import ImportRecipeAIPage from "./pages/recipes/import-ai";
 import AIRecipeSearchPage from "./pages/recipes/ai-search";
 import GroceryListsPage from "./pages/grocery-lists";
@@ -49,14 +48,6 @@ const App = () => (
             element={
               <AuthGuard>
                 <NewRecipePage />
-              </AuthGuard>
-            }
-          />
-          <Route
-            path="/recipes/import"
-            element={
-              <AuthGuard>
-                <ImportRecipePage />
               </AuthGuard>
             }
           />

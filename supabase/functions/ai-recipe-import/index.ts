@@ -42,20 +42,33 @@ serve(async (req) => {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-    const prompt = `Extract recipe information from this webpage content.
-    Return ONLY a valid JSON object with these exact fields:
-    {
-      "title": "Recipe title",
-      "description": "Brief recipe description",
-      "ingredients": ["list of ingredients"],
-      "instructions": ["step by step instructions"],
-      "servings": 1
-    }
-    
-    Webpage content:
-    ${content.slice(0, 10000)}
-    
-    Important: Your response must be ONLY the JSON object, with no additional text or formatting.`;
+    const prompt = `You are a recipe extraction expert. Analyze this webpage content and extract a complete recipe.
+
+Format your response as ONLY a valid JSON object with these exact fields and nothing else:
+{
+  "title": "Recipe title here",
+  "description": "Brief description here",
+  "ingredients": [
+    "ingredient 1 with quantity",
+    "ingredient 2 with quantity"
+  ],
+  "instructions": [
+    "step 1",
+    "step 2"
+  ],
+  "servings": number_of_servings
+}
+
+Rules:
+- Return ONLY the JSON object, no other text
+- Ingredients MUST be an array of strings with quantities
+- Instructions MUST be an array of strings
+- Servings MUST be a number
+- Each ingredient must include its quantity
+- Each instruction must be clear and detailed
+
+Webpage content to analyze:
+${content.slice(0, 10000)}`;
 
     console.log('Sending request to Gemini...');
     const result = await model.generateContent(prompt);
@@ -70,20 +83,31 @@ serve(async (req) => {
       
       const recipeData = JSON.parse(jsonText);
       
-      // Validate recipe data
-      if (!recipeData.title || !recipeData.ingredients || !recipeData.instructions) {
-        console.error('Invalid recipe structure:', recipeData);
-        throw new Error('Generated recipe data is missing required fields');
+      // Enhanced validation
+      if (!recipeData.title || typeof recipeData.title !== 'string') {
+        throw new Error('Invalid or missing title');
+      }
+      if (!Array.isArray(recipeData.ingredients) || recipeData.ingredients.length === 0) {
+        throw new Error('Invalid or empty ingredients array');
+      }
+      if (!Array.isArray(recipeData.instructions) || recipeData.instructions.length === 0) {
+        throw new Error('Invalid or empty instructions array');
+      }
+      if (typeof recipeData.servings !== 'number' || recipeData.servings < 1) {
+        recipeData.servings = 1; // Default to 1 if invalid
+      }
+      if (!recipeData.description) {
+        recipeData.description = ''; // Empty string if missing
       }
 
-      console.log('Successfully parsed recipe data');
+      console.log('Successfully parsed recipe:', JSON.stringify(recipeData, null, 2));
       return new Response(JSON.stringify(recipeData), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     } catch (error) {
-      console.error('JSON parsing error:', error);
+      console.error('Recipe parsing error:', error);
       console.error('Attempted to parse:', text);
-      throw new Error(`Failed to parse recipe data: ${error.message}`);
+      throw new Error(`Failed to extract recipe: ${error.message}. Please check if the URL contains a valid recipe.`);
     }
   } catch (error) {
     console.error('Error:', error);

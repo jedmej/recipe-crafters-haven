@@ -1,8 +1,8 @@
-
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from '@supabase/supabase-js';
 import FirecrawlApp from 'npm:@mendable/firecrawl-js@latest';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,8 +10,49 @@ const corsHeaders = {
 };
 
 const firecrawlApiKey = Deno.env.get('FIRECRAWL_API_KEY');
+const geminiApiKey = Deno.env.get('GOOGLE_GEMINI_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
 const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+
+async function extractRecipeWithGemini(url: string): Promise<any> {
+  if (!geminiApiKey) {
+    throw new Error('Gemini API key not configured');
+  }
+
+  console.log('Attempting to extract recipe with Gemini from URL:', url);
+  
+  const genAI = new GoogleGenerativeAI(geminiApiKey);
+  const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+
+  const prompt = `Visit this URL: ${url} and extract recipe information.
+  Return ONLY a JSON object with these fields:
+  {
+    "title": "Recipe title",
+    "description": "Brief description",
+    "ingredients": ["array", "of", "ingredients"],
+    "instructions": ["array", "of", "step by step", "instructions"]
+  }
+  Ensure the output is valid JSON. Do not include any other text.`;
+
+  const result = await model.generateContent(prompt);
+  const text = result.response.text();
+  
+  try {
+    // Extract JSON from the response
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('No JSON found in Gemini response');
+    }
+    
+    const recipeData = JSON.parse(jsonMatch[0]);
+    console.log('Successfully extracted recipe with Gemini:', recipeData);
+    
+    return recipeData;
+  } catch (error) {
+    console.error('Failed to parse Gemini response:', error);
+    throw new Error('Failed to parse recipe with AI');
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -20,166 +61,160 @@ serve(async (req) => {
   }
 
   try {
-    // Verify authentication
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    const authHeader = req.headers.get('Authorization');
-    
-    if (!authHeader) {
-      throw new Error('No authorization header');
-    }
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-    
-    if (authError || !user) {
-      console.error('Auth error:', authError);
-      throw new Error('Unauthorized');
-    }
-
     // Get URL from request body
     const { url } = await req.json();
     console.log('Starting recipe import for URL:', url);
 
-    if (!firecrawlApiKey) {
-      console.error('Firecrawl API key not found');
-      throw new Error('Firecrawl API key not configured');
-    }
-
-    if (!url || !url.startsWith('http')) {
-      console.error('Invalid URL:', url);
-      throw new Error('Invalid URL provided');
-    }
-
-    console.log('Initializing Firecrawl');
-    const firecrawl = new FirecrawlApp({ apiKey: firecrawlApiKey });
-
-    const crawlOptions = {
-      limit: 1,
-      scrapeOptions: {
-        formats: ['markdown', 'html'],
-        timeout: 30000
+    // Try Firecrawl first
+    try {
+      if (!firecrawlApiKey) {
+        throw new Error('Firecrawl API key not configured');
       }
-    };
 
-    console.log('Starting crawl with options:', JSON.stringify(crawlOptions));
-    const crawlResponse = await firecrawl.crawlUrl(url, crawlOptions);
-
-    console.log('Crawl response:', JSON.stringify(crawlResponse, null, 2));
-
-    if (!crawlResponse.success) {
-      throw new Error(crawlResponse.error || 'Failed to crawl webpage');
-    }
-
-    if (!crawlResponse.data?.[0]?.content) {
-      throw new Error('No content found in webpage');
-    }
-
-    const content = crawlResponse.data[0].content;
-    console.log('Processing content:', JSON.stringify(content, null, 2));
-
-    const title = content.title || 'Untitled Recipe';
-    const description = content.description || '';
-    const imageUrl = content.images?.[0] || '';
-    const ingredients: string[] = [];
-    const instructions: string[] = [];
-
-    // Try to extract from HTML content first
-    const htmlContent = content.html || '';
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(htmlContent, 'text/html');
-
-    // Common selectors for recipe content
-    const ingredientSelectors = ['[itemprop="recipeIngredient"]', '.ingredients', '#ingredients'];
-    const instructionSelectors = ['[itemprop="recipeInstructions"]', '.instructions', '#instructions'];
-
-    // Try to find ingredients from HTML structure
-    for (const selector of ingredientSelectors) {
-      const elements = doc.querySelectorAll(selector);
-      if (elements.length > 0) {
-        elements.forEach(el => {
-          const text = el.textContent?.trim();
-          if (text && !ingredients.includes(text)) {
-            ingredients.push(text);
-          }
-        });
-        break;
+      if (!url || !url.startsWith('http')) {
+        throw new Error('Invalid URL provided');
       }
-    }
 
-    // Try to find instructions from HTML structure
-    for (const selector of instructionSelectors) {
-      const elements = doc.querySelectorAll(selector);
-      if (elements.length > 0) {
-        elements.forEach(el => {
-          const text = el.textContent?.trim();
-          if (text && !instructions.includes(text)) {
-            instructions.push(text);
-          }
-        });
-        break;
-      }
-    }
+      console.log('Attempting to extract recipe with Firecrawl');
+      const firecrawl = new FirecrawlApp({ apiKey: firecrawlApiKey });
 
-    // Fallback to markdown content if HTML parsing didn't work
-    if (ingredients.length === 0 || instructions.length === 0) {
-      console.log('Falling back to markdown content parsing');
-      const markdown = content.markdown || '';
-      const sections = markdown.split('\n\n');
-      let currentSection = '';
-
-      for (const section of sections) {
-        const lowerSection = section.toLowerCase();
-        
-        if (lowerSection.includes('ingredient')) {
-          currentSection = 'ingredients';
-          continue;
+      const crawlResponse = await firecrawl.crawlUrl(url, {
+        limit: 1,
+        scrapeOptions: {
+          formats: ['markdown', 'html'],
+          timeout: 30000
         }
-        if (lowerSection.includes('instruction') || lowerSection.includes('direction') || lowerSection.includes('method')) {
-          currentSection = 'instructions';
-          continue;
+      });
+
+      console.log('Firecrawl response:', JSON.stringify(crawlResponse, null, 2));
+
+      if (!crawlResponse.success || !crawlResponse.data?.[0]?.content) {
+        throw new Error('No content found in webpage');
+      }
+
+      const content = crawlResponse.data[0].content;
+      const recipe = {
+        title: content.title || 'Untitled Recipe',
+        description: content.description || '',
+        image_url: content.images?.[0] || '',
+        ingredients: [],
+        instructions: [],
+        servings: 1
+      };
+
+      // Extract ingredients and instructions from HTML/markdown
+      const htmlContent = content.html || '';
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(htmlContent, 'text/html');
+
+      // Common selectors for recipe content
+      const ingredientSelectors = ['[itemprop="recipeIngredient"]', '.ingredients', '#ingredients'];
+      const instructionSelectors = ['[itemprop="recipeInstructions"]', '.instructions', '#instructions'];
+
+      // Try to find ingredients from HTML structure
+      for (const selector of ingredientSelectors) {
+        const elements = doc.querySelectorAll(selector);
+        if (elements.length > 0) {
+          elements.forEach(el => {
+            const text = el.textContent?.trim();
+            if (text && !recipe.ingredients.includes(text)) {
+              recipe.ingredients.push(text);
+            }
+          });
+          break;
         }
+      }
 
-        const lines = section.split('\n');
-        for (const line of lines) {
-          const trimmedLine = line.trim();
-          if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+      // Try to find instructions from HTML structure
+      for (const selector of instructionSelectors) {
+        const elements = doc.querySelectorAll(selector);
+        if (elements.length > 0) {
+          elements.forEach(el => {
+            const text = el.textContent?.trim();
+            if (text && !recipe.instructions.includes(text)) {
+              recipe.instructions.push(text);
+            }
+          });
+          break;
+        }
+      }
 
-          if (currentSection === 'ingredients' && !ingredients.includes(trimmedLine)) {
-            if (/\d/.test(trimmedLine) || /cup|tablespoon|teaspoon|gram|oz|pound|ml|g|tbsp|tsp/i.test(trimmedLine)) {
-              ingredients.push(trimmedLine);
+      // Fallback to markdown content if HTML parsing didn't work
+      if (recipe.ingredients.length === 0 || recipe.instructions.length === 0) {
+        console.log('Falling back to markdown content parsing');
+        const markdown = content.markdown || '';
+        const sections = markdown.split('\n\n');
+        let currentSection = '';
+
+        for (const section of sections) {
+          const lowerSection = section.toLowerCase();
+          
+          if (lowerSection.includes('ingredient')) {
+            currentSection = 'ingredients';
+            continue;
+          }
+          if (lowerSection.includes('instruction') || lowerSection.includes('direction') || lowerSection.includes('method')) {
+            currentSection = 'instructions';
+            continue;
+          }
+
+          const lines = section.split('\n');
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (!trimmedLine || trimmedLine.startsWith('#')) continue;
+
+            if (currentSection === 'ingredients' && !recipe.ingredients.includes(trimmedLine)) {
+              if (/\d/.test(trimmedLine) || /cup|tablespoon|teaspoon|gram|oz|pound|ml|g|tbsp|tsp/i.test(trimmedLine)) {
+                recipe.ingredients.push(trimmedLine);
+              }
+            }
+            if (currentSection === 'instructions' && !recipe.instructions.includes(trimmedLine)) {
+              recipe.instructions.push(trimmedLine);
             }
           }
-          if (currentSection === 'instructions' && !instructions.includes(trimmedLine)) {
-            instructions.push(trimmedLine);
-          }
         }
       }
-    }
 
-    if (ingredients.length === 0 || instructions.length === 0) {
-      console.error('Failed to extract recipe content');
-      throw new Error('Could not find recipe content on the page');
-    }
-
-    const recipe = {
-      title,
-      description,
-      image_url: imageUrl,
-      ingredients,
-      instructions,
-      servings: 1
-    };
-
-    console.log('Successfully extracted recipe:', JSON.stringify(recipe, null, 2));
-
-    return new Response(
-      JSON.stringify(recipe),
-      { 
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json' 
-        } 
+      if (recipe.ingredients.length === 0 || recipe.instructions.length === 0) {
+        console.error('Failed to extract recipe content');
+        throw new Error('Could not find recipe content on the page');
       }
-    );
+
+      return new Response(
+        JSON.stringify(recipe),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+
+    } catch (scrapingError) {
+      // If Firecrawl fails, try Gemini
+      console.log('Firecrawl extraction failed, falling back to Gemini:', scrapingError);
+      
+      try {
+        const geminiRecipe = await extractRecipeWithGemini(url);
+        
+        return new Response(
+          JSON.stringify({
+            ...geminiRecipe,
+            image_url: '', // Gemini doesn't extract images
+            servings: 1
+          }),
+          { 
+            headers: { 
+              ...corsHeaders, 
+              'Content-Type': 'application/json' 
+            } 
+          }
+        );
+      } catch (geminiError) {
+        console.error('Gemini extraction failed:', geminiError);
+        throw new Error('Unable to extract recipe data. Please try another URL or enter the recipe manually.');
+      }
+    }
 
   } catch (error) {
     console.error('Error in import-recipe function:', error);
@@ -188,7 +223,7 @@ serve(async (req) => {
         error: error instanceof Error ? error.message : 'Failed to import recipe' 
       }),
       { 
-        status: error instanceof Error && error.message === 'Unauthorized' ? 401 : 400,
+        status: 400,
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json' 

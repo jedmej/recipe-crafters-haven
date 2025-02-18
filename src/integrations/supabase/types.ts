@@ -78,9 +78,11 @@ export type Database = {
           image_url: string | null
           ingredients: Json
           instructions: Json
+          portion_size: number
           prep_time: number | null
           servings: number
           source_url: string | null
+          suggested_portions: number | null
           title: string
           user_id: string
         }
@@ -93,9 +95,11 @@ export type Database = {
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
+          portion_size?: number
           prep_time?: number | null
           servings?: number
           source_url?: string | null
+          suggested_portions?: number | null
           title: string
           user_id: string
         }
@@ -108,9 +112,11 @@ export type Database = {
           image_url?: string | null
           ingredients?: Json
           instructions?: Json
+          portion_size?: number
           prep_time?: number | null
           servings?: number
           source_url?: string | null
+          suggested_portions?: number | null
           title?: string
           user_id?: string
         }

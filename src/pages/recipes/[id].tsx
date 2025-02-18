@@ -2,18 +2,17 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Loader2, ArrowLeft, Trash, Edit, Clock, Flame } from "lucide-react";
+import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
 import { convertMeasurement } from "@/lib/unit-conversions";
+import { MeasurementSystem } from "@/lib/types";
+import { RecipeHeader } from "@/components/recipes/RecipeHeader";
+import { TimeAndNutrition } from "@/components/recipes/TimeAndNutrition";
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
-type MeasurementSystem = 'imperial' | 'metric';
 
 function parseQuantity(ingredient: string): { quantity: number | null; unit: string; item: string } {
   const regex = /^((?:\d+\s+)?(?:\d+\/\d+|\d*\.?\d+))?\s*([a-zA-Z]*)\s*(.*)/;
@@ -311,56 +310,18 @@ export default function RecipeDetailPage() {
           </div>
         )}
         
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div className="space-y-2">
-            <CardTitle className="text-3xl">{recipe.title}</CardTitle>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">Servings:</span>
-                <Input
-                  type="number"
-                  min="1"
-                  value={desiredServings}
-                  onChange={(e) => handleServingsChange(e.target.value)}
-                  className="w-20"
-                />
-              </div>
-              <span className="text-sm text-muted-foreground">
-                (Original: {recipe.servings})
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="measurement-system"
-                checked={measurementSystem === 'metric'}
-                onCheckedChange={toggleMeasurementSystem}
-              />
-              <Label htmlFor="measurement-system">
-                {measurementSystem === 'imperial' ? 'Imperial' : 'Metric'} Units
-              </Label>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate(`/recipes/${id}/edit`)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="destructive"
-              size="icon"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+        <CardHeader>
+          <RecipeHeader
+            title={recipe.title}
+            originalServings={recipe.servings}
+            desiredServings={desiredServings}
+            measurementSystem={measurementSystem}
+            onServingsChange={handleServingsChange}
+            onMeasurementSystemChange={toggleMeasurementSystem}
+            onEdit={() => navigate(`/recipes/${id}/edit`)}
+            onDelete={handleDelete}
+            isDeleting={isDeleting}
+          />
         </CardHeader>
 
         <CardContent className="space-y-6">
@@ -372,47 +333,15 @@ export default function RecipeDetailPage() {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <h3 className="font-semibold">Time & Nutrition</h3>
-              <div className="space-y-1 text-sm text-muted-foreground">
-                {(recipe.prep_time || recipe.cook_time) && (
-                  <div className="flex flex-wrap gap-4">
-                    {recipe.prep_time && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>Prep: {recipe.prep_time} mins</span>
-                      </div>
-                    )}
-                    {recipe.cook_time && (
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>Cook: {recipe.cook_time} mins</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {recipe.estimated_calories && (
-                  <div className="flex flex-col gap-1 mt-2">
-                    <div className="flex items-center gap-1">
-                      <Flame className="h-4 w-4" />
-                      <span>
-                        {scaledCalories} cal total
-                        {scaledCaloriesPerServing && ` (${scaledCaloriesPerServing} cal/serving)`}
-                      </span>
-                    </div>
-                    {scaleFactor !== 1 && (
-                      <span className="text-xs text-muted-foreground pl-5">
-                        Original: {recipe.estimated_calories} cal total
-                        {caloriesPerServing && ` (${caloriesPerServing} cal/serving)`}
-                      </span>
-                    )}
-                  </div>
-                )}
-                {!recipe.prep_time && !recipe.cook_time && !recipe.estimated_calories && (
-                  <span>Time and nutrition information not available</span>
-                )}
-              </div>
-            </div>
+            <TimeAndNutrition
+              prepTime={recipe.prep_time}
+              cookTime={recipe.cook_time}
+              estimatedCalories={recipe.estimated_calories}
+              scaledCalories={scaledCalories}
+              caloriesPerServing={caloriesPerServing}
+              scaledCaloriesPerServing={scaledCaloriesPerServing}
+              showOriginalCalories={scaleFactor !== 1}
+            />
           </div>
 
           <div>

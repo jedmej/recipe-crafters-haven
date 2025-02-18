@@ -30,10 +30,10 @@ serve(async (req) => {
       throw new Error('Invalid URL provided');
     }
 
-    // Fetch webpage content
+    console.log('Processing URL:', url);
     const content = await fetchWebContent(url);
+    console.log('Fetched content length:', content.length);
 
-    // Process with Gemini
     const apiKey = Deno.env.get('GOOGLE_GEMINI_KEY');
     if (!apiKey) {
       throw new Error('AI service is not properly configured');
@@ -55,30 +55,43 @@ serve(async (req) => {
     Webpage content:
     ${content.slice(0, 10000)}
     
-    Respond with ONLY the JSON object, no other text.`;
+    Important: Your response must be ONLY the JSON object, with no additional text or formatting.`;
 
+    console.log('Sending request to Gemini...');
     const result = await model.generateContent(prompt);
     const text = result.response.text();
+    console.log('Raw Gemini response:', text);
     
     try {
-      const recipeData = JSON.parse(text);
+      // Try to clean the response if it contains additional text
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const jsonText = jsonMatch ? jsonMatch[0] : text;
+      console.log('Cleaned JSON text:', jsonText);
+      
+      const recipeData = JSON.parse(jsonText);
       
       // Validate recipe data
       if (!recipeData.title || !recipeData.ingredients || !recipeData.instructions) {
-        throw new Error('Invalid recipe data structure');
+        console.error('Invalid recipe structure:', recipeData);
+        throw new Error('Generated recipe data is missing required fields');
       }
 
+      console.log('Successfully parsed recipe data');
       return new Response(JSON.stringify(recipeData), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     } catch (error) {
       console.error('JSON parsing error:', error);
-      throw new Error('Failed to parse recipe data');
+      console.error('Attempted to parse:', text);
+      throw new Error(`Failed to parse recipe data: ${error.message}`);
     }
   } catch (error) {
     console.error('Error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }), 
+      JSON.stringify({ 
+        error: error.message,
+        details: 'Check the function logs for more information'
+      }), 
       { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

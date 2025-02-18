@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowLeft, Trash, Edit } from "lucide-react";
+import { Loader2, ArrowLeft, Trash, Edit, Clock, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
@@ -179,6 +179,11 @@ export default function RecipeDetailPage() {
     ? desiredServings / recipe.servings 
     : 1;
 
+  const calculateCaloriesPerServing = (totalCalories: number | null, servings: number): number | null => {
+    if (totalCalories === null) return null;
+    return Math.round(totalCalories / servings);
+  };
+
   const addToGroceryList = useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -257,6 +262,18 @@ export default function RecipeDetailPage() {
       </div>
     );
   }
+
+  const caloriesPerServing = recipe.estimated_calories 
+    ? calculateCaloriesPerServing(recipe.estimated_calories, recipe.servings)
+    : null;
+
+  const scaledCalories = recipe.estimated_calories 
+    ? Math.round(recipe.estimated_calories * scaleFactor)
+    : null;
+
+  const scaledCaloriesPerServing = scaledCalories 
+    ? calculateCaloriesPerServing(scaledCalories, desiredServings as number)
+    : null;
 
   return (
     <div className="container mx-auto py-8">
@@ -353,6 +370,50 @@ export default function RecipeDetailPage() {
               <p className="text-muted-foreground">{recipe.description}</p>
             </div>
           )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <h3 className="font-semibold">Time & Nutrition</h3>
+              <div className="space-y-1 text-sm text-muted-foreground">
+                {(recipe.prep_time || recipe.cook_time) && (
+                  <div className="flex flex-wrap gap-4">
+                    {recipe.prep_time && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>Prep: {recipe.prep_time} mins</span>
+                      </div>
+                    )}
+                    {recipe.cook_time && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>Cook: {recipe.cook_time} mins</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {recipe.estimated_calories && (
+                  <div className="flex flex-col gap-1 mt-2">
+                    <div className="flex items-center gap-1">
+                      <Flame className="h-4 w-4" />
+                      <span>
+                        {scaledCalories} cal total
+                        {scaledCaloriesPerServing && ` (${scaledCaloriesPerServing} cal/serving)`}
+                      </span>
+                    </div>
+                    {scaleFactor !== 1 && (
+                      <span className="text-xs text-muted-foreground pl-5">
+                        Original: {recipe.estimated_calories} cal total
+                        {caloriesPerServing && ` (${caloriesPerServing} cal/serving)`}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {!recipe.prep_time && !recipe.cook_time && !recipe.estimated_calories && (
+                  <span>Time and nutrition information not available</span>
+                )}
+              </div>
+            </div>
+          </div>
 
           <div>
             <h3 className="font-semibold mb-2">Ingredients</h3>

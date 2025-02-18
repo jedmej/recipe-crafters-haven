@@ -11,6 +11,9 @@ import NotFound from "./pages/NotFound";
 import RecipesPage from "./pages/recipes";
 import RecipeDetailPage from "./pages/recipes/[id]";
 import NewRecipePage from "./pages/recipes/new";
+import GroceryListsPage from "./pages/grocery-lists";
+import GroceryListDetailPage from "./pages/grocery-lists/[id]";
+import NewGroceryListPage from "./pages/grocery-lists/new";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +54,30 @@ const App = () => (
             element={
               <AuthGuard>
                 <RecipeDetailPage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/grocery-lists"
+            element={
+              <AuthGuard>
+                <GroceryListsPage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/grocery-lists/new"
+            element={
+              <AuthGuard>
+                <NewGroceryListPage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/grocery-lists/:id"
+            element={
+              <AuthGuard>
+                <GroceryListDetailPage />
               </AuthGuard>
             }
           />

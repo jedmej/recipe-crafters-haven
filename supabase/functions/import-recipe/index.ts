@@ -1,3 +1,4 @@
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import FirecrawlApp from 'npm:@mendable/firecrawl-js@latest';
@@ -13,13 +14,34 @@ const geminiApiKey = Deno.env.get('GOOGLE_GEMINI_KEY');
 
 async function fetchWebContent(url: string): Promise<string> {
   console.log('Fetching web content from:', url);
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`);
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`);
+    }
+    
+    const contentType = response.headers.get('content-type') || '';
+    if (!contentType.includes('text/html') && !contentType.includes('application/xhtml+xml')) {
+      throw new Error('URL does not point to a valid webpage');
+    }
+    
+    const text = await response.text();
+    if (!text || text.trim().length === 0) {
+      throw new Error('Empty response from webpage');
+    }
+    
+    console.log('Successfully fetched web content');
+    return text;
+  } catch (error) {
+    console.error('Error fetching web content:', error);
+    throw error;
   }
-  const text = await response.text();
-  console.log('Successfully fetched web content');
-  return text;
 }
 
 async function extractRecipeWithGemini(url: string): Promise<any> {
@@ -30,45 +52,46 @@ async function extractRecipeWithGemini(url: string): Promise<any> {
   console.log('Attempting to extract recipe with Gemini from URL:', url);
   
   try {
-    // Fetch the webpage content first
+    // Fetch the webpage content
     const pageContent = await fetchWebContent(url);
     
     const genAI = new GoogleGenerativeAI(geminiApiKey);
     const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
 
-    const prompt = `Given the following webpage content, extract the recipe information.
-    Return ONLY a JSON object with these fields:
+    const prompt = `Extract recipe information from this webpage content.
+    Return ONLY a valid JSON object with these exact fields:
     {
       "title": "Recipe title",
-      "description": "Brief description",
-      "ingredients": ["array", "of", "ingredients"],
-      "instructions": ["array", "of", "step by step", "instructions"]
+      "description": "Brief recipe description",
+      "ingredients": ["list of ingredients"],
+      "instructions": ["step by step instructions"]
     }
     
     Webpage content:
-    ${pageContent.slice(0, 10000)} # Limit content length to avoid token limits
-
-    Return valid JSON only, no other text.`;
+    ${pageContent.slice(0, 10000)}
+    
+    Respond with ONLY the JSON object, no other text.`;
 
     const result = await model.generateContent(prompt);
     const text = result.response.text();
     
-    // Extract JSON from the response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('No JSON found in Gemini response');
-      throw new Error('Failed to extract recipe data');
+    try {
+      // First try direct JSON parsing
+      const recipeData = JSON.parse(text);
+      console.log('Successfully parsed JSON directly');
+      return recipeData;
+    } catch (error) {
+      // If direct parsing fails, try to extract JSON from the text
+      console.log('Direct JSON parse failed, trying to extract JSON');
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('No valid JSON found in Gemini response');
+      }
+      
+      const recipeData = JSON.parse(jsonMatch[0]);
+      console.log('Successfully extracted and parsed JSON');
+      return recipeData;
     }
-    
-    const recipeData = JSON.parse(jsonMatch[0]);
-    console.log('Successfully extracted recipe with Gemini:', recipeData);
-
-    // Validate the recipe data structure
-    if (!recipeData.title || !Array.isArray(recipeData.ingredients) || !Array.isArray(recipeData.instructions)) {
-      throw new Error('Invalid recipe data format');
-    }
-    
-    return recipeData;
   } catch (error) {
     console.error('Error in Gemini extraction:', error);
     throw new Error('Unable to extract recipe data');
@@ -82,13 +105,22 @@ serve(async (req) => {
   }
 
   try {
-    const { url } = await req.json();
-    console.log('Starting recipe import for URL:', url);
+    // Parse request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+    } catch (error) {
+      console.error('Error parsing request body:', error);
+      throw new Error('Invalid request format');
+    }
 
-    if (!url || !url.startsWith('http')) {
+    const { url } = requestBody;
+    if (!url || typeof url !== 'string' || !url.startsWith('http')) {
       throw new Error('Invalid URL provided');
     }
 
+    console.log('Starting recipe import for URL:', url);
+    
     let recipe = null;
     let usedFallback = false;
 
@@ -107,6 +139,8 @@ serve(async (req) => {
           timeout: 30000
         }
       });
+
+      console.log('Firecrawl response:', JSON.stringify(crawlResponse, null, 2));
 
       if (!crawlResponse.success || !crawlResponse.data?.[0]?.content) {
         throw new Error('No content found in webpage');
@@ -220,11 +254,15 @@ serve(async (req) => {
       throw new Error('Failed to extract recipe data');
     }
 
+    const response = {
+      ...recipe,
+      usedFallback
+    };
+
+    console.log('Returning recipe data:', JSON.stringify(response, null, 2));
+
     return new Response(
-      JSON.stringify({ 
-        ...recipe,
-        usedFallback 
-      }),
+      JSON.stringify(response),
       { 
         headers: { 
           ...corsHeaders, 

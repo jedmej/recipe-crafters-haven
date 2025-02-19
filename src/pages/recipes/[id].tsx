@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Loader2, ArrowLeft, Plus, ImageIcon } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, ImageIcon, Clock, Flame } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,9 @@ import { RecipeHeader } from "@/components/recipes/RecipeHeader";
 import { TimeAndNutrition } from "@/components/recipes/TimeAndNutrition";
 import ImageGenerator from '@/components/ImageGenerator';
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
 
@@ -190,6 +193,7 @@ export default function RecipeDetailPage() {
 
   const addToGroceryList = useMutation({
     mutationFn: async () => {
+      if (!recipe) throw new Error("Recipe not found");
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
@@ -198,16 +202,16 @@ export default function RecipeDetailPage() {
         scaleAndConvertIngredient(ingredient, scaleFactor, measurementSystem)
       );
 
+      // Create the grocery list
       const { data, error } = await supabase
         .from('grocery_lists')
-        .insert([
-          {
-            title: listTitle,
-            items: scaledIngredients,
-            user_id: user.id,
-          }
-        ])
-        .select()
+        .insert({
+          title: listTitle,
+          items: scaledIngredients.map(item => ({ name: item, checked: false })),
+          user_id: user.id,
+          recipe_id: recipe.id
+        })
+        .select('*')
         .single();
       
       if (error) throw error;
@@ -221,10 +225,11 @@ export default function RecipeDetailPage() {
       });
     },
     onError: (error: Error) => {
+      console.error('Error creating grocery list:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: "Failed to create grocery list. Please try again.",
       });
     }
   });
@@ -282,33 +287,18 @@ export default function RecipeDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="container max-w-4xl mx-auto p-4 md:p-8 space-y-4">
-        <div className="flex flex-col items-center justify-center gap-4">
-          <h1 className="text-2xl font-semibold text-destructive">Error Loading Recipe</h1>
-          <p className="text-muted-foreground">{error.message}</p>
-          <Button onClick={() => navigate("/recipes")}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Recipes
-          </Button>
-        </div>
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!recipe) {
     return (
-      <div className="container max-w-4xl mx-auto p-4 md:p-8 space-y-4">
-        <div className="flex flex-col items-center justify-center gap-4">
-          <h1 className="text-2xl font-semibold">Recipe Not Found</h1>
-          <p className="text-muted-foreground">The recipe you're looking for doesn't exist or has been deleted.</p>
+      <div className="container mx-auto py-8 px-4 md:px-6">
+        <div className="text-center py-12 border rounded-lg bg-background">
+          <h1 className="text-2xl font-bold mb-2">Recipe not found</h1>
+          <p className="text-muted-foreground mb-4">This recipe may have been deleted or doesn't exist.</p>
           <Button onClick={() => navigate("/recipes")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Recipes
@@ -333,154 +323,216 @@ export default function RecipeDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
-        <header className="mb-8">
-          <div className="flex justify-between items-center">
-            <Button
-              variant="ghost"
-              onClick={() => navigate("/recipes")}
-              className="h-9"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Recipes
-            </Button>
-            <Button
-              onClick={() => addToGroceryList.mutate()}
-              disabled={addToGroceryList.isPending}
-              className="h-9 gap-2"
-            >
-              {addToGroceryList.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Adding to List...
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" />
-                  Add to Grocery List
-                </>
-              )}
-            </Button>
-          </div>
-        </header>
+        <Button
+          variant="ghost"
+          className="mb-6"
+          onClick={() => navigate("/recipes")}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Recipes
+        </Button>
 
-        {recipe && (
-          <Card className="overflow-hidden">
-            <CardHeader className="border-b bg-gray-50/50">
-              <RecipeHeader
+        <Card>
+          <CardHeader>
+            <RecipeHeader
+              title={recipe.title}
+              originalServings={recipe.servings}
+              desiredServings={desiredServings}
+              measurementSystem={measurementSystem}
+              onServingsChange={handleServingsChange}
+              onMeasurementSystemChange={toggleMeasurementSystem}
+              onEdit={() => navigate(`/recipes/${id}/edit`)}
+              onDelete={handleDelete}
+              onCreateGroceryList={() => {
+                if (addToGroceryList.isPending) return;
+                addToGroceryList.mutate();
+              }}
+              isDeleting={isDeleting}
+            />
+          </CardHeader>
+        </Card>
+
+        {/* Image Card */}
+        <Card className="overflow-hidden mb-6">
+          <CardContent className="p-6">
+            {showImageGenerator ? (
+              <ImageUploadOrGenerate
+                onImageSelected={handleImageGenerated}
                 title={recipe.title}
-                originalServings={recipe.servings}
-                desiredServings={desiredServings}
-                measurementSystem={measurementSystem}
-                onServingsChange={handleServingsChange}
-                onMeasurementSystemChange={toggleMeasurementSystem}
-                onEdit={() => navigate(`/recipes/${id}/edit`)}
-                onDelete={handleDelete}
-                isDeleting={isDeleting}
+                disabled={isGeneratingImage}
+                toggleMode={true}
+                hasExistingImage={!!recipe.image_url}
               />
-            </CardHeader>
-            <CardContent className="p-6">
-              <div className="relative mb-6">
-                {(updateRecipeImage.isPending || isRegenerating) ? (
-                  <div className="w-full max-w-2xl mx-auto aspect-video flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                    <div className="flex flex-col items-center justify-center gap-4 p-8">
-                      <Loader2 className="h-8 w-8 animate-spin" />
-                      <p className="text-base text-muted-foreground animate-fade-in">
-                        {isRegenerating ? "Generating new image..." : "Updating image..."}
-                      </p>
-                    </div>
-                  </div>
-                ) : recipe.image_url ? (
-                  <div className="relative w-full max-w-2xl mx-auto">
-                    <img
-                      src={recipe.image_url}
-                      alt={recipe.title}
-                      className="w-full rounded-lg shadow-md"
-                    />
-                    <div className="absolute top-2 right-2 z-10">
-                      <ImageUploadOrGenerate
-                        onImageSelected={(imageUrl) => {
-                          if (imageUrl.includes("generated")) {
-                            setIsRegenerating(true);
-                          }
-                          updateRecipeImage.mutate(imageUrl);
-                        }}
-                        title={recipe.title}
-                        disabled={updateRecipeImage.isPending || isRegenerating}
-                        toggleMode={false}
-                        hasExistingImage={!!recipe.image_url}
-                      />
-                    </div>
-                  </div>
+            ) : (
+              <div className="space-y-4">
+                {recipe.image_url ? (
+                  <img
+                    src={recipe.image_url}
+                    alt={recipe.title}
+                    className="w-full h-[400px] object-cover rounded-lg"
+                  />
                 ) : (
-                  <div className="w-full max-w-2xl mx-auto p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-                    <ImageUploadOrGenerate
-                      onImageSelected={(imageUrl) => {
-                        if (imageUrl.includes("generated")) {
-                          setIsRegenerating(true);
-                        }
-                        updateRecipeImage.mutate(imageUrl);
-                      }}
-                      title={recipe.title}
-                      disabled={updateRecipeImage.isPending || isRegenerating}
-                      toggleMode={false}
-                      hasExistingImage={!!recipe.image_url}
-                    />
+                  <div className="w-full h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
+                    <p className="text-muted-foreground">No image available</p>
                   </div>
                 )}
+                <Button
+                  variant="outline"
+                  onClick={() => setShowImageGenerator(true)}
+                  className="w-full gap-2"
+                >
+                  <ImageIcon className="h-4 w-4" />
+                  {recipe.image_url ? 'Change Image' : 'Add Image'}
+                </Button>
               </div>
+            )}
+          </CardContent>
+        </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <TimeAndNutrition
-                  prepTime={recipe.prep_time}
-                  cookTime={recipe.cook_time}
-                  estimatedCalories={recipe.estimated_calories}
-                  scaledCalories={scaledCalories}
-                  caloriesPerServing={caloriesPerServing}
-                  scaledCaloriesPerServing={scaledCaloriesPerServing}
-                  showOriginalCalories={scaleFactor !== 1}
-                />
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Ingredients</h3>
-                <ul className="space-y-2">
-                  {(recipe.ingredients as string[]).map((ingredient, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="mr-3 text-muted-foreground">•</span>
-                      <span>{scaleAndConvertIngredient(ingredient, scaleFactor, measurementSystem)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Instructions</h3>
-                <ol className="space-y-4">
-                  {(recipe.instructions as string[]).map((instruction, index) => (
-                    <li key={index} className="flex items-start">
-                      <span className="font-medium text-muted-foreground mr-4">{index + 1}.</span>
-                      <span className="leading-relaxed">{instruction}</span>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-
-              {recipe.source_url && (
-                <div>
-                  <h3 className="text-lg font-semibold mb-3">Source</h3>
-                  <a
-                    href={recipe.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    Original Recipe
-                  </a>
-                </div>
-              )}
+        {/* Description Card */}
+        {recipe.description && (
+          <Card className="overflow-hidden mb-6">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-2">Description</h3>
+              <p className="text-muted-foreground leading-relaxed">{recipe.description}</p>
             </CardContent>
           </Card>
         )}
+
+        {/* Time and Nutrition Card */}
+        <Card className="overflow-hidden mb-6">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-2">Time & Nutrition</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recipe.prep_time && (
+                <div className="glass-panel p-4 flex items-center gap-3 w-full">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <div>
+                    <div className="font-medium text-foreground">Prep Time</div>
+                    <div className="text-sm">
+                      {recipe.prep_time} mins
+                      {scaleFactor !== 1 && (
+                        <span className="text-xs block mt-1 text-muted-foreground">
+                          (Original: {recipe.prep_time} mins)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {recipe.cook_time && (
+                <div className="glass-panel p-4 flex items-center gap-3 w-full">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <div>
+                    <div className="font-medium text-foreground">Cook Time</div>
+                    <div className="text-sm">
+                      {recipe.cook_time} mins
+                      {scaleFactor !== 1 && (
+                        <span className="text-xs block mt-1 text-muted-foreground">
+                          (Original: {recipe.cook_time} mins)
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {recipe.estimated_calories && (
+                <div className="glass-panel p-4 flex items-center gap-3 w-full">
+                  <Flame className="h-5 w-5 text-primary" />
+                  <div>
+                    <div className="font-medium text-foreground">Calories</div>
+                    <div className="text-sm">
+                      {scaledCalories} total
+                      {scaleFactor !== 1 && (
+                        <span className="text-xs block mt-1 text-muted-foreground">
+                          (Original: {recipe.estimated_calories})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Recipe Content Container */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {/* Ingredients Card */}
+          <Card className="overflow-hidden">
+            <CardContent className="p-6">
+              <div className="flex flex-col space-y-4 mb-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Ingredients</h3>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        value={desiredServings}
+                        onChange={(e) => handleServingsChange(e.target.value)}
+                        className="w-20"
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        servings
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="measurement-system"
+                        checked={measurementSystem === 'metric'}
+                        onCheckedChange={toggleMeasurementSystem}
+                      />
+                      <Label htmlFor="measurement-system">
+                        {measurementSystem === 'imperial' ? 'Imperial' : 'Metric'}
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  (Original: {recipe.servings} servings)
+                </div>
+              </div>
+              <ul className="space-y-2 mb-4">
+                {(recipe.ingredients as string[]).map((ingredient, index) => (
+                  <li key={index} className="flex items-center gap-3">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                    <span>
+                      {scaleAndConvertIngredient(
+                        ingredient,
+                        scaleFactor,
+                        measurementSystem
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+
+          {/* Instructions Card */}
+          <Card className="overflow-hidden">
+            <CardContent className="p-6">
+              <h3 className="text-lg font-semibold mb-2">Instructions</h3>
+              <ol className="space-y-4">
+                {(recipe.instructions as string[]).map((instruction, index) => (
+                  <li key={index} className="flex gap-4">
+                    <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-medium">
+                      {index + 1}
+                    </span>
+                    <span className="mt-1">{instruction}</span>
+                  </li>
+                ))}
+              </ol>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Decorative sphere accents */}
+        <div className="sphere-accent opacity-10 top-[20%] left-[-150px]" />
+        <div className="sphere-accent opacity-10 bottom-[10%] right-[-150px]" />
       </div>
     </div>
   );

@@ -14,22 +14,31 @@ export type Database = {
           created_at: string
           id: string
           items: Json
+          checked_items: Json | null
           title: string
           user_id: string
+          image_url: string | null
+          recipe_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           items?: Json
+          checked_items?: Json
           title: string
           user_id: string
+          image_url?: string | null
+          recipe_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           items?: Json
+          checked_items?: Json
           title?: string
           user_id?: string
+          image_url?: string | null
+          recipe_id?: string | null
         }
         Relationships: [
           {
@@ -39,6 +48,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "grocery_lists_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          }
         ]
       }
       profiles: {

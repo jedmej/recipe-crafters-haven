@@ -1,9 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Loader2, Edit, Trash } from "lucide-react";
+import { Loader2, Edit, Trash, ListPlus } from "lucide-react";
 import { MeasurementSystem } from "@/lib/types";
 
 interface RecipeHeaderProps {
@@ -15,6 +12,7 @@ interface RecipeHeaderProps {
   onMeasurementSystemChange: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onCreateGroceryList: () => void;
   isDeleting: boolean;
 }
 
@@ -27,6 +25,7 @@ export function RecipeHeader({
   onMeasurementSystemChange,
   onEdit,
   onDelete,
+  onCreateGroceryList,
   isDeleting
 }: RecipeHeaderProps) {
   return (
@@ -48,18 +47,16 @@ export function RecipeHeader({
             (Original: {originalServings})
           </span>
         </div>
-        <div className="flex items-center space-x-2">
-          <Switch
-            id="measurement-system"
-            checked={measurementSystem === 'metric'}
-            onCheckedChange={onMeasurementSystemChange}
-          />
-          <Label htmlFor="measurement-system">
-            {measurementSystem === 'imperial' ? 'Imperial' : 'Metric'} Units
-          </Label>
-        </div>
       </div>
       <div className="flex gap-2">
+        <Button
+          variant="outline"
+          onClick={onCreateGroceryList}
+          className="gap-2"
+        >
+          <ListPlus className="h-4 w-4" />
+          Create List
+        </Button>
         <Button
           variant="outline"
           size="icon"

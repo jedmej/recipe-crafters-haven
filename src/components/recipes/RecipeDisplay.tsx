@@ -1,6 +1,8 @@
-
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Clock, Flame, Loader2, Plus } from "lucide-react";
 import { RecipeData } from "@/types/recipe";
 
@@ -11,6 +13,8 @@ interface RecipeDisplayProps {
   onPortionsChange: (portions: number) => void;
   onSave: () => void;
   isSaving: boolean;
+  measurementSystem: 'metric' | 'imperial';
+  onMeasurementSystemChange: () => void;
 }
 
 export function RecipeDisplay({
@@ -20,102 +24,179 @@ export function RecipeDisplay({
   onPortionsChange,
   onSave,
   isSaving,
+  measurementSystem,
+  onMeasurementSystemChange,
 }: RecipeDisplayProps) {
   return (
-    <div className="space-y-6">
-      <p className="text-muted-foreground">{recipe.description}</p>
+    <div className="space-y-6 animate-fade-in">
+      {/* Description Card */}
+      {recipe.description && (
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-2">Description</h3>
+            <p className="text-muted-foreground leading-relaxed">{recipe.description}</p>
+          </CardContent>
+        </Card>
+      )}
 
-      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-        {scaledRecipe?.prep_time && (
-          <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
-            <span>Prep: {scaledRecipe.prep_time} mins</span>
-            {chosenPortions !== recipe.suggested_portions && (
-              <span className="text-xs">
-                (Original: {recipe.prep_time} mins)
-              </span>
+      {/* Time and Nutrition Card */}
+      <Card className="overflow-hidden">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold mb-2">Time & Nutrition</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {scaledRecipe?.prep_time && (
+              <div className="glass-panel p-4 flex items-center gap-3 w-full">
+                <Clock className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="font-medium text-foreground">Prep Time</div>
+                  <div className="text-sm">
+                    {scaledRecipe.prep_time} mins
+                    {chosenPortions !== recipe.suggested_portions && (
+                      <span className="text-xs block mt-1 text-muted-foreground">
+                        (Original: {recipe.prep_time} mins)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {scaledRecipe?.cook_time && (
+              <div className="glass-panel p-4 flex items-center gap-3 w-full">
+                <Clock className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="font-medium text-foreground">Cook Time</div>
+                  <div className="text-sm">
+                    {scaledRecipe.cook_time} mins
+                    {chosenPortions !== recipe.suggested_portions && (
+                      <span className="text-xs block mt-1 text-muted-foreground">
+                        (Original: {recipe.cook_time} mins)
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {scaledRecipe?.estimated_calories && (
+              <div className="glass-panel p-4 flex items-center gap-3 w-full">
+                <Flame className="h-5 w-5 text-primary" />
+                <div>
+                  <div className="font-medium text-foreground">Calories</div>
+                  <div className="text-sm">
+                    {scaledRecipe.estimated_calories} total
+                    {chosenPortions !== recipe.suggested_portions && (
+                      <span className="text-xs block mt-1 text-muted-foreground">
+                        (Original: {recipe.estimated_calories})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-        )}
-        {scaledRecipe?.cook_time && (
-          <div className="flex items-center gap-1">
-            <Clock className="h-4 w-4" />
-            <span>Cook: {scaledRecipe.cook_time} mins</span>
-            {chosenPortions !== recipe.suggested_portions && (
-              <span className="text-xs">
-                (Original: {recipe.cook_time} mins)
-              </span>
-            )}
-          </div>
-        )}
-        {scaledRecipe?.estimated_calories && (
-          <div className="flex items-center gap-1">
-            <Flame className="h-4 w-4" />
-            <span>{scaledRecipe.estimated_calories} cal total</span>
-            {chosenPortions !== recipe.suggested_portions && (
-              <span className="text-xs">
-                (Original: {recipe.estimated_calories} cal)
-              </span>
-            )}
-          </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
-      <div className="space-y-2">
-        <h3 className="font-semibold">Portions</h3>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              min="1"
-              value={chosenPortions}
-              onChange={(e) => onPortionsChange(Number(e.target.value))}
-              className="w-20"
+      {/* Image Card */}
+      {recipe.imageUrl && (
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <img
+              src={recipe.imageUrl}
+              alt={recipe.title}
+              className="w-full h-[400px] object-cover rounded-lg"
             />
-            <span className="text-sm text-muted-foreground">
-              {recipe.portion_description}
-            </span>
-          </div>
-          <span className="text-sm text-muted-foreground">
-            (Suggested: {recipe.suggested_portions})
-          </span>
-        </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recipe Content Container */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Ingredients Card */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex flex-col space-y-4 mb-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Ingredients</h3>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min="1"
+                      value={chosenPortions}
+                      onChange={(e) => onPortionsChange(Number(e.target.value))}
+                      className="w-20"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {recipe.portion_description}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      id="measurement-system"
+                      checked={measurementSystem === 'metric'}
+                      onCheckedChange={onMeasurementSystemChange}
+                    />
+                    <Label htmlFor="measurement-system">
+                      {measurementSystem === 'imperial' ? 'Imperial' : 'Metric'}
+                    </Label>
+                  </div>
+                </div>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                (Suggested: {recipe.suggested_portions})
+              </div>
+            </div>
+            <ul className="space-y-2 mb-4">
+              {scaledRecipe.ingredients.map((ingredient, index) => (
+                <li key={index} className="flex items-center gap-3">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                  <span>{ingredient}</span>
+                </li>
+              ))}
+            </ul>
+            <Button 
+              onClick={onSave}
+              className="button-modern w-full gap-2"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  Saving Recipe...
+                </>
+              ) : (
+                <>
+                  <Plus className="h-5 w-5" />
+                  Save Recipe
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Instructions Card */}
+        <Card className="overflow-hidden">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold mb-2">Instructions</h3>
+            <ol className="space-y-4">
+              {scaledRecipe.instructions.map((instruction, index) => (
+                <li key={index} className="flex gap-4">
+                  <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-medium">
+                    {index + 1}
+                  </span>
+                  <span className="mt-1">{instruction}</span>
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="space-y-2">
-        <h3 className="font-semibold">Ingredients:</h3>       <ul className="list-disc pl-5 space-y-1">
-          {scaledRecipe.ingredients.map((ingredient, index) => (
-            <li key={index}>{ingredient}</li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="space-y-2">
-        <h3 className="font-semibold">Instructions:</h3>
-        <ol className="list-decimal pl-5 space-y-1">
-          {scaledRecipe.instructions.map((instruction, index) => (
-            <li key={index}>{instruction}</li>
-          ))}
-        </ol>
-      </div>
-
-      <Button 
-        onClick={onSave}
-        className="w-full gap-2"
-        disabled={isSaving}
-      >
-        {isSaving ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Saving...
-          </>
-        ) : (
-          <>
-            <Plus className="h-4 w-4" />
-            Save Recipe
-          </>
-        )}
-      </Button>
+      {/* Decorative sphere accents */}
+      <div className="sphere-accent opacity-10 top-[20%] left-[-150px]" />
+      <div className="sphere-accent opacity-10 bottom-[10%] right-[-150px]" />
     </div>
   );
 }

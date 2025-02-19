@@ -27,6 +27,7 @@ export default function AIRecipeSearchPage() {
   const [generateImage, setGenerateImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'imperial'>('metric');
   const recipeToGenerateImage = useRef<string | null>(null);
 
   // Memoize the scaled recipe calculation
@@ -369,6 +370,8 @@ export default function AIRecipeSearchPage() {
                 onPortionsChange={setChosenPortions}
                 onSave={() => saveRecipe.mutate()}
                 isSaving={saveRecipe.isPending}
+                measurementSystem={measurementSystem}
+                onMeasurementSystemChange={() => setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric')}
               />
             </CardContent>
             {suggestedRecipe.source_url && (

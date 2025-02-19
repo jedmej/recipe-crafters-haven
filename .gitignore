@@ -22,3 +22,19 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Build output
+build/
+.next/
+
+# Coverage directory
+coverage/
+
+# Temporary files
+*.tmp
+.cache/

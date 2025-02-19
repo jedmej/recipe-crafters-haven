@@ -10,6 +10,7 @@ import { useState } from "react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
 
@@ -149,14 +150,19 @@ export default function RecipesPage() {
             </div>
             
             <div className="flex gap-2">
-              <Button 
+              <div 
                 onClick={toggleSelectionMode} 
-                variant={isSelectionMode ? "secondary" : "outline"}
-                className="gap-2 whitespace-nowrap"
+                className={cn(
+                  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium cursor-pointer",
+                  "h-10 px-4 py-2 transition-colors",
+                  isSelectionMode 
+                    ? "bg-secondary text-secondary-foreground hover:bg-secondary/80" 
+                    : "border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                )}
               >
                 <Checkbox className="h-4 w-4" checked={isSelectionMode} />
                 {isSelectionMode ? "Cancel Selection" : "Select Multiple"}
-              </Button>
+              </div>
               {isSelectionMode && selectedRecipes.length > 0 && (
                 <AlertDialog>
                   <AlertDialogTrigger asChild>

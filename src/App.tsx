@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +16,7 @@ import AIRecipeSearchPage from "./pages/recipes/ai-search";
 import GroceryListsPage from "./pages/grocery-lists";
 import GroceryListDetailPage from "./pages/grocery-lists/[id]";
 import NewGroceryListPage from "./pages/grocery-lists/new";
+import GenerateImagePage from "./pages/generate-image";
 
 const queryClient = new QueryClient();
 
@@ -105,6 +105,14 @@ const App = () => (
             element={
               <AuthGuard>
                 <GroceryListDetailPage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/generate-image"
+            element={
+              <AuthGuard>
+                <GenerateImagePage />
               </AuthGuard>
             }
           />

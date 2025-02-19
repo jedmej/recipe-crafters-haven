@@ -83,8 +83,7 @@ export function RecipeDisplay({
       </div>
 
       <div className="space-y-2">
-        <h3 className="font-semibold">Ingredients:</h3>
-        <ul className="list-disc pl-5 space-y-1">
+        <h3 className="font-semibold">Ingredients:</h3>       <ul className="list-disc pl-5 space-y-1">
           {scaledRecipe.ingredients.map((ingredient, index) => (
             <li key={index}>{ingredient}</li>
           ))}

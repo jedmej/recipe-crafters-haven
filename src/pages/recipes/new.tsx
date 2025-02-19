@@ -1,19 +1,25 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft, Trash } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { Link } from "react-router-dom";
+import { PlusIcon } from "lucide-react";
+import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 
 export default function NewRecipePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recipeImage, setRecipeImage] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -22,6 +28,11 @@ export default function NewRecipePage() {
     instructions: [""],
     image_url: "",
     source_url: "",
+    prep_time: 0,
+    cook_time: 0,
+    estimated_calories: 0,
+    servings: 1,
+    language: "en"
   });
 
   const createRecipe = useMutation({
@@ -34,6 +45,7 @@ export default function NewRecipePage() {
         .insert([
           {
             ...formData,
+            image_url: recipeImage,
             user_id: user.id,
             ingredients: formData.ingredients.filter(i => i.trim() !== ""),
             instructions: formData.instructions.filter(i => i.trim() !== ""),
@@ -91,126 +103,206 @@ export default function NewRecipePage() {
   };
 
   return (
-    <div className="container mx-auto py-8">
-      <Button
-        variant="ghost"
-        className="mb-6"
-        onClick={() => navigate("/recipes")}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Recipes
-      </Button>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+      <div className="max-w-3xl mx-auto">
+        <Button
+          variant="ghost"
+          className="mb-6"
+          onClick={() => navigate("/recipes")}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Recipes
+        </Button>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Recipe</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <Input
-                value={formData.title}
-                onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                required
-              />
-            </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Create New Recipe</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="title">Title</Label>
+                <Input
+                  id="title"
+                  value={formData.title}
+                  onChange={e => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                  required
+                />
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <Input
-                value={formData.description}
-                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              />
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  rows={4}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Image URL</label>
-              <Input
-                type="url"
-                value={formData.image_url}
-                onChange={e => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Source URL</label>
-              <Input
-                type="url"
-                value={formData.source_url}
-                onChange={e => setFormData(prev => ({ ...prev, source_url: e.target.value }))}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Ingredients</label>
-              {formData.ingredients.map((ingredient, index) => (
-                <div key={index} className="flex gap-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="prep_time">Prep Time (minutes)</Label>
                   <Input
-                    value={ingredient}
-                    onChange={e => updateListItem("ingredients", index, e.target.value)}
-                    placeholder={`Ingredient ${index + 1}`}
+                    type="number"
+                    id="prep_time"
+                    min="0"
+                    value={formData.prep_time}
+                    onChange={e => setFormData(prev => ({ ...prev, prep_time: parseInt(e.target.value) || 0 }))}
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="cook_time">Cook Time (minutes)</Label>
+                  <Input
+                    type="number"
+                    id="cook_time"
+                    min="0"
+                    value={formData.cook_time}
+                    onChange={e => setFormData(prev => ({ ...prev, cook_time: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="estimated_calories">Estimated Calories</Label>
+                  <Input
+                    type="number"
+                    id="estimated_calories"
+                    min="0"
+                    value={formData.estimated_calories}
+                    onChange={e => setFormData(prev => ({ ...prev, estimated_calories: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="servings">Servings</Label>
+                  <Input
+                    type="number"
+                    id="servings"
+                    min="1"
+                    value={formData.servings}
+                    onChange={e => setFormData(prev => ({ ...prev, servings: parseInt(e.target.value) || 1 }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="language">Language</Label>
+                <Select 
+                  value={formData.language} 
+                  onValueChange={value => setFormData(prev => ({ ...prev, language: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Spanish</SelectItem>
+                    <SelectItem value="fr">French</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Ingredients</Label>
+                <div className="space-y-3">
+                  {formData.ingredients.map((ingredient, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={ingredient}
+                        onChange={e => updateListItem("ingredients", index, e.target.value)}
+                        placeholder={`Ingredient ${index + 1}`}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeListItem("ingredients", index)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    onClick={() => removeListItem("ingredients", index)}
+                    onClick={() => addListItem("ingredients")}
+                    className="w-full"
                   >
-                    <Trash className="h-4 w-4" />
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Add Ingredient
                   </Button>
                 </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => addListItem("ingredients")}
-              >
-                Add Ingredient
-              </Button>
-            </div>
+              </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Instructions</label>
-              {formData.instructions.map((instruction, index) => (
-                <div key={index} className="flex gap-2">
-                  <Input
-                    value={instruction}
-                    onChange={e => updateListItem("instructions", index, e.target.value)}
-                    placeholder={`Step ${index + 1}`}
-                  />
+              <div className="space-y-2">
+                <Label>Instructions</Label>
+                <div className="space-y-3">
+                  {formData.instructions.map((instruction, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        value={instruction}
+                        onChange={e => updateListItem("instructions", index, e.target.value)}
+                        placeholder={`Step ${index + 1}`}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeListItem("instructions", index)}
+                      >
+                        <Trash className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
                   <Button
                     type="button"
                     variant="outline"
-                    size="icon"
-                    onClick={() => removeListItem("instructions", index)}
+                    onClick={() => addListItem("instructions")}
+                    className="w-full"
                   >
-                    <Trash className="h-4 w-4" />
+                    <PlusIcon className="h-4 w-4 mr-2" />
+                    Add Step
                   </Button>
                 </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => addListItem("instructions")}
-              >
-                Add Step
-              </Button>
-            </div>
+              </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Recipe...
-                </>
-              ) : (
-                "Create Recipe"
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+              <div className="space-y-4">
+                <label className="text-sm font-medium">Recipe Image</label>
+                <ImageUploadOrGenerate
+                  onImageSelected={setRecipeImage}
+                  title={formData.title}
+                  disabled={isSubmitting}
+                />
+              </div>
+
+              <div className="flex gap-4 pt-6">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  asChild
+                >
+                  <Link to="/recipes">Cancel</Link>
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="flex-1"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating Recipe...
+                    </>
+                  ) : (
+                    'Create Recipe'
+                  )}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

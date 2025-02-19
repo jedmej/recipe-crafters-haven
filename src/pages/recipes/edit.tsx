@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -10,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { EditRecipeForm } from "@/components/recipes/EditRecipeForm";
 import { useRecipeUpdate } from "@/hooks/use-recipe-update";
 import type { Database } from "@/integrations/supabase/types";
+import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
 
@@ -63,7 +63,8 @@ export default function EditRecipePage() {
         estimated_calories: recipe.estimated_calories || 0,
         servings: recipe.servings || 1,
         source_url: recipe.source_url || "",
-        language: recipe.language || "en"
+        language: recipe.language || "en",
+        image_url: recipe.image_url || ""
       });
     }
   }, [recipe]);
@@ -100,7 +101,22 @@ export default function EditRecipePage() {
 
     setIsSubmitting(true);
     try {
-      await updateRecipe.mutateAsync(formData);
+      const dataToUpdate = {
+        ...formData,
+        image_url: formData.image_url || recipe?.image_url,
+        ingredients: formData.ingredients,
+        instructions: formData.instructions,
+        title: formData.title,
+        description: formData.description,
+        prep_time: formData.prep_time,
+        cook_time: formData.cook_time,
+        estimated_calories: formData.estimated_calories,
+        servings: formData.servings,
+        source_url: formData.source_url,
+        language: formData.language
+      };
+      
+      await updateRecipe.mutateAsync(dataToUpdate);
     } finally {
       setIsSubmitting(false);
     }
@@ -129,39 +145,74 @@ export default function EditRecipePage() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <Button
-        variant="ghost"
-        className="mb-6"
-        onClick={() => navigate(`/recipes/${id}`)}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Recipe
-      </Button>
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto">
+        <header className="mb-8">
+          <div className="flex justify-between items-center">
+            <Button
+              variant="ghost"
+              onClick={() => navigate(`/recipes/${id}`)}
+              className="h-9"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Recipe
+            </Button>
+          </div>
+        </header>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Recipe</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EditRecipeForm
-            formData={formData}
-            isSubmitting={isSubmitting}
-            onSubmit={handleSubmit}
-            onUpdateFormData={(updates) => setFormData(prev => ({ ...prev, ...updates }))}
-            onAddListItem={addListItem}
-            onUpdateListItem={updateListItem}
-            onRemoveListItem={removeListItem}
-          />
-        </CardContent>
-      </Card>
+        <Card className="hover:shadow-lg transition-all duration-200">
+          <CardHeader>
+            <CardTitle>Edit Recipe</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Recipe Image</label>
+                <div className="relative">
+                  {recipe.image_url && (
+                    <img
+                      src={recipe.image_url}
+                      alt={recipe.title}
+                      className="w-full max-w-2xl rounded-lg shadow-md mx-auto mb-4"
+                    />
+                  )}
+                  <ImageUploadOrGenerate
+                    onImageSelected={(imageUrl) => {
+                      setFormData(prev => ({
+                        ...prev,
+                        image_url: imageUrl
+                      }));
+                      if (recipe) {
+                        recipe.image_url = imageUrl;
+                      }
+                    }}
+                    title={formData.title}
+                    disabled={isSubmitting}
+                    toggleMode={false}
+                    hasExistingImage={!!recipe?.image_url}
+                  />
+                </div>
+              </div>
+              <EditRecipeForm
+                formData={formData}
+                isSubmitting={isSubmitting}
+                onSubmit={handleSubmit}
+                onUpdateFormData={(updates) => setFormData(prev => ({ ...prev, ...updates }))}
+                onAddListItem={addListItem}
+                onUpdateListItem={updateListItem}
+                onRemoveListItem={removeListItem}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Plus, Trash2 } from "lucide-react";
@@ -65,6 +64,50 @@ export function EditRecipeForm({
         </Select>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Prep Time (minutes)</label>
+          <Input
+            type="number"
+            min="0"
+            value={formData.prep_time}
+            onChange={e => onUpdateFormData({ prep_time: parseInt(e.target.value) || 0 })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Cook Time (minutes)</label>
+          <Input
+            type="number"
+            min="0"
+            value={formData.cook_time}
+            onChange={e => onUpdateFormData({ cook_time: parseInt(e.target.value) || 0 })}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Estimated Calories</label>
+          <Input
+            type="number"
+            min="0"
+            value={formData.estimated_calories}
+            onChange={e => onUpdateFormData({ estimated_calories: parseInt(e.target.value) || 0 })}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Servings</label>
+          <Input
+            type="number"
+            min="1"
+            value={formData.servings}
+            onChange={e => onUpdateFormData({ servings: parseInt(e.target.value) || 0 })}
+          />
+        </div>
+      </div>
+
       <div className="space-y-2">
         <label className="text-sm font-medium">Ingredients</label>
         {(formData.ingredients as string[])?.map((ingredient, index) => (
@@ -121,50 +164,6 @@ export function EditRecipeForm({
           <Plus className="mr-2 h-4 w-4" />
           Add Step
         </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Prep Time (minutes)</label>
-          <Input
-            type="number"
-            min="0"
-            value={formData.prep_time}
-            onChange={e => onUpdateFormData({ prep_time: parseInt(e.target.value) || 0 })}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Cook Time (minutes)</label>
-          <Input
-            type="number"
-            min="0"
-            value={formData.cook_time}
-            onChange={e => onUpdateFormData({ cook_time: parseInt(e.target.value) || 0 })}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Estimated Calories</label>
-          <Input
-            type="number"
-            min="0"
-            value={formData.estimated_calories}
-            onChange={e => onUpdateFormData({ estimated_calories: parseInt(e.target.value) || 0 })}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <label className="text-sm font-medium">Servings</label>
-          <Input
-            type="number"
-            min="1"
-            value={formData.servings}
-            onChange={e => onUpdateFormData({ servings: parseInt(e.target.value) || 0 })}
-          />
-        </div>
       </div>
 
       <Button type="submit" className="w-full" disabled={isSubmitting}>

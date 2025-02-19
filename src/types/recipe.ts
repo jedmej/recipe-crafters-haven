@@ -1,15 +1,20 @@
-
 export interface RecipeData {
+  id?: string;
   title: string;
   description: string;
   ingredients: string[];
   instructions: string[];
-  prep_time?: number;
   cook_time?: number;
+  prep_time?: number;
   estimated_calories?: number;
   suggested_portions: number;
-  portion_description: string;
+  portion_size?: number;
+  source_url?: string;
+  imageUrl?: string;
   language?: string;
+  user_id?: string;
+  created_at?: string;
+  portion_description: string;
 }
 
 export interface ScaledIngredient {

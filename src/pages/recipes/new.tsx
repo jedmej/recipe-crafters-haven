@@ -130,6 +130,15 @@ export default function NewRecipePage() {
                 />
               </div>
 
+              <div className="space-y-4">
+                <label className="text-sm font-medium">Recipe Image</label>
+                <ImageUploadOrGenerate
+                  onImageSelected={setRecipeImage}
+                  title={formData.title}
+                  disabled={isSubmitting}
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
                 <Textarea
@@ -265,15 +274,6 @@ export default function NewRecipePage() {
                     Add Step
                   </Button>
                 </div>
-              </div>
-
-              <div className="space-y-4">
-                <label className="text-sm font-medium">Recipe Image</label>
-                <ImageUploadOrGenerate
-                  onImageSelected={setRecipeImage}
-                  title={formData.title}
-                  disabled={isSubmitting}
-                />
               </div>
 
               <div className="flex gap-4 pt-6">

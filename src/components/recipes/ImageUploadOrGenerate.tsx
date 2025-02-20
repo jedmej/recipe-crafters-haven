@@ -57,7 +57,6 @@ export function ImageUploadOrGenerate({
     }
 
     setIsUploading(true);
-    setPreviewUrl(null); // Clear existing image
     try {
       const filename = `${Date.now()}-${file.name}`;
       const { error: uploadError, data } = await supabase.storage
@@ -82,12 +81,12 @@ export function ImageUploadOrGenerate({
         title: "Success",
         description: "Image uploaded successfully"
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Upload error:', error);
       toast({
         variant: "destructive",
         title: "Upload failed",
-        description: error.message || "Failed to upload image"
+        description: error instanceof Error ? error.message : "Failed to upload image"
       });
     } finally {
       setIsUploading(false);
@@ -107,19 +106,7 @@ export function ImageUploadOrGenerate({
       // Basic URL validation
       new URL(imageUrl);
 
-      // Optional: Check if URL points to an image
-      const isImage = /\.(jpg|jpeg|png|webp|avif|gif|svg)$/.test(imageUrl.toLowerCase());
-      if (!isImage) {
-        toast({
-          variant: "destructive",
-          title: "Invalid image URL",
-          description: "Please provide a direct link to an image file.",
-        });
-        return;
-      }
-
       setIsImageLoading(true);
-      setPreviewUrl(null); // Clear existing image
 
       // Create a new Image object to check if the URL loads successfully
       const img = new Image();
@@ -139,7 +126,7 @@ export function ImageUploadOrGenerate({
         toast({
           variant: "destructive",
           title: "Invalid image",
-          description: "The image URL could not be loaded.",
+          description: "The URL provided does not point to a valid image.",
         });
       };
       img.src = imageUrl;
@@ -148,7 +135,7 @@ export function ImageUploadOrGenerate({
       toast({
         variant: "destructive",
         title: "Invalid URL",
-        description: "Please enter a valid image URL.",
+        description: "Please enter a valid URL.",
       });
     }
   };
@@ -160,7 +147,6 @@ export function ImageUploadOrGenerate({
   };
 
   const handleGenerateClick = () => {
-    setPreviewUrl(null); // Clear existing image
     setGenerateImage(true);
     setIsGeneratingImage(true);
   };
@@ -171,123 +157,128 @@ export function ImageUploadOrGenerate({
 
   return (
     <div className="space-y-4">
-      {(isGeneratingImage || isUploading || isImageLoading) ? (
-        <div className="flex flex-col items-center gap-2 my-4">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <p className="text-sm text-muted-foreground">
-            {isGeneratingImage ? "Generating Recipe Image..." :
-             isUploading ? "Uploading Image..." :
-             "Loading Image..."}
-          </p>
+      {toggleMode && !previewUrl ? (
+        <div className="flex items-center p-2 border rounded-md bg-white">
+          <Switch
+            id="generate-image"
+            checked={generateImage}
+            onCheckedChange={(checked) => {
+              setGenerateImage(checked);
+              if (checked) {
+                setIsGeneratingImage(true);
+              }
+            }}
+            disabled={disabled || isUploading}
+          />
+          <label htmlFor="generate-image" className="text-sm text-gray-600 ml-2">
+            Generate AI image
+          </label>
         </div>
       ) : (
         <>
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              {toggleMode ? (
-                <div className="flex items-center p-2 border rounded-md bg-white">
-                  <Switch
-                    id="generate-image"
-                    checked={generateImage}
-                    onCheckedChange={setGenerateImage}
-                    disabled={disabled || isUploading}
-                  />
-                  <label htmlFor="generate-image" className="text-sm text-gray-600 ml-2">
-                    Generate AI image
-                  </label>
+          {(isGeneratingImage || isUploading || isImageLoading) ? (
+            <div className="flex flex-col items-center gap-2 my-4">
+              <Loader2 className="h-8 w-8 animate-spin" />
+              <p className="text-sm text-muted-foreground">
+                {isGeneratingImage ? "Generating Recipe Image..." :
+                isUploading ? "Uploading Image..." :
+                "Loading Image..."}
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateClick}
+                    disabled={disabled || isGeneratingImage || isUploading}
+                    type="button"
+                  >
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    {hasExistingImage || previewUrl ? 'Regenerate AI Image' : 'Generate AI Image'}
+                  </Button>
                 </div>
-              ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateClick}
-                  disabled={disabled || isGeneratingImage || isUploading}
-                  type="button"
-                >
-                  <ImageIcon className="mr-2 h-4 w-4" />
-                  {hasExistingImage ? 'Regenerate AI Image' : 'Generate AI Image'}
-                </Button>
+
+                <div className="flex gap-2">
+                  <input
+                    type="file"
+                    id="image-upload"
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={disabled || isGeneratingImage}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('image-upload')?.click()}
+                    disabled={disabled || isGeneratingImage || isUploading}
+                    type="button"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="mr-2 h-4 w-4" />
+                        Upload
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleUrlButtonClick}
+                    disabled={disabled || isGeneratingImage || isUploading}
+                    type="button"
+                  >
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                    URL
+                  </Button>
+                </div>
+              </div>
+
+              {showUrlInput && (
+                <div className="flex gap-2 mb-4">
+                  <Input
+                    type="url"
+                    placeholder="Paste image URL here..."
+                    value={imageUrl}
+                    onChange={(e) => setImageUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        validateAndSubmitUrl();
+                      }
+                    }}
+                  />
+                  <Button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      validateAndSubmitUrl();
+                    }}
+                    disabled={!imageUrl.trim()}
+                    type="button"
+                  >
+                    Add
+                  </Button>
+                </div>
               )}
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="file"
-                id="image-upload"
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageUpload}
-                disabled={disabled || isGeneratingImage}
-              />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById('image-upload')?.click()}
-                disabled={disabled || isGeneratingImage || isUploading}
-                type="button"
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload
-                  </>
-                )}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleUrlButtonClick}
-                disabled={disabled || isGeneratingImage || isUploading}
-                type="button"
-              >
-                <LinkIcon className="mr-2 h-4 w-4" />
-                URL
-              </Button>
-            </div>
-          </div>
-
-          {showUrlInput && (
-            <div className="flex gap-2 mb-4">
-              <Input
-                type="url"
-                placeholder="Paste image URL here..."
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    validateAndSubmitUrl();
-                  }
-                }}
-              />
-              <Button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  validateAndSubmitUrl();
-                }}
-                disabled={!imageUrl.trim()}
-                type="button"
-              >
-                Add
-              </Button>
-            </div>
+            </>
           )}
         </>
       )}
 
       {generateImage && !previewUrl && (
-        <div className="hidden">
-          <ImageGenerator
-            prompt={title}
-            onImageGenerated={handleImageGenerated}
-            embedded={true}
-          />
-        </div>
+        <ImageGenerator
+          prompt={title}
+          onImageGenerated={handleImageGenerated}
+          embedded={true}
+        />
       )}
 
       {previewUrl && (

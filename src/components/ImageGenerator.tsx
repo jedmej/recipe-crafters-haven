@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
@@ -28,7 +28,7 @@ interface ImageGeneratorProps {
 
 // Configure FAL client
 fal.config({
-  credentials: "1bdc7126-51ab-40f8-bcc5-e304def1a789:d2df7a52cb9f954e7374b8e3828da39c"
+  credentials: import.meta.env.VITE_FAL_API_KEY
 });
 
 const ImageGenerator: React.FC<ImageGeneratorProps> = ({ 
@@ -43,14 +43,7 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (initialPrompt) {
-      setPromptText(initialPrompt);
-      generateImage(initialPrompt);
-    }
-  }, [initialPrompt]);
-
-  const generateImage = async (promptToUse = promptText) => {
+  const generateImage = useCallback(async (promptToUse = promptText) => {
     if (!promptToUse.trim()) {
       toast({
         title: "Error",
@@ -122,7 +115,14 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [promptText, toast, onImageGenerated]);
+
+  useEffect(() => {
+    if (initialPrompt) {
+      setPromptText(initialPrompt);
+      generateImage(initialPrompt);
+    }
+  }, [initialPrompt, generateImage]);
 
   if (embedded) {
     return null;

@@ -110,6 +110,18 @@ export default function RecipesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+      <style>
+        {`
+          @keyframes gentleShake {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(-0.5deg) scale(1.005); }
+            75% { transform: rotate(0.5deg) scale(1.005); }
+            85% { transform: rotate(0.2deg) scale(1.002); }
+            95% { transform: rotate(-0.1deg) scale(1.001); }
+            100% { transform: rotate(0deg) scale(1); }
+          }
+        `}
+      </style>
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -117,27 +129,30 @@ export default function RecipesPage() {
           </h1>
           
           {/* Main action buttons */}
-          <div className="flex gap-2 mb-4">
-            <Button onClick={() => navigate("/recipes/ai-search")} variant="outline" className="gap-2">
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Button onClick={() => navigate("/recipes/ai-search")} variant="outline" className="flex-1 sm:flex-none gap-2 min-w-[120px]">
               <Search className="h-4 w-4" />
-              AI Search
+              <span className="hidden sm:inline">AI Search</span>
+              <span className="sm:hidden">Search</span>
             </Button>
-            <Button onClick={() => navigate("/recipes/import-ai")} variant="outline" className="gap-2">
+            <Button onClick={() => navigate("/recipes/import-ai")} variant="outline" className="flex-1 sm:flex-none gap-2 min-w-[120px]">
               <Bot className="h-4 w-4" />
-              Import from URL
+              <span className="hidden sm:inline">Import from URL</span>
+              <span className="sm:hidden">Import</span>
             </Button>
-            <Button onClick={() => navigate("/recipes/new")} className="gap-2">
+            <Button onClick={() => navigate("/recipes/new")} className="flex-1 sm:flex-none gap-2 min-w-[120px]">
               <Plus className="h-4 w-4" />
-              Add Recipe
+              <span>Add Recipe</span>
             </Button>
-            <Button onClick={() => navigate("/generate-image")} variant="outline" className="gap-2">
+            <Button onClick={() => navigate("/generate-image")} variant="outline" className="flex-1 sm:flex-none gap-2 min-w-[120px]">
               <FileImage className="h-4 w-4" />
-              Generate Image
+              <span className="hidden sm:inline">Generate Image</span>
+              <span className="sm:hidden">Image</span>
             </Button>
           </div>
 
           {/* Search and selection controls */}
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
             <div className="relative flex-1">
               <Input
                 type="search"
@@ -160,7 +175,6 @@ export default function RecipesPage() {
                     : "border border-input bg-background hover:bg-accent hover:text-accent-foreground"
                 )}
               >
-                <Checkbox className="h-4 w-4" checked={isSelectionMode} />
                 {isSelectionMode ? "Cancel Selection" : "Select Multiple"}
               </div>
               {isSelectionMode && selectedRecipes.length > 0 && (
@@ -189,34 +203,31 @@ export default function RecipesPage() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredRecipes?.map((recipe) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {filteredRecipes?.map((recipe, index) => (
             <div key={recipe.id} className="relative group">
-              {isSelectionMode && (
-                <div className="absolute -left-4 top-1/2 transform -translate-y-1/2 z-20">
-                  <Checkbox
-                    checked={selectedRecipes.includes(recipe.id)}
-                    onCheckedChange={() => toggleRecipeSelection(recipe.id)}
-                    className="h-5 w-5 bg-white"
-                  />
-                </div>
-              )}
               <Card 
+                style={{
+                  transform: selectedRecipes.includes(recipe.id) 
+                    ? 'scale(0.98)' 
+                    : 'scale(1)',
+                  transformOrigin: 'center',
+                  borderRadius: '16px',
+                  transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
+                  animation: isSelectionMode ? `gentleShake 600ms ${index * 30}ms cubic-bezier(0.4, 0, 0.2, 1) forwards` : 'none'
+                }}
                 className={`
                   cursor-pointer 
                   hover:shadow-lg 
-                  transition-all 
-                  duration-200
-                  ${isSelectionMode ? 'ml-4' : ''}
                   ${selectedRecipes.includes(recipe.id) ? 
-                    'ring-2 ring-primary ring-offset-2 scale-[0.98] bg-primary/5' : 
+                    'ring-2 ring-primary ring-offset-2 bg-primary/5' : 
                     'hover:scale-[1.02]'
                   }
                 `}
                 onClick={(e) => handleCardClick(recipe.id, e)}
               >
                 {recipe.image_url && (
-                  <div className="relative h-48 w-full">
+                  <div className="relative h-40 sm:h-48 w-full">
                     <img
                       src={recipe.image_url}
                       alt={recipe.title}
@@ -228,11 +239,11 @@ export default function RecipesPage() {
                     />
                   </div>
                 )}
-                <CardHeader>
-                  <CardTitle>{recipe.title}</CardTitle>
+                <CardHeader className="p-4 sm:p-6">
+                  <CardTitle className="text-lg sm:text-xl line-clamp-2">{recipe.title}</CardTitle>
                 </CardHeader>
                 {recipe.description && (
-                  <CardContent>
+                  <CardContent className="p-4 sm:p-6 pt-0">
                     <p className="text-muted-foreground line-clamp-2 text-sm">
                       {recipe.description}
                     </p>

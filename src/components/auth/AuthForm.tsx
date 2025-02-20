@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,11 +41,12 @@ export function AuthForm() {
           description: "Successfully signed in.",
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred during authentication';
       toast({
-        variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: errorMessage,
+        variant: "destructive",
       });
     } finally {
       setIsLoading(false);

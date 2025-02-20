@@ -1,4 +1,7 @@
 import type { Config } from "tailwindcss";
+import { fontFamily } from "tailwindcss/defaultTheme";
+import typography from "@tailwindcss/typography";
+import animate from "tailwindcss-animate";
 
 export default {
 	darkMode: ["class"],
@@ -84,13 +87,31 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'gentle-shake': {
+					'0%, 100%': { transform: 'rotate(0deg)' },
+					'25%': { transform: 'rotate(0.25deg)' },
+					'75%': { transform: 'rotate(-0.25deg)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'gentle-shake': 'gentle-shake 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite'
+			},
+			transitionDelay: {
+				'50': '50ms',
+				'100': '100ms',
+				'150': '150ms',
+				'200': '200ms',
+				'250': '250ms',
+				'300': '300ms',
+				'350': '350ms',
+				'400': '400ms',
+				'450': '450ms',
+				'500': '500ms',
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [animate],
 } satisfies Config;

@@ -13,6 +13,7 @@ import { SUPPORTED_LANGUAGES } from "@/types/recipe";
 import ImageGenerator from '@/components/ImageGenerator';
 import { Switch } from "@/components/ui/switch";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
+import { RecipeData } from "@/types/recipe";
 
 export default function ImportRecipeAIPage() {
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ export default function ImportRecipeAIPage() {
     }
   });
 
-  const saveRecipeToDatabase = async (recipeData: any, userId: string, data: { url: string; language: string }) => {
+  const saveRecipeToDatabase = async (recipeData: RecipeData, userId: string, data: { url: string; language: string }) => {
     const { data: savedRecipe, error: insertError } = await supabase
       .from('recipes')
       .insert([{

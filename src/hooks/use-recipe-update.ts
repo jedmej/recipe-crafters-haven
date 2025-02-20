@@ -1,4 +1,3 @@
-
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +13,8 @@ export function useRecipeUpdate(recipeId: string) {
 
   return useMutation({
     mutationFn: async (data: Partial<Recipe>) => {
+      if (!recipeId) throw new Error("Recipe ID is required");
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
@@ -29,13 +30,16 @@ export function useRecipeUpdate(recipeId: string) {
           estimated_calories: data.estimated_calories,
           servings: data.servings,
           source_url: data.source_url,
-          language: data.language
+          language: data.language,
+          image_url: data.image_url
         })
         .eq('id', recipeId)
         .select()
         .single();
 
       if (error) throw error;
+      if (!updatedRecipe) throw new Error('Failed to update recipe');
+      
       return updatedRecipe;
     },
     onSuccess: (data) => {

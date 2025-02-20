@@ -14,7 +14,7 @@ import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerat
 type Recipe = Database['public']['Tables']['recipes']['Row'];
 
 export default function EditRecipePage() {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,9 +32,11 @@ export default function EditRecipePage() {
     language: "en"
   });
 
-  const { data: recipe, isLoading } = useQuery({
+  const { data: recipe, isLoading, error } = useQuery({
     queryKey: ['recipes', id],
     queryFn: async () => {
+      if (!id) throw new Error("Recipe ID is required");
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
@@ -45,8 +47,11 @@ export default function EditRecipePage() {
         .single();
 
       if (error) throw error;
+      if (!data) throw new Error('Recipe not found');
+      
       return data as Recipe;
-    }
+    },
+    enabled: !!id
   });
 
   const updateRecipe = useRecipeUpdate(id as string);
@@ -143,10 +148,46 @@ export default function EditRecipePage() {
     }));
   };
 
+  if (!id) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-lg text-red-500">Recipe ID is required</p>
+        <Button variant="ghost" onClick={() => navigate('/recipes')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Recipes
+        </Button>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-lg text-red-500">{error instanceof Error ? error.message : 'Error loading recipe'}</p>
+        <Button variant="ghost" onClick={() => navigate('/recipes')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Recipes
+        </Button>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!recipe) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <p className="text-lg text-red-500">Recipe not found</p>
+        <Button variant="ghost" onClick={() => navigate('/recipes')}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Recipes
+        </Button>
       </div>
     );
   }

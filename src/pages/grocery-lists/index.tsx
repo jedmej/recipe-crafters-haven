@@ -115,7 +115,7 @@ export default function GroceryListsPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground">
-                  {(list.items as any[]).length} items
+                  {Array.isArray(list.items) ? list.items.length : 0} items
                 </p>
               </CardContent>
             </Card>

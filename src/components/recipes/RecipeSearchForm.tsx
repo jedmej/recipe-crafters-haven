@@ -1,6 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,38 +14,43 @@ import { SUPPORTED_LANGUAGES } from "@/types/recipe";
 
 interface RecipeSearchFormProps {
   query: string;
+  setQuery: (query: string) => void;
   language: string;
-  isSearching: boolean;
-  onQueryChange: (query: string) => void;
-  onLanguageChange: (language: string) => void;
+  setLanguage: (language: string) => void;
+  generateImage: boolean;
+  setGenerateImage: (generate: boolean) => void;
   onSubmit: (e: React.FormEvent) => void;
+  isLoading: boolean;
+  simpleMode?: boolean;
 }
 
 export function RecipeSearchForm({
   query,
+  setQuery,
   language,
-  isSearching,
-  onQueryChange,
-  onLanguageChange,
+  setLanguage,
+  generateImage,
+  setGenerateImage,
   onSubmit,
+  isLoading,
+  simpleMode = false
 }: RecipeSearchFormProps) {
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-4">
       <div className="space-y-2">
-        <label className="text-sm font-medium">What would you like to cook?</label>
         <Input
           value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
-          placeholder="e.g., Find a vegan lasagna recipe"
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Describe what you'd like to cook..."
           required
-          className="w-full"
         />
       </div>
-
-      <div className="space-y-2">
-        <label className="text-sm font-medium">Recipe Language</label>
-        <Select value={language} onValueChange={onLanguageChange}>
-          <SelectTrigger className="w-full">
+      <div className="flex gap-4">
+        <Select
+          value={language}
+          onValueChange={setLanguage}
+        >
+          <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select language" />
           </SelectTrigger>
           <SelectContent>
@@ -55,21 +61,28 @@ export function RecipeSearchForm({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-sm text-muted-foreground">
-          Choose the language for your recipe
-        </p>
+        <Button type="submit" disabled={isLoading} className="flex-1">
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Searching...
+            </>
+          ) : (
+            'Search'
+          )}
+        </Button>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSearching}>
-        {isSearching ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Searching...
-          </>
-        ) : (
-          "Search Recipe"
-        )}
-      </Button>
+      {/* Only show the AI image generation toggle */}
+      <div className="flex items-center space-x-2">
+        <Switch
+          id="generate-image"
+          checked={generateImage}
+          onCheckedChange={setGenerateImage}
+          disabled={isLoading}
+        />
+        <Label htmlFor="generate-image">Generate AI image for recipe</Label>
+      </div>
     </form>
   );
 }

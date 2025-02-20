@@ -17,11 +17,11 @@ const Navigation = () => {
   };
 
   return (
-    <nav className="nav-modern fixed w-full z-50">
+    <nav className="nav-modern fixed w-full z-50 hidden md:block bg-background/80 backdrop-blur-md border-b">
       <div className="max-w-screen-xl mx-auto px-6">
         <div className="flex h-20 items-center justify-between">
           <div className="flex items-center gap-8">
-            <Link to="/" className="text-xl font-bold text-gradient">
+            <Link to="/" className="text-xl font-bold text-gradient hover:opacity-90 transition-opacity">
               Recipe Crafters Haven
             </Link>
             <div className="flex gap-6">
@@ -30,30 +30,33 @@ const Navigation = () => {
                   key={link.href}
                   to={link.href}
                   className={cn(
-                    "text-sm font-medium transition-all duration-200 hover:text-primary relative group",
+                    "flex flex-col items-center gap-1 text-sm font-medium transition-all duration-200",
                     location.pathname.startsWith(link.href)
                       ? "text-primary"
-                      : "text-muted-foreground"
+                      : "text-muted-foreground hover:text-primary"
                   )}
                 >
                   {link.label}
                   <span className={cn(
-                    "absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-200 group-hover:w-full",
-                    location.pathname.startsWith(link.href) && "w-full"
+                    "h-0.5 bg-primary transition-all duration-200",
+                    location.pathname.startsWith(link.href)
+                      ? "w-full"
+                      : "w-0 group-hover:w-full"
                   )} />
                 </Link>
               ))}
             </div>
           </div>
           
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={handleSignOut} className="hover:shadow-sm transition-all">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
-            {/* Sphere accent */}
-            <div className="sphere-accent opacity-20 top-[-150px] right-[-150px]" />
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleSignOut}
+            className="text-muted-foreground hover:text-primary transition-colors"
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="sr-only">Sign out</span>
+          </Button>
         </div>
       </div>
     </nav>

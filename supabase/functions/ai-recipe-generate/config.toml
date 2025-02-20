@@ -1,0 +1,3 @@
+[functions.ai-recipe-generate]
+verify_jwt = true
+import_map = "../import_map.json" 

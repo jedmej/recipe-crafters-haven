@@ -1,10 +1,9 @@
-const express = require('express');
-const { fal } = require('@fal-ai/client');
+import express from 'express';
+import { fal } from '@fal-ai/client';
 
 const router = express.Router();
 
-const FAL_KEY = "1bdc7126-51ab-40f8-bcc5-e304def1a789:d2df7a52cb9f954e7374b8e3828da39c";
-fal.config({ credentials: FAL_KEY });
+fal.config({ credentials: process.env.FAL_API_KEY });
 
 router.post('/generate-image', async (req, res) => {
   try {
@@ -51,4 +50,4 @@ router.post('/generate-image', async (req, res) => {
   }
 });
 
-module.exports = router; 
+export { router as generateImage }; 

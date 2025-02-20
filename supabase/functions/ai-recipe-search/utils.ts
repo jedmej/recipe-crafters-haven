@@ -1,11 +1,7 @@
+import { RecipeValidation } from './types';
 
 export function cleanJsonResponse(text: string): string {
-  const jsonBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-  if (jsonBlockMatch) {
-    return jsonBlockMatch[1].trim();
-  }
-  
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
   if (jsonMatch) {
     return jsonMatch[0].trim();
   }
@@ -13,12 +9,12 @@ export function cleanJsonResponse(text: string): string {
   return text.replace(/```/g, '').trim();
 }
 
-export function validateRecipeData(recipeData: any) {
+export function validateRecipeData(recipeData: RecipeValidation) {
   const requiredFields = [
     'title', 'description', 'ingredients', 'instructions',
     'prep_time', 'cook_time', 'estimated_calories',
     'suggested_portions', 'portion_description'
-  ];
+  ] as const;
 
   for (const field of requiredFields) {
     if (recipeData[field] === undefined) {

@@ -6,6 +6,9 @@ import { AuthGuard } from "@/components/auth/AuthGuard";
 import Navigation from "@/components/layout/Navigation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { SphereBackgroundGroup } from "@/components/ui/sphere-background";
+import { SupabaseProvider } from '@/lib/supabase/supabase-provider';
+
+// Page imports
 import AuthPage from "./pages/auth";
 import NotFound from "./pages/NotFound";
 import RecipesPage from "./pages/recipes";
@@ -39,103 +42,105 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <div className="min-h-screen antialiased">
-        <Toaster />
+      <SupabaseProvider>
         <BrowserRouter>
-          <Routes>
-            <Route path="/auth" element={<AuthPage />} />
-            <Route
-              path="/"
-              element={
-                <AuthenticatedLayout>
-                  <RecipesPage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route
-              path="/recipes"
-              element={
-                <AuthenticatedLayout>
-                  <RecipesPage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route
-              path="/recipes/new"
-              element={
-                <AuthenticatedLayout>
-                  <NewRecipePage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route
-              path="/recipes/import-ai"
-              element={
-                <AuthenticatedLayout>
-                  <ImportRecipeAIPage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route
-              path="/recipes/ai-search"
-              element={
-                <AuthenticatedLayout>
-                  <AIRecipeSearchPage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route
-              path="/recipes/:id"
-              element={
-                <AuthenticatedLayout>
-                  <RecipeDetailPage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route
-              path="/recipes/:id/edit"
-              element={
-                <AuthenticatedLayout>
-                  <EditRecipePage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route
-              path="/grocery-lists"
-              element={
-                <AuthenticatedLayout>
-                  <GroceryListsPage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route
-              path="/grocery-lists/new"
-              element={
-                <AuthenticatedLayout>
-                  <NewGroceryListPage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route
-              path="/grocery-lists/:id"
-              element={
-                <AuthenticatedLayout>
-                  <GroceryListDetailPage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route
-              path="/generate-image"
-              element={
-                <AuthenticatedLayout>
-                  <GenerateImagePage />
-                </AuthenticatedLayout>
-              }
-            />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              <Route path="/auth" element={<AuthPage />} />
+              <Route
+                path="/"
+                element={
+                  <AuthenticatedLayout>
+                    <RecipesPage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/recipes"
+                element={
+                  <AuthenticatedLayout>
+                    <RecipesPage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/recipes/new"
+                element={
+                  <AuthenticatedLayout>
+                    <NewRecipePage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/recipes/import-ai"
+                element={
+                  <AuthenticatedLayout>
+                    <ImportRecipeAIPage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/recipes/ai-search"
+                element={
+                  <AuthenticatedLayout>
+                    <AIRecipeSearchPage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/recipes/:id"
+                element={
+                  <AuthenticatedLayout>
+                    <RecipeDetailPage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/recipes/:id/edit"
+                element={
+                  <AuthenticatedLayout>
+                    <EditRecipePage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/grocery-lists"
+                element={
+                  <AuthenticatedLayout>
+                    <GroceryListsPage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/grocery-lists/new"
+                element={
+                  <AuthenticatedLayout>
+                    <NewGroceryListPage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/grocery-lists/:id"
+                element={
+                  <AuthenticatedLayout>
+                    <GroceryListDetailPage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/generate-image"
+                element={
+                  <AuthenticatedLayout>
+                    <GenerateImagePage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <Toaster />
+          </div>
         </BrowserRouter>
-      </div>
+      </SupabaseProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

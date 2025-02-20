@@ -2,9 +2,10 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Edit, Trash, Clock, Timer, Flame } from "lucide-react";
+import { ArrowLeft, Loader2, Clock, Timer, Flame } from "lucide-react";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeIngredients } from './RecipeIngredients';
+import { RecipeActions } from './RecipeActions';
 import { useRecipeDetail } from '../../hooks/useRecipeDetail';
 import { useRecipeActions } from '../../hooks/useRecipeActions';
 
@@ -105,27 +106,15 @@ export default function RecipeDetailPage() {
           <div className="md:col-span-2 lg:col-span-4 flex flex-col gap-6">
             <Card>
               <CardContent className="p-6">
-                <div className="flex justify-end gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                  >
-                    <Link to={`/recipes/${recipe.id}/edit`}>
-                      <Edit className="h-4 w-4 mr-2" />
-                      Edit
-                    </Link>
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleDelete}
-                    disabled={isDeleting}
-                  >
-                    <Trash className="h-4 w-4 mr-2" />
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </Button>
-                </div>
+                <RecipeActions
+                  recipeId={recipe.id}
+                  isDeleting={isDeleting}
+                  handleDelete={handleDelete}
+                  desiredServings={desiredServings}
+                  handleServingsChange={handleServingsChange}
+                  measurementSystem={measurementSystem}
+                  toggleMeasurementSystem={toggleMeasurementSystem}
+                />
               </CardContent>
             </Card>
 
@@ -146,7 +135,7 @@ export default function RecipeDetailPage() {
                     <Flame className="h-6 w-6 text-gray-500 mb-2" />
                     <p className="text-sm text-gray-500">Calories</p>
                     <p className="text-lg font-semibold">
-                      {calculateCaloriesPerServing(recipe.estimated_calories, recipe.servings)} kcal
+                      {Math.round(calculateCaloriesPerServing(recipe.estimated_calories, recipe.servings) * scaleFactor)} kcal
                     </p>
                   </div>
                 </div>
@@ -170,10 +159,10 @@ export default function RecipeDetailPage() {
             <Card className="h-full">
               <CardContent className="p-6">
                 <h3 className="text-xl font-semibold mb-4">Instructions</h3>
-                <ol className="list-decimal list-inside space-y-4">
+                <ol className="list-decimal space-y-4">
                   {recipe.instructions.map((instruction, index) => (
-                    <li key={index} className="text-gray-700 pl-2">
-                      <span className="ml-2">{instruction}</span>
+                    <li key={index} className="text-gray-700 ml-4 pl-2">
+                      <span className="block">{instruction}</span>
                     </li>
                   ))}
                 </ol>

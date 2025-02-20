@@ -184,6 +184,29 @@ export function ImageUploadOrGenerate({
         </div>
       ) : (
         <>
+          {previewUrl && (
+            <div className="relative w-full max-w-2xl mx-auto">
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="w-full rounded-lg shadow-md"
+                onLoad={handleImageLoad}
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="absolute top-2 right-2"
+                onClick={() => {
+                  setPreviewUrl(null);
+                  setGenerateImage(false);
+                }}
+                type="button"
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+
           {(isGeneratingImage || isUploading || isImageLoading) ? (
             <div className="flex flex-col items-center gap-2 my-4">
               <Loader2 className="h-8 w-8 animate-spin" />
@@ -195,21 +218,20 @@ export function ImageUploadOrGenerate({
             </div>
           ) : (
             <>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateClick}
-                    disabled={disabled || isGeneratingImage || isUploading}
-                    type="button"
-                  >
-                    <ImageIcon className="mr-2 h-4 w-4" />
-                    {hasExistingImage || previewUrl ? 'Regenerate AI Image' : 'Generate AI Image'}
-                  </Button>
-                </div>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateClick}
+                  disabled={disabled || isGeneratingImage || isUploading}
+                  type="button"
+                  className="w-full sm:w-auto"
+                >
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  {hasExistingImage || previewUrl ? 'Regenerate' : 'Generate'}
+                </Button>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full sm:w-auto">
                   <input
                     type="file"
                     id="image-upload"
@@ -224,6 +246,7 @@ export function ImageUploadOrGenerate({
                     onClick={() => document.getElementById('image-upload')?.click()}
                     disabled={disabled || isGeneratingImage || isUploading}
                     type="button"
+                    className="flex-1 sm:flex-initial"
                   >
                     {isUploading ? (
                       <>
@@ -243,6 +266,7 @@ export function ImageUploadOrGenerate({
                     onClick={handleUrlButtonClick}
                     disabled={disabled || isGeneratingImage || isUploading}
                     type="button"
+                    className="flex-1 sm:flex-initial"
                   >
                     <LinkIcon className="mr-2 h-4 w-4" />
                     URL
@@ -251,7 +275,7 @@ export function ImageUploadOrGenerate({
               </div>
 
               {showUrlInput && (
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 mt-4">
                   <Input
                     type="url"
                     placeholder="Paste image URL here..."
@@ -287,29 +311,6 @@ export function ImageUploadOrGenerate({
           onImageGenerated={handleImageGenerated}
           embedded={true}
         />
-      )}
-
-      {previewUrl && (
-        <div className="relative w-full max-w-2xl mx-auto mt-4">
-          <img
-            src={previewUrl}
-            alt="Preview"
-            className="w-full rounded-lg shadow-md"
-            onLoad={handleImageLoad}
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            className="absolute top-2 right-2"
-            onClick={() => {
-              setPreviewUrl(null);
-              setGenerateImage(false);
-            }}
-            type="button"
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
-        </div>
       )}
     </div>
   );

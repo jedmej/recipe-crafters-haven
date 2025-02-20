@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SUPPORTED_LANGUAGES } from "@/types/recipe";
@@ -34,14 +35,18 @@ export function EditRecipeForm({
           value={formData.title}
           onChange={e => onUpdateFormData({ title: e.target.value })}
           required
+          placeholder="Enter recipe title..."
+          className="text-lg font-medium"
         />
       </div>
 
       <div className="space-y-2">
         <label className="text-sm font-medium">Description</label>
-        <Input
+        <textarea
           value={formData.description}
           onChange={e => onUpdateFormData({ description: e.target.value })}
+          placeholder="Enter recipe description..."
+          className="w-full min-h-[120px] p-3 rounded-md border border-input bg-background text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-y"
         />
       </div>
 
@@ -64,7 +69,7 @@ export function EditRecipeForm({
         </Select>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Prep Time (minutes)</label>
           <Input
@@ -86,7 +91,7 @@ export function EditRecipeForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-medium">Estimated Calories</label>
           <Input

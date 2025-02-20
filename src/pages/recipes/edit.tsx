@@ -217,27 +217,18 @@ export default function EditRecipePage() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Recipe Image</label>
                 <div className="relative">
-                  {recipe.image_url && (
-                    <img
-                      src={recipe.image_url}
-                      alt={recipe.title}
-                      className="w-full max-w-2xl rounded-lg shadow-md mx-auto mb-4"
-                    />
-                  )}
                   <ImageUploadOrGenerate
                     onImageSelected={(imageUrl) => {
                       setFormData(prev => ({
                         ...prev,
                         image_url: imageUrl
                       }));
-                      if (recipe) {
-                        recipe.image_url = imageUrl;
-                      }
                     }}
                     title={formData.title}
                     disabled={isSubmitting}
                     toggleMode={false}
-                    hasExistingImage={!!recipe?.image_url}
+                    hasExistingImage={!!formData.image_url}
+                    initialImage={formData.image_url}
                   />
                 </div>
               </div>

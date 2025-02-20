@@ -46,14 +46,23 @@ export function useAISearch() {
         body: JSON.stringify({ query, language }),
       });
 
+      const responseData = await response.json();
+      console.log('API Response:', {
+        status: response.status,
+        ok: response.ok,
+        data: responseData
+      });
+
       if (!response.ok) {
-        const errorDetails = await response.text();
-        throw new Error(`Error ${response.status}: ${errorDetails}`);
+        throw new Error(`Error ${response.status}: ${JSON.stringify(responseData)}`);
       }
 
-      const data = await response.json();
-      const apiResponse = data as AIRecipeResponse;
+      if (!responseData.success || !responseData.data) {
+        console.error('API returned unsuccessful response:', responseData);
+        throw new Error(responseData.error || 'Failed to get recipe data');
+      }
 
+      const apiResponse = responseData.data;
       const recipe: RecipeData = {
         title: apiResponse.title,
         description: apiResponse.description,

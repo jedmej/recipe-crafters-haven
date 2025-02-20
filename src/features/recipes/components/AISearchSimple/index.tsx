@@ -107,10 +107,11 @@ export default function AISearchSimplePage() {
         {suggestedRecipe && (
           <RecipeDisplay
             recipe={suggestedRecipe}
-            portions={chosenPortions}
+            scaledRecipe={suggestedRecipe}
+            chosenPortions={chosenPortions}
             onPortionsChange={setChosenPortions}
             measurementSystem={measurementSystem}
-            onMeasurementSystemChange={setMeasurementSystem}
+            onMeasurementSystemChange={() => setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric')}
             onSave={() => saveRecipe.mutate()}
             isSaving={saveRecipe.isPending}
           />

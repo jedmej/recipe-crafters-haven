@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Plus, Loader2, Search, Bot, Trash, FileText, FileImage } from "lucide-react";
+import { Plus, Loader2, Search, Bot, Trash, FileText, FileImage, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { Input } from "@/components/ui/input";
@@ -208,47 +208,101 @@ export default function RecipesPage() {
             <div key={recipe.id} className="relative group">
               <Card 
                 style={{
-                  transform: selectedRecipes.includes(recipe.id) 
-                    ? 'scale(0.98)' 
-                    : 'scale(1)',
-                  transformOrigin: 'center',
-                  borderRadius: '16px',
-                  transition: 'all 200ms cubic-bezier(0.4, 0, 0.2, 1)',
-                  animation: isSelectionMode ? `gentleShake 600ms ${index * 30}ms cubic-bezier(0.4, 0, 0.2, 1) forwards` : 'none'
+                  borderRadius: '24px',
+                  overflow: 'hidden',
+                  position: 'relative',
+                  transition: 'all 2500ms cubic-bezier(0.19, 1, 0.22, 1)',
+                  transform: `scale(${selectedRecipes.includes(recipe.id) ? '0.98' : '1'})`,
+                  transformOrigin: 'center'
                 }}
                 className={`
                   cursor-pointer 
-                  hover:shadow-lg 
-                  ${selectedRecipes.includes(recipe.id) ? 
-                    'ring-2 ring-primary ring-offset-2 bg-primary/5' : 
-                    'hover:scale-[1.02]'
+                  shadow-sm
+                  hover:shadow-lg
+                  h-[280px]
+                  rounded-[24px]
+                  transform-gpu
+                  ${selectedRecipes.includes(recipe.id) 
+                    ? 'ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/5' 
+                    : 'hover:scale-[1.02] transition-all duration-2500'
                   }
+                  group
                 `}
                 onClick={(e) => handleCardClick(recipe.id, e)}
               >
-                {recipe.image_url && (
-                  <div className="relative h-40 sm:h-48 w-full">
-                    <img
-                      src={recipe.image_url}
-                      alt={recipe.title}
-                      className={`
-                        absolute inset-0 w-full h-full object-cover rounded-t-lg
-                        transition-all duration-200
-                        ${selectedRecipes.includes(recipe.id) ? 'brightness-95' : ''}
-                      `}
-                    />
-                  </div>
-                )}
-                <CardHeader className="p-4 sm:p-6">
-                  <CardTitle className="text-lg sm:text-xl line-clamp-2">{recipe.title}</CardTitle>
-                </CardHeader>
-                {recipe.description && (
-                  <CardContent className="p-4 sm:p-6 pt-0">
-                    <p className="text-muted-foreground line-clamp-2 text-sm">
+                <div className="absolute inset-0 rounded-[24px] overflow-hidden">
+                  {recipe.image_url ? (
+                    <>
+                      <img
+                        src={recipe.image_url}
+                        alt={recipe.title}
+                        className={`
+                          absolute inset-0 w-full h-full object-cover
+                          transition-all duration-2500
+                          group-hover:scale-[1.04]
+                          ${selectedRecipes.includes(recipe.id) ? 'brightness-95' : ''}
+                        `}
+                        style={{
+                          transitionTimingFunction: 'cubic-bezier(0.19, 1, 0.22, 1)'
+                        }}
+                      />
+                      {isSelectionMode && (
+                        <div className="absolute top-3 left-3 bg-white/30 backdrop-blur-md p-1.5 rounded-full flex items-center justify-center shadow-lg border border-white/30 z-10 transition-opacity duration-200">
+                          <div className={cn(
+                            "h-5 w-5 rounded-full border-2 transition-colors duration-200",
+                            selectedRecipes.includes(recipe.id)
+                              ? "bg-primary border-transparent"
+                              : "border-white/80 bg-white/20"
+                          )}>
+                            {selectedRecipes.includes(recipe.id) && (
+                              <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="white"
+                                strokeWidth="3"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="h-full w-full p-1"
+                              >
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {recipe.cook_time && (
+                        <div className="absolute top-3 right-3 bg-white/30 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg border border-white/30 z-10">
+                          <Clock className="w-4 h-4 text-white" />
+                          <span className="text-sm font-medium text-white drop-shadow-sm">{recipe.cook_time} min</span>
+                        </div>
+                      )}
+                      <div className="absolute inset-x-0 bottom-0 h-[50%]">
+                        <div 
+                          className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+                        />
+                        <div 
+                          className="absolute inset-0 backdrop-blur-[5px]"
+                          style={{ 
+                            maskImage: 'linear-gradient(to top, black 60%, transparent)',
+                            WebkitMaskImage: 'linear-gradient(to top, black 60%, transparent)'
+                          }}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 bg-gray-100" />
+                  )}
+                </div>
+                <div className="absolute inset-x-0 bottom-0 p-4">
+                  <h3 className="font-semibold text-lg sm:text-xl line-clamp-2 text-white">
+                    {recipe.title}
+                  </h3>
+                  {recipe.description && (
+                    <p className="mt-2 text-sm line-clamp-2 text-white/80">
                       {recipe.description}
                     </p>
-                  </CardContent>
-                )}
+                  )}
+                </div>
               </Card>
             </div>
           ))}

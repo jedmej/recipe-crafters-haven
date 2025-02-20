@@ -72,8 +72,51 @@ serve(async (req) => {
       for (const [index, modelInfo] of models.entries()) {
         try {
           console.log(`Attempting with ${modelInfo.displayName}...`);
-          const model = genAI.getGenerativeModel({ model: modelInfo.name });
-          return await tryGenerateContent(model, prompt);
+          const model = genAI.getGenerativeModel({ 
+            model: modelInfo.name,
+            generationConfig: {
+              temperature: 0.1,  // Lower temperature for more consistent output
+              topP: 0.1,        // More focused sampling
+              topK: 16,         // More deterministic output
+            },
+          });
+
+          // Set generation parameters
+          const result = await model.generateContent({
+            contents: [{
+              role: 'user',
+              parts: [{
+                text: `Create a recipe for: "${query}" in ${language} language.
+
+                Return a JSON object with this structure:
+                {
+                  "title": "Recipe title",
+                  "description": "Brief description",
+                  "ingredients": ["List of ingredients with quantities"],
+                  "instructions": ["Step by step instructions"],
+                  "prep_time": number (in minutes),
+                  "cook_time": number (in minutes),
+                  "estimated_calories": number,
+                  "suggested_portions": number,
+                  "portion_description": "Portion size description"
+                }
+
+                Rules:
+                1. Use ${language} language for all text
+                2. Use common measurements in ${language}
+                3. Make instructions clear and detailed
+                4. All numbers must be integers
+                5. Return ONLY the JSON object, no markdown or formatting`
+              }]
+            }],
+            generationConfig: {
+              temperature: 0.1,
+              topP: 0.1,
+              topK: 16,
+            },
+          });
+
+          return result;
         } catch (error) {
           const isLastModel = index === models.length - 1;
           if (isLastModel || !isOverloadError(error)) {
@@ -86,34 +129,34 @@ serve(async (req) => {
 
     try {
       console.log('Sending prompt to Gemini...');
-      const prompt = [{
-        text: `Create a recipe for: "${query}". The entire response including the recipe title, description, ingredients, instructions, and all other text should be in ${language} language.
+      const result = await generateWithFallback({
+        contents: [{
+          role: 'user',
+          parts: [{
+            text: `Create a recipe for: "${query}" in ${language} language.
 
-        Return a JSON object with this structure:
-        {
-          "title": "Recipe title in ${language}",
-          "description": "A brief description of the dish in ${language}",
-          "ingredients": ["List of ingredients with precise quantities in ${language}"],
-          "instructions": ["Step by step cooking instructions in ${language}"],
-          "prep_time": integer (estimated preparation time in minutes),
-          "cook_time": integer (estimated cooking time in minutes),
-          "estimated_calories": integer (estimated total calories for the entire recipe),
-          "suggested_portions": integer (recommended number of portions based on the dish type),
-          "portion_description": string (brief explanation of what a portion means in ${language})
-        }
+            Return a JSON object with this structure:
+            {
+              "title": "Recipe title",
+              "description": "Brief description",
+              "ingredients": ["List of ingredients with quantities"],
+              "instructions": ["Step by step instructions"],
+              "prep_time": number (in minutes),
+              "cook_time": number (in minutes),
+              "estimated_calories": number,
+              "suggested_portions": number,
+              "portion_description": "Portion size description"
+            }
 
-        Important rules:
-        1. ALL text must be in ${language} language
-        2. Use common measurements and ingredient names in ${language}
-        3. Format quantities precisely
-        4. Make instructions detailed and numbered
-        5. Return ONLY valid JSON - no markdown, no text before or after
-        6. All fields must be present and properly formatted
-        7. Prep and cook times must be realistic estimates in minutes
-        8. Calorie estimation should be based on standard ingredient calories`
-      }];
-
-      const result = await generateWithFallback(prompt);
+            Rules:
+            1. Use ${language} language for all text
+            2. Use common measurements in ${language}
+            3. Make instructions clear and detailed
+            4. All numbers must be integers
+            5. Return ONLY the JSON object, no markdown or formatting`
+          }]
+        }]
+      });
 
       console.log('Received response from Gemini');
       
@@ -132,14 +175,16 @@ serve(async (req) => {
       }
 
       const rawText = result.response.text();
-      console.log('Raw response text length:', rawText.length);
+      console.log('Raw response text:', rawText);
 
       if (!rawText) {
+        console.error('Empty text response received from AI service');
         return new Response(
           JSON.stringify({
             error: 'Empty text response from AI service',
             success: false,
-            data: null
+            data: null,
+            rawResponse: null
           }), 
           { 
             status: 500,
@@ -148,11 +193,16 @@ serve(async (req) => {
         );
       }
 
-      const cleanedJson = cleanJsonResponse(rawText);
-      console.log('Cleaned JSON length:', cleanedJson.length);
-
+      let cleanedJson;
       try {
+        console.log('Attempting to clean JSON response...');
+        cleanedJson = cleanJsonResponse(rawText);
+        console.log('Successfully cleaned JSON:', cleanedJson);
+        
+        console.log('Parsing cleaned JSON...');
         const recipeData = JSON.parse(cleanedJson);
+        console.log('Successfully parsed JSON, validating...');
+        
         validateRecipeData(recipeData);
         console.log('Validation passed, returning recipe data');
 
@@ -167,12 +217,15 @@ serve(async (req) => {
           }
         );
       } catch (error) {
-        console.error('Recipe data validation error:', error);
+        console.error('Recipe data processing error:', error);
+        console.error('Raw text that failed:', rawText);
         return new Response(
           JSON.stringify({
-            error: `Invalid recipe format: ${error.message}`,
+            error: `Failed to process recipe data: ${error.message}`,
             success: false,
-            data: null
+            data: null,
+            rawResponse: rawText,
+            processingStage: error.processingStage || 'unknown'
           }), 
           { 
             status: 400,
@@ -182,6 +235,11 @@ serve(async (req) => {
       }
     } catch (error) {
       console.error('Edge function error:', error);
+      console.error('Full error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       
       let status = 400;
       let errorMessage = error.message;
@@ -201,7 +259,11 @@ serve(async (req) => {
         JSON.stringify({
           error: errorMessage,
           success: false,
-          data: null
+          data: null,
+          errorDetails: {
+            message: error.message,
+            type: error.name
+          }
         }), 
         { 
           status,

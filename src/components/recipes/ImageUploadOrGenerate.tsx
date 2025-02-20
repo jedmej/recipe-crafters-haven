@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -14,6 +14,7 @@ interface ImageUploadOrGenerateProps {
   disabled?: boolean;
   toggleMode?: boolean;
   hasExistingImage?: boolean;
+  initialImage?: string;
 }
 
 export function ImageUploadOrGenerate({ 
@@ -21,16 +22,23 @@ export function ImageUploadOrGenerate({
   title, 
   disabled,
   toggleMode = false,
-  hasExistingImage = false
+  hasExistingImage = false,
+  initialImage
 }: ImageUploadOrGenerateProps) {
   const [generateImage, setGenerateImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(initialImage || null);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (initialImage) {
+      setPreviewUrl(initialImage);
+    }
+  }, [initialImage]);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

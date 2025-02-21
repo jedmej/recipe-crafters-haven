@@ -53,6 +53,7 @@ export default function InspirePage() {
   const [cuisine, setCuisine] = useState<string>("");
   const [cookingMethod, setCookingMethod] = useState<string>("");
   const [calories, setCalories] = useState<number[]>([500]);
+  const [cookTime, setCookTime] = useState<number[]>([30]);
   const [language, setLanguage] = useState<string>("English");
   const [generateImage, setGenerateImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -80,6 +81,14 @@ export default function InspirePage() {
 
   const languages = Object.keys(LANGUAGE_CODES);
 
+  const formatCookTime = (minutes: number): string => {
+    if (minutes < 60) return `${minutes} minutes`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    if (remainingMinutes === 0) return `${hours} hour${hours > 1 ? 's' : ''}`;
+    return `${hours} hour${hours > 1 ? 's' : ''} and ${remainingMinutes} minute${remainingMinutes > 1 ? 's' : ''}`;
+  };
+
   const generateRecipe = useMutation({
     mutationFn: async () => {
       const preferences = [];
@@ -89,6 +98,7 @@ export default function InspirePage() {
       if (cuisine) preferences.push(`cuisine type: ${cuisine}`);
       if (cookingMethod) preferences.push(`cooking method: ${cookingMethod}`);
       if (calories[0]) preferences.push(`maximum calories per serving: ${calories[0]}`);
+      if (cookTime[0]) preferences.push(`maximum cook time: ${cookTime[0]} minutes`);
 
       const query = `Create a recipe with these preferences: ${preferences.join(", ")}`;
       
@@ -365,6 +375,23 @@ export default function InspirePage() {
                   max={2000}
                   min={100}
                   step={50}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-4 md:col-span-2">
+                <div className="flex justify-between">
+                  <Label>Maximum Cook Time</Label>
+                  <span className="text-sm text-muted-foreground">
+                    {formatCookTime(cookTime[0])}
+                  </span>
+                </div>
+                <Slider
+                  value={cookTime}
+                  onValueChange={setCookTime}
+                  max={180}
+                  min={5}
+                  step={5}
                   className="w-full"
                 />
               </div>

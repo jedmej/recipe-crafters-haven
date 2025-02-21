@@ -119,41 +119,149 @@ export function AIRecipeSearch() {
 
     try {
       // First, get the recipe in the selected language
-      const { data, error } = await supabase.functions.invoke('recipe-chat', {
-        body: { query, language },
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("User not authenticated");
 
-      if (error) throw error;
+      console.log('Sending request with:', { query, language });
+      
+      const MAX_RETRIES = 3;
+      const BASE_DELAY = 2000; // 2 seconds base delay
 
-      if (data.success && data.data) {
-        let recipeData = data.data;
+      const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      
+      // Calculate delay with exponential backoff and jitter
+      const getRetryDelay = (attempt: number) => {
+        const exponentialDelay = BASE_DELAY * Math.pow(2, attempt - 1);
+        const jitter = Math.random() * 1000; // Add up to 1 second of random jitter
+        return exponentialDelay + jitter;
+      };
 
-        // If image generation is enabled, get the recipe in English for image generation
-        if (generateImage && language !== 'en') {
-          const { data: englishData } = await supabase.functions.invoke('recipe-chat', {
-            body: { query, language: 'en' },
+      let lastError;
+      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+        try {
+          if (attempt > 1) {
+            const delay = getRetryDelay(attempt - 1);
+            console.log(`Attempt ${attempt} - Waiting ${(delay/1000).toFixed(1)} seconds before retry...`);
+            await sleep(delay);
+          }
+
+          const response = await supabase.functions.invoke('recipe-chat', {
+            method: 'POST',
+            body: { query, language },
           });
-          
-          if (englishData?.success && englishData?.data) {
-            const imagePrompt = `Generate a photorealistic image of ${englishData.data.title}: ${englishData.data.description}`;
-            const imageUrl = await generateRecipeImage(imagePrompt);
-            if (imageUrl) {
-              recipeData = { ...recipeData, image_url: imageUrl };
-            }
-          }
-        } else if (generateImage) {
-          // If already in English, generate image directly
-          const imagePrompt = `Generate a photorealistic image of ${recipeData.title}: ${recipeData.description}`;
-          const imageUrl = await generateRecipeImage(imagePrompt);
-          if (imageUrl) {
-            recipeData = { ...recipeData, image_url: imageUrl };
-          }
-        }
 
-        setRecipe(recipeData);
-      } else {
-        throw new Error(data.error || 'Failed to get recipe');
+          const { data, error } = response;
+
+          if (error) {
+            console.error(`Attempt ${attempt} - Function error details:`, error);
+            
+            // Check if it's a Gemini overload error
+            const errorMessage = error.message || '';
+            if (errorMessage.includes('503 Service Unavailable') && 
+                errorMessage.includes('model is overloaded')) {
+              if (attempt < MAX_RETRIES) {
+                console.log(`Attempt ${attempt} - Gemini API overloaded, will retry with exponential backoff`);
+                continue;
+              }
+              throw new Error('The AI service is currently experiencing high traffic. Please try again in a few moments.');
+            }
+
+            // For other errors, try to get more details
+            if (error instanceof Error) {
+              const errorObj = error as any;
+              console.error('Full error object:', {
+                name: errorObj.name,
+                message: errorObj.message,
+                context: errorObj.context,
+                stack: errorObj.stack,
+              });
+              
+              if (errorObj.context?.response) {
+                try {
+                  const errorResponse = await errorObj.context.response.json();
+                  console.error('Error response body:', errorResponse);
+                  
+                  // Extract the actual error message from the Edge Function response
+                  const edgeFunctionError = errorResponse.error || errorResponse.message;
+                  if (edgeFunctionError) {
+                    console.error('Edge Function error:', edgeFunctionError);
+                    throw new Error(edgeFunctionError);
+                  }
+                  
+                  throw new Error(errorResponse.message || errorResponse.error || 'Edge Function error');
+                } catch (parseError) {
+                  console.error('Error parsing response:', parseError);
+                  console.error('Raw response:', errorObj.context?.response);
+                }
+              }
+            }
+            lastError = error;
+            if (attempt < MAX_RETRIES) {
+              await sleep(getRetryDelay(attempt));
+              continue;
+            }
+            throw error;
+          }
+
+          console.log('Received response:', data);
+
+          if (data?.success && data?.data) {
+            let recipeData = data.data;
+
+            // If image generation is enabled, get the recipe in English for image generation
+            if (generateImage && language !== 'en') {
+              // Add retry logic for the English translation request as well
+              for (let translationAttempt = 1; translationAttempt <= MAX_RETRIES; translationAttempt++) {
+                try {
+                  const { data: englishData } = await supabase.functions.invoke('recipe-chat', {
+                    method: 'POST',
+                    body: { query, language: 'en' },
+                  });
+                  
+                  if (englishData?.success && englishData?.data) {
+                    const imagePrompt = `Generate a photorealistic image of ${englishData.data.title}: ${englishData.data.description}`;
+                    const imageUrl = await generateRecipeImage(imagePrompt);
+                    if (imageUrl) {
+                      recipeData = { ...recipeData, image_url: imageUrl };
+                    }
+                    break;
+                  }
+                } catch (translationError) {
+                  if (translationAttempt === MAX_RETRIES) throw translationError;
+                  await sleep(getRetryDelay(translationAttempt));
+                }
+              }
+            } else if (generateImage) {
+              const imagePrompt = `Generate a photorealistic image of ${recipeData.title}: ${recipeData.description}`;
+              const imageUrl = await generateRecipeImage(imagePrompt);
+              if (imageUrl) {
+                recipeData = { ...recipeData, image_url: imageUrl };
+              }
+            }
+
+            setRecipe(recipeData);
+            return; // Success! Exit the retry loop
+          } else {
+            throw new Error(data?.error || 'Failed to get recipe');
+          }
+        } catch (error) {
+          lastError = error;
+          if (attempt === MAX_RETRIES) break;
+          await sleep(getRetryDelay(attempt));
+        }
       }
+
+      // If we get here, all retries failed
+      console.error('All retry attempts failed. Last error:', lastError);
+      toast({
+        title: 'Error',
+        description: lastError instanceof Error ? 
+          (lastError.message.includes('model is overloaded') ? 
+            'The AI service is currently busy. Please try again in a few moments.' : 
+            lastError.message) : 
+          'Failed to search for recipe',
+        variant: 'destructive',
+      });
     } catch (error) {
       console.error('Search error:', error);
       toast({

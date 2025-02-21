@@ -49,7 +49,9 @@ export default defineConfig({
           }
         ]
       },
+      strategies: 'generateSW',
       workbox: {
+        globDirectory: 'dist',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
         runtimeCaching: [
           {

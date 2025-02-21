@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { GoogleGenerativeAI } from 'npm:@google/generative-ai@0.1.3';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from 'npm:@google/generative-ai@0.22.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -48,14 +48,35 @@ serve(async (req) => {
       throw new Error('AI service configuration error: Missing API key');
     }
 
+    // Initialize the Gemini client with proper configuration
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-      model: 'gemini-pro',
+    
+    // Configure the model with safety settings and generation config
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+      ],
       generationConfig: {
         temperature: 0.7,
-        topK: 1,
-        topP: 1,
-        maxOutputTokens: 2048,
+        topK: 40,
+        topP: 0.95,
+        maxOutputTokens: 1024,
       },
     });
 
@@ -74,13 +95,24 @@ serve(async (req) => {
       "portion_description": "Portion size description in ${SUPPORTED_LANGUAGES[language]}"
     }
 
-    Ensure all text fields are descriptive and clear, written in ${SUPPORTED_LANGUAGES[language]}. All numbers must be integers.`;
-
-    const result = await model.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
+    Important:
+    1. Return ONLY the JSON object, no other text or explanations
+    2. All numbers must be integers
+    3. All text must be in ${SUPPORTED_LANGUAGES[language]}
+    4. Follow the exact structure shown above
+    5. Make sure all fields are present and properly formatted`;
 
     try {
+      console.log('Sending request to Gemini...');
+      const result = await model.generateContent(prompt);
+      
+      if (!result.response) {
+        throw new Error('Empty response from Gemini');
+      }
+
+      const text = result.response.text();
+      console.log('Raw response text:', text);
+
       // Extract JSON from the response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
@@ -117,16 +149,33 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+
     } catch (error) {
-      console.error('Failed to process recipe data:', error);
+      console.error('Gemini API error:', error);
+      
+      // Check if it's a rate limit or overload error
+      if (error.message?.includes('503') || error.message?.includes('overloaded')) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'The AI service is currently busy. Please try again in a few moments.',
+            retryable: true
+          }),
+          { 
+            status: 503,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+
       return new Response(
         JSON.stringify({
           success: false,
-          error: `Failed to process recipe: ${error.message}`,
-          raw_response: text
+          error: error.message,
+          details: error instanceof Error ? error.stack : 'Unknown error'
         }),
         { 
-          status: 400,
+          status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
@@ -136,7 +185,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message
+        error: error.message,
+        details: error instanceof Error ? error.stack : 'Unknown error'
       }),
       { 
         status: 500,
@@ -144,4 +194,4 @@ serve(async (req) => {
       }
     );
   }
-}); 
+});

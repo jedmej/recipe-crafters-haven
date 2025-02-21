@@ -2,7 +2,6 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Edit, Trash } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { MeasurementSystem } from "@/lib/types";
@@ -11,8 +10,6 @@ interface RecipeActionsProps {
   recipeId: string;
   isDeleting: boolean;
   handleDelete: () => Promise<void>;
-  desiredServings: number | '';
-  handleServingsChange: (value: string) => void;
   measurementSystem: MeasurementSystem;
   toggleMeasurementSystem: () => void;
 }
@@ -21,39 +18,22 @@ export function RecipeActions({
   recipeId,
   isDeleting,
   handleDelete,
-  desiredServings,
-  handleServingsChange,
   measurementSystem,
   toggleMeasurementSystem
 }: RecipeActionsProps) {
   return (
     <div className="flex flex-col space-y-4 p-4">
       {/* Recipe Controls Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="servings" className="text-base font-medium">
-            Servings:
-          </Label>
-          <Input
-            id="servings"
-            type="number"
-            min="1"
-            value={desiredServings}
-            onChange={(e) => handleServingsChange(e.target.value)}
-            className="w-28 h-10 text-right text-lg"
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <Label htmlFor="measurement" className="text-base font-medium">
-            Imperial:
-          </Label>
-          <Switch
-            id="measurement"
-            checked={measurementSystem === 'imperial'}
-            onCheckedChange={toggleMeasurementSystem}
-            className="data-[state=checked]:bg-primary"
-          />
-        </div>
+      <div className="flex items-center justify-between">
+        <Label htmlFor="measurement" className="text-base font-medium">
+          Imperial:
+        </Label>
+        <Switch
+          id="measurement"
+          checked={measurementSystem === 'imperial'}
+          onCheckedChange={toggleMeasurementSystem}
+          className="data-[state=checked]:bg-primary"
+        />
       </div>
 
       {/* Action Buttons Section */}

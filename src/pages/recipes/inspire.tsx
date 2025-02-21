@@ -473,6 +473,10 @@ export default function InspirePage() {
                         <p className="text-sm text-gray-500">Calories</p>
                         <p className="text-lg font-semibold">{generatedRecipe.estimated_calories} kcal</p>
                       </div>
+                      <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
+                        <p className="text-sm text-gray-500">Portions</p>
+                        <p className="text-lg font-semibold">{generatedRecipe.suggested_portions} {generatedRecipe.portion_description}</p>
+                      </div>
                     </div>
                   </div>
                 </Card>

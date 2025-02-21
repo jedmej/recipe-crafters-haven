@@ -91,12 +91,11 @@ export default function RecipeDetailPage() {
                   )}
 
                   {!recipe.image_url && (
-                    <div className="h-[500px]">
+                    <div className="h-[200px] flex items-center justify-center rounded-xl overflow-hidden bg-gray-50">
                       <ImageUploadOrGenerate
                         onImageSelected={(url) => updateRecipeImage.mutate(url)}
                         title={recipe.title}
                         disabled={isGeneratingImage}
-                        toggleMode={true}
                       />
                     </div>
                   )}
@@ -112,8 +111,6 @@ export default function RecipeDetailPage() {
                   recipeId={recipe.id}
                   isDeleting={isDeleting}
                   handleDelete={handleDelete}
-                  desiredServings={desiredServings}
-                  handleServingsChange={handleServingsChange}
                   measurementSystem={measurementSystem}
                   toggleMeasurementSystem={toggleMeasurementSystem}
                 />
@@ -140,6 +137,17 @@ export default function RecipeDetailPage() {
                       {Math.round(calculateCaloriesPerServing(recipe.estimated_calories, recipe.servings) * scaleFactor)} kcal
                     </p>
                   </div>
+                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-500">Servings</p>
+                    <p className="text-lg font-semibold">
+                      {recipe.servings} {recipe.portion_description}
+                    </p>
+                    {recipe.suggested_portions !== recipe.servings && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        (Suggested: {recipe.suggested_portions})
+                      </p>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -157,6 +165,7 @@ export default function RecipeDetailPage() {
                   handleServingsChange={handleServingsChange}
                   toggleMeasurementSystem={toggleMeasurementSystem}
                   addToGroceryList={addToGroceryList}
+                  recipe={recipe}
                 />
               </CardContent>
             </Card>

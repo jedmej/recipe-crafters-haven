@@ -100,7 +100,13 @@ serve(async (req) => {
     2. All numbers must be integers
     3. All text must be in ${SUPPORTED_LANGUAGES[language]}
     4. Follow the exact structure shown above
-    5. Make sure all fields are present and properly formatted`;
+    5. Make sure all fields are present and properly formatted
+    6. For portion suggestions, analyze the dish type and provide realistic portions:
+       - Single-serve items (toast, sandwich): typically 1-2 portions
+       - Family meals (casseroles, lasagna): typically 6-8 portions
+       - Baked goods (cookies, muffins): typically 12-24 portions
+       - Pizza: typically 6-8 slices
+    7. The portion_description should clearly describe what a portion means (e.g., "slices" for pizza, "cookies" for cookie recipes, "servings" for casseroles)`;
 
     try {
       console.log('Sending request to Gemini...');

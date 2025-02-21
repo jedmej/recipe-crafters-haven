@@ -130,6 +130,9 @@ export function RecipeDisplay({
                     />
                     <span className="text-sm text-muted-foreground">
                       {recipe.portion_description}
+                      {recipe.suggested_portions && (
+                        <span className="ml-1">(Suggested: {recipe.suggested_portions} {recipe.portion_description})</span>
+                      )}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">

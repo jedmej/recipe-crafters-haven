@@ -14,6 +14,7 @@ interface RecipeHeaderProps {
   onDelete: () => void;
   onCreateGroceryList: () => void;
   isDeleting: boolean;
+  recipe: any;
 }
 
 export function RecipeHeader({
@@ -26,7 +27,8 @@ export function RecipeHeader({
   onEdit,
   onDelete,
   onCreateGroceryList,
-  isDeleting
+  isDeleting,
+  recipe
 }: RecipeHeaderProps) {
   return (
     <div className="flex flex-row items-center justify-between">
@@ -44,7 +46,10 @@ export function RecipeHeader({
             />
           </div>
           <span className="text-sm text-muted-foreground">
-            (Original: {originalServings})
+            (Original: {originalServings} {recipe.portion_description})
+            {recipe.suggested_portions && (
+              <span className="ml-2">(Suggested: {recipe.suggested_portions} {recipe.portion_description})</span>
+            )}
           </span>
         </div>
       </div>

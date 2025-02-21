@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Clock, Timer, Flame } from "lucide-react";
+import { ArrowLeft, Loader2, Clock, Timer, Flame, ListPlus } from "lucide-react";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeIngredients } from './RecipeIngredients';
 import { RecipeActions } from './RecipeActions';
@@ -81,7 +81,7 @@ export default function RecipeDetailPage() {
                   </div>
                   
                   {recipe.image_url && (
-                    <div className="relative w-full aspect-video rounded-xl overflow-hidden">
+                    <div className="relative w-full h-[500px] rounded-xl overflow-hidden">
                       <img
                         src={recipe.image_url}
                         alt={recipe.title}
@@ -91,12 +91,14 @@ export default function RecipeDetailPage() {
                   )}
 
                   {!recipe.image_url && (
-                    <ImageUploadOrGenerate
-                      onImageSelected={(url) => updateRecipeImage.mutate(url)}
-                      title={recipe.title}
-                      disabled={isGeneratingImage}
-                      toggleMode={true}
-                    />
+                    <div className="h-[500px]">
+                      <ImageUploadOrGenerate
+                        onImageSelected={(url) => updateRecipeImage.mutate(url)}
+                        title={recipe.title}
+                        disabled={isGeneratingImage}
+                        toggleMode={true}
+                      />
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -147,14 +149,15 @@ export default function RecipeDetailPage() {
             <Card className="h-full">
               <CardContent className="p-6 lg:p-8">
                 <h3 className="text-2xl font-semibold mb-6">Ingredients</h3>
-                <ul className="list-none space-y-4">
-                  {recipe.ingredients.map((ingredient, index) => (
-                    <li key={index} className="flex items-center gap-4 text-lg">
-                      <span className="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0" />
-                      <span className="text-gray-700">{ingredient}</span>
-                    </li>
-                  ))}
-                </ul>
+                <RecipeIngredients
+                  ingredients={recipe.ingredients}
+                  scaleFactor={scaleFactor}
+                  measurementSystem={measurementSystem}
+                  desiredServings={desiredServings}
+                  handleServingsChange={handleServingsChange}
+                  toggleMeasurementSystem={toggleMeasurementSystem}
+                  addToGroceryList={addToGroceryList}
+                />
               </CardContent>
             </Card>
           </div>
@@ -163,13 +166,16 @@ export default function RecipeDetailPage() {
             <Card className="h-full">
               <CardContent className="p-6 lg:p-8">
                 <h3 className="text-2xl font-semibold mb-6">Instructions</h3>
-                <ol className="list-decimal space-y-6 ml-4">
+                <div className="space-y-4">
                   {recipe.instructions.map((instruction, index) => (
-                    <li key={index} className="text-lg text-gray-700 pl-2">
-                      <span className="block">{instruction}</span>
-                    </li>
+                    <div key={index} className="flex items-start gap-4 text-lg text-gray-700">
+                      <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-medium">
+                        {index + 1}
+                      </span>
+                      <span>{instruction}</span>
+                    </div>
                   ))}
-                </ol>
+                </div>
               </CardContent>
             </Card>
           </div>

@@ -57,25 +57,25 @@ export function RecipeActions({
       </div>
 
       {/* Action Buttons Section */}
-      <div className="flex flex-col gap-2 pt-2">
+      <div className="flex gap-2 pt-2">
         <Button
           variant="outline"
-          className="w-full h-12 text-base font-medium"
+          className="flex-1 h-12 text-base font-medium"
           asChild
         >
           <Link to={`/recipes/${recipeId}/edit`} className="flex items-center justify-center">
             <Edit className="h-5 w-5 mr-2" />
-            Edit Recipe
+            Edit
           </Link>
         </Button>
         <Button
           variant="destructive"
           onClick={handleDelete}
           disabled={isDeleting}
-          className="w-full h-12 text-base font-medium"
+          className="flex-1 h-12 text-base font-medium"
         >
           <Trash className="h-5 w-5 mr-2" />
-          {isDeleting ? 'Deleting...' : 'Delete Recipe'}
+          {isDeleting ? 'Deleting...' : 'Delete'}
         </Button>
       </div>
     </div>

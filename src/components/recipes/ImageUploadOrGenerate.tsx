@@ -37,8 +37,17 @@ export function ImageUploadOrGenerate({
   useEffect(() => {
     if (initialImage) {
       setPreviewUrl(initialImage);
+      setGenerateImage(false);
+      setIsGeneratingImage(false);
     }
   }, [initialImage]);
+
+  useEffect(() => {
+    return () => {
+      setGenerateImage(false);
+      setIsGeneratingImage(false);
+    };
+  }, []);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -102,7 +111,9 @@ export function ImageUploadOrGenerate({
   };
 
   const handleImageGenerated = (imageUrl: string) => {
+    if (!imageUrl) return;
     setIsGeneratingImage(false);
+    setGenerateImage(false);
     setPreviewUrl(imageUrl);
     onImageSelected(imageUrl);
   };
@@ -155,12 +166,26 @@ export function ImageUploadOrGenerate({
   };
 
   const handleGenerateClick = () => {
+    if (!title) {
+      toast({
+        title: "Error",
+        description: "Recipe title is required for image generation",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Clear existing image first
+    setPreviewUrl(null);
     setGenerateImage(true);
     setIsGeneratingImage(true);
   };
 
-  const handleImageLoad = () => {
-    setIsImageLoading(false);
+  const handleRemoveImage = () => {
+    setPreviewUrl(null);
+    setGenerateImage(false);
+    setIsGeneratingImage(false);
+    onImageSelected('');
   };
 
   return (
@@ -190,16 +215,13 @@ export function ImageUploadOrGenerate({
                 src={previewUrl}
                 alt="Preview"
                 className="w-full rounded-lg shadow-md"
-                onLoad={handleImageLoad}
+                onLoad={() => setIsImageLoading(false)}
               />
               <Button
                 variant="outline"
                 size="sm"
                 className="absolute top-2 right-2"
-                onClick={() => {
-                  setPreviewUrl(null);
-                  setGenerateImage(false);
-                }}
+                onClick={handleRemoveImage}
                 type="button"
               >
                 <Trash className="h-4 w-4" />
@@ -218,7 +240,7 @@ export function ImageUploadOrGenerate({
             </div>
           ) : (
             <>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <Button
                   variant="outline"
                   size="sm"
@@ -228,7 +250,7 @@ export function ImageUploadOrGenerate({
                   className="w-full sm:w-auto"
                 >
                   <ImageIcon className="mr-2 h-4 w-4" />
-                  {hasExistingImage || previewUrl ? 'Regenerate' : 'Generate'}
+                  {previewUrl ? 'Regenerate Image' : 'Generate Image'}
                 </Button>
 
                 <div className="flex gap-2 w-full sm:w-auto">
@@ -305,7 +327,7 @@ export function ImageUploadOrGenerate({
         </>
       )}
 
-      {generateImage && !previewUrl && (
+      {generateImage && title && !isImageLoading && !isUploading && (
         <ImageGenerator
           prompt={title}
           onImageGenerated={handleImageGenerated}

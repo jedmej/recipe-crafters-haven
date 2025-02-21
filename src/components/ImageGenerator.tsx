@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { fal } from "@fal-ai/client";
+import { useImageGeneration } from '@/features/recipes/hooks/useImageGeneration';
 
 // Update interface to match the actual API response structure from the documentation
 interface RecraftResponse {
@@ -26,11 +26,6 @@ interface ImageGeneratorProps {
   embedded?: boolean;
 }
 
-// Configure FAL client
-fal.config({
-  credentials: import.meta.env.VITE_FAL_API_KEY
-});
-
 const ImageGenerator: React.FC<ImageGeneratorProps> = ({ 
   prompt: initialPrompt, 
   onImageGenerated,
@@ -38,12 +33,14 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
 }) => {
   const [promptText, setPromptText] = useState('');
   const [generatedImage, setGeneratedImage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasGenerated, setHasGenerated] = useState(false);
+  const generationStartedRef = useRef(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { generateImage, isLoading } = useImageGeneration();
 
-  const generateImage = useCallback(async (promptToUse = promptText) => {
+  const handleGenerateImage = useCallback(async (promptToUse = promptText) => {
     if (!promptToUse.trim()) {
       toast({
         title: "Error",
@@ -53,76 +50,36 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
       return;
     }
 
-    setIsLoading(true);
+    if (hasGenerated || generationStartedRef.current) {
+      return; // Prevent multiple generations
+    }
+
+    generationStartedRef.current = true;
     setError('');
     setGeneratedImage('');
 
-    try {
-      const result = await fal.subscribe('fal-ai/recraft-20b', {
-        input: {
-          prompt: `high quality professional food photography of ${promptToUse.trim()}, appetizing, masterful plating, studio lighting, 8k, professional lighting, bokeh, depth of field, food magazine style`,
-          image_size: "square_hd",
-          style: "realistic_image"
-        },
-        pollInterval: 500,
-        logs: true,
-        onQueueUpdate: (update) => {
-          if (update.status === "IN_PROGRESS") {
-            const latestMessage = update.logs[update.logs.length - 1]?.message;
-            if (latestMessage) {
-              toast({
-                title: 'Processing',
-                description: latestMessage,
-                duration: 2000,
-              });
-            }
-          }
-        }
-      });
-
-      console.log('API Response:', result);
-
-      // According to the API docs, the response contains an array of File objects
-      if (!result.data?.images?.[0]) {
-        throw new Error('No image generated');
-      }
-
-      const imageData = result.data.images[0];
-      
-      // The API returns a File object with a url property
-      if (!imageData.url) {
-        throw new Error('No image URL in response');
-      }
-
-      setGeneratedImage(imageData.url);
-      
-      toast({
-        title: "Success",
-        description: "Image generated successfully",
-      });
-
+    const imageUrl = await generateImage(promptToUse);
+    
+    if (imageUrl) {
+      setGeneratedImage(imageUrl);
+      setHasGenerated(true);
       if (onImageGenerated) {
-        onImageGenerated(imageData.url);
+        onImageGenerated(imageUrl);
       }
-    } catch (err) {
-      console.error('Generation error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate image');
-      toast({
-        title: "Error",
-        description: "Failed to generate image",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
     }
-  }, [promptText, toast, onImageGenerated]);
+    generationStartedRef.current = false;
+  }, [promptText, generateImage, toast, onImageGenerated, hasGenerated]);
 
   useEffect(() => {
-    if (initialPrompt) {
+    if (initialPrompt && !hasGenerated && !generationStartedRef.current) {
       setPromptText(initialPrompt);
-      generateImage(initialPrompt);
+      handleGenerateImage(initialPrompt);
     }
-  }, [initialPrompt, generateImage]);
+
+    return () => {
+      generationStartedRef.current = false;
+    };
+  }, [initialPrompt, handleGenerateImage, hasGenerated]);
 
   if (embedded) {
     return null;
@@ -149,14 +106,14 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
             onChange={(e) => setPromptText(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !isLoading) {
-                generateImage();
+                handleGenerateImage();
               }
             }}
             disabled={isLoading}
           />
           
           <Button 
-            onClick={() => generateImage()}
+            onClick={() => handleGenerateImage()}
             disabled={isLoading || !promptText.trim()}
             className="w-full"
           >

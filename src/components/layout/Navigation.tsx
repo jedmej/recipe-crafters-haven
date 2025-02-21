@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Navigation = () => {
@@ -30,12 +30,13 @@ const Navigation = () => {
                   key={link.href}
                   to={link.href}
                   className={cn(
-                    "flex flex-col items-center gap-1 text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-2 text-sm font-medium transition-all duration-200",
                     location.pathname.startsWith(link.href)
                       ? "text-primary"
                       : "text-muted-foreground hover:text-primary"
                   )}
                 >
+                  {link.icon}
                   {link.label}
                   <span className={cn(
                     "h-0.5 bg-primary transition-all duration-200",

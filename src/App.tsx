@@ -17,6 +17,7 @@ import EditRecipePage from "./pages/recipes/edit";
 import NewRecipePage from "./pages/recipes/new";
 import ImportRecipeAIPage from "./pages/recipes/import-ai";
 import AIRecipeSearchPage from "./pages/recipes/ai-search";
+import InspirePage from "./pages/recipes/inspire";
 import GroceryListsPage from "./pages/grocery-lists";
 import GroceryListDetailPage from "./pages/grocery-lists/[id]";
 import NewGroceryListPage from "./pages/grocery-lists/new";
@@ -84,6 +85,14 @@ const App = () => (
                 element={
                   <AuthenticatedLayout>
                     <AIRecipeSearchPage />
+                  </AuthenticatedLayout>
+                }
+              />
+              <Route
+                path="/recipes/inspire"
+                element={
+                  <AuthenticatedLayout>
+                    <InspirePage />
                   </AuthenticatedLayout>
                 }
               />

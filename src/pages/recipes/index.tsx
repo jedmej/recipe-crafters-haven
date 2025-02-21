@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Plus, Loader2, Search, Bot, Trash, FileText, FileImage, Clock } from "lucide-react";
+import { Plus, Loader2, Search, Bot, Trash, FileText, FileImage, Clock, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { Input } from "@/components/ui/input";
@@ -144,6 +144,14 @@ export default function RecipesPage() {
               <Bot className="h-5 w-5" />
               <span className="hidden sm:inline">Import from URL</span>
               <span className="sm:hidden">Import</span>
+            </Button>
+            <Button 
+              onClick={() => navigate("/recipes/inspire")} 
+              variant="outline" 
+              className="flex-1 sm:flex-none gap-2 h-14 px-6 text-base rounded-xl"
+            >
+              <Sparkles className="h-5 w-5" />
+              <span>Inspire Me</span>
             </Button>
             <Button 
               onClick={() => navigate("/recipes/new")} 

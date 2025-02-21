@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { useImageGeneration } from '@/features/recipes/hooks/useImageGeneration';
+import ImageGenerator from '@/components/ImageGenerator';
 
 interface RecipeData {
   title: string;
@@ -49,7 +49,7 @@ export function AIRecipeSearch() {
   const [isLoading, setIsLoading] = useState(false);
   const [recipe, setRecipe] = useState<RecipeData | null>(null);
   const { toast } = useToast();
-  const { generateImage: generateRecipeImage, isLoading: isImageLoading } = useImageGeneration();
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -219,11 +219,8 @@ export function AIRecipeSearch() {
                   });
                   
                   if (englishData?.success && englishData?.data) {
-                    const imagePrompt = `Generate a photorealistic image of ${englishData.data.title}: ${englishData.data.description}`;
-                    const imageUrl = await generateRecipeImage(imagePrompt);
-                    if (imageUrl) {
-                      recipeData = { ...recipeData, image_url: imageUrl };
-                    }
+                    setRecipe(recipeData);
+                    setIsGeneratingImage(true);
                     break;
                   }
                 } catch (translationError) {
@@ -232,14 +229,11 @@ export function AIRecipeSearch() {
                 }
               }
             } else if (generateImage) {
-              const imagePrompt = `Generate a photorealistic image of ${recipeData.title}: ${recipeData.description}`;
-              const imageUrl = await generateRecipeImage(imagePrompt);
-              if (imageUrl) {
-                recipeData = { ...recipeData, image_url: imageUrl };
-              }
+              setRecipe(recipeData);
+              setIsGeneratingImage(true);
+            } else {
+              setRecipe(recipeData);
             }
-
-            setRecipe(recipeData);
             return; // Success! Exit the retry loop
           } else {
             throw new Error(data?.error || 'Failed to get recipe');
@@ -314,13 +308,13 @@ export function AIRecipeSearch() {
                 </Select>
                 <Button 
                   onClick={handleSearch} 
-                  disabled={isLoading || isImageLoading}
+                  disabled={isLoading || isGeneratingImage}
                   className="w-full sm:w-auto"
                 >
-                  {isLoading || isImageLoading ? (
+                  {isLoading || isGeneratingImage ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {isImageLoading ? 'Generating Image...' : 'Searching...'}
+                      {isGeneratingImage ? 'Generating Image...' : 'Searching...'}
                     </>
                   ) : (
                     'Search'
@@ -445,6 +439,17 @@ export function AIRecipeSearch() {
             </Card>
           </div>
         </div>
+      )}
+
+      {generateImage && recipe && !recipe.image_url && (
+        <ImageGenerator
+          prompt={`${recipe.title}: ${recipe.description}`}
+          embedded={true}
+          onImageGenerated={(imageUrl) => {
+            setRecipe(prev => prev ? { ...prev, image_url: imageUrl } : null);
+            setIsGeneratingImage(false);
+          }}
+        />
       )}
     </div>
   );

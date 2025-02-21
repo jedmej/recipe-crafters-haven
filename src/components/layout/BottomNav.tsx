@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { ChefHat, Plus, ShoppingCart, Search, Bot, FileText } from "lucide-react"
+import { ChefHat, Plus, ShoppingCart, Search, Bot, FileText, Sparkles } from "lucide-react"
 
 export function BottomNav() {
   const location = useLocation()
@@ -24,6 +24,11 @@ export function BottomNav() {
       label: "Import from URL",
       icon: Bot,
       onClick: () => navigate("/recipes/import-ai"),
+    },
+    {
+      label: "Inspire Me",
+      icon: Sparkles,
+      onClick: () => navigate("/recipes/inspire"),
     },
     {
       label: "Add Recipe",

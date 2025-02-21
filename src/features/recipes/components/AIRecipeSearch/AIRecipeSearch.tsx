@@ -178,41 +178,47 @@ export function AIRecipeSearch() {
           <h1 className="text-3xl font-bold text-gray-900 mb-6">AI Recipe Search</h1>
           
           <div className="flex flex-col gap-4 mb-6">
-            <div className="flex gap-2">
+            <div className="flex flex-col md:flex-row gap-3">
               <div className="flex-1">
                 <Input
                   placeholder="e.g., Find a vegan lasagna recipe"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                  className="w-full"
+                  className="w-full text-lg"
                 />
               </div>
-              <Select
-                value={language}
-                onValueChange={(value: LanguageCode) => setLanguage(value)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
-                    <SelectItem key={code} value={code}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button onClick={handleSearch} disabled={isLoading || isImageLoading}>
-                {isLoading || isImageLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {isImageLoading ? 'Generating Image...' : 'Searching...'}
-                  </>
-                ) : (
-                  'Search'
-                )}
-              </Button>
+              <div className="flex flex-col sm:flex-row md:flex-row gap-3 sm:w-auto">
+                <Select
+                  value={language}
+                  onValueChange={(value: LanguageCode) => setLanguage(value)}
+                >
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
+                      <SelectItem key={code} value={code}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button 
+                  onClick={handleSearch} 
+                  disabled={isLoading || isImageLoading}
+                  className="w-full sm:w-auto"
+                >
+                  {isLoading || isImageLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {isImageLoading ? 'Generating Image...' : 'Searching...'}
+                    </>
+                  ) : (
+                    'Search'
+                  )}
+                </Button>
+              </div>
             </div>
             <div className="flex items-center space-x-2">
               <Switch
@@ -234,10 +240,10 @@ export function AIRecipeSearch() {
           <div className="md:col-span-2 lg:col-span-8">
             <Card className="overflow-hidden h-full">
               <div className="p-6">
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div>
-                    <h2 className="text-3xl font-bold text-gray-900">{recipe.title}</h2>
-                    <p className="text-gray-600 mt-2">{recipe.description}</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">{recipe.title}</h2>
+                    <p className="text-gray-600 mt-3 break-words whitespace-pre-wrap">{recipe.description}</p>
                   </div>
                   
                   {recipe.image_url && (
@@ -302,10 +308,13 @@ export function AIRecipeSearch() {
           <div className="md:col-span-1 lg:col-span-6">
             <Card className="h-full">
               <div className="p-6">
-                <h3 className="text-xl font-semibold mb-4">Ingredients</h3>
-                <ul className="list-disc list-inside space-y-2">
+                <h3 className="text-xl font-semibold mb-6">Ingredients</h3>
+                <ul className="list-none space-y-4">
                   {recipe.ingredients.map((ingredient, index) => (
-                    <li key={index} className="text-gray-700">{ingredient}</li>
+                    <li key={index} className="flex items-center gap-4">
+                      <span className="w-1.5 h-1.5 rounded-full bg-gray-500 flex-shrink-0" />
+                      <span className="text-gray-700 break-words flex-1">{ingredient}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -315,11 +324,12 @@ export function AIRecipeSearch() {
           <div className="md:col-span-1 lg:col-span-6">
             <Card className="h-full">
               <div className="p-6">
-                <h3 className="text-xl font-semibold mb-4">Instructions</h3>
-                <ol className="list-decimal list-inside space-y-4">
+                <h3 className="text-xl font-semibold mb-6">Instructions</h3>
+                <ol className="list-none space-y-8">
                   {recipe.instructions.map((instruction, index) => (
-                    <li key={index} className="text-gray-700">
-                      <span className="ml-2">{instruction}</span>
+                    <li key={index} className="flex gap-4">
+                      <span className="text-gray-700 font-medium">{index + 1}.</span>
+                      <span className="text-gray-700 break-words whitespace-pre-wrap flex-1">{instruction}</span>
                     </li>
                   ))}
                 </ol>

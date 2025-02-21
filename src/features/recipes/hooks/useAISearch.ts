@@ -36,7 +36,7 @@ export function useAISearch() {
         throw new Error("User not authenticated");
       }
 
-      const API_URL = 'https://yorijihyeahhfprgjkvp.supabase.co/functions/v1/ai-recipe-search';
+      const API_URL = 'https://yorijihyeahhfprgjkvp.supabase.co/functions/v1/recipe-chat';
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {

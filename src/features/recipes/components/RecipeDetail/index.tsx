@@ -63,25 +63,25 @@ export default function RecipeDetailPage() {
       <div className="max-w-7xl mx-auto">
         <Button
           variant="ghost"
-          className="mb-6"
+          className="mb-8"
           onClick={() => window.history.back()}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back
         </Button>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
-          <div className="md:col-span-2 lg:col-span-8">
-            <Card className="overflow-hidden h-full">
-              <CardContent className="p-6">
-                <div className="space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          <div className="lg:col-span-8">
+            <Card className="overflow-hidden">
+              <CardContent className="p-6 lg:p-8">
+                <div className="space-y-6">
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">{recipe.title}</h1>
-                    <p className="text-gray-600 mt-2">{recipe.description}</p>
+                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">{recipe.title}</h1>
+                    <p className="text-gray-600 mt-4 text-lg">{recipe.description}</p>
                   </div>
                   
                   {recipe.image_url && (
-                    <div className="relative w-full aspect-video rounded-lg overflow-hidden">
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden">
                       <img
                         src={recipe.image_url}
                         alt={recipe.title}
@@ -103,7 +103,7 @@ export default function RecipeDetailPage() {
             </Card>
           </div>
 
-          <div className="md:col-span-2 lg:col-span-4 flex flex-col gap-6">
+          <div className="lg:col-span-4 flex flex-col gap-6">
             <Card>
               <CardContent className="p-6">
                 <RecipeActions
@@ -118,7 +118,7 @@ export default function RecipeDetailPage() {
               </CardContent>
             </Card>
 
-            <Card className="flex-1">
+            <Card>
               <CardContent className="p-6">
                 <div className="grid grid-cols-3 lg:grid-cols-1 gap-4">
                   <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
@@ -143,25 +143,29 @@ export default function RecipeDetailPage() {
             </Card>
           </div>
 
-          <div className="md:col-span-1 lg:col-span-6">
-            <RecipeIngredients
-              ingredients={recipe.ingredients}
-              scaleFactor={scaleFactor}
-              measurementSystem={measurementSystem}
-              desiredServings={desiredServings}
-              handleServingsChange={handleServingsChange}
-              toggleMeasurementSystem={toggleMeasurementSystem}
-              addToGroceryList={addToGroceryList}
-            />
+          <div className="lg:col-span-6">
+            <Card className="h-full">
+              <CardContent className="p-6 lg:p-8">
+                <h3 className="text-2xl font-semibold mb-6">Ingredients</h3>
+                <ul className="list-none space-y-4">
+                  {recipe.ingredients.map((ingredient, index) => (
+                    <li key={index} className="flex items-center gap-4 text-lg">
+                      <span className="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0" />
+                      <span className="text-gray-700">{ingredient}</span>
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="md:col-span-1 lg:col-span-6">
+          <div className="lg:col-span-6">
             <Card className="h-full">
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold mb-4">Instructions</h3>
-                <ol className="list-decimal space-y-4">
+              <CardContent className="p-6 lg:p-8">
+                <h3 className="text-2xl font-semibold mb-6">Instructions</h3>
+                <ol className="list-decimal space-y-6 ml-4">
                   {recipe.instructions.map((instruction, index) => (
-                    <li key={index} className="text-gray-700 ml-4 pl-2">
+                    <li key={index} className="text-lg text-gray-700 pl-2">
                       <span className="block">{instruction}</span>
                     </li>
                   ))}

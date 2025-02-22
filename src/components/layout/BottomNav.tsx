@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { ChefHat, Plus, ShoppingCart, Search, Bot, FileText, Sparkles } from "lucide-react"
+import { ChefHat, Plus, X, ShoppingCart, Search, Bot, FileText, Sparkles } from "lucide-react"
 
 export function BottomNav() {
   const location = useLocation()
@@ -39,7 +39,7 @@ export function BottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-      <div className="bg-background/80 backdrop-blur-lg border-t">
+      <div className="bg-background/80 backdrop-blur-lg border-t pb-6">
         <div className="flex items-center justify-around h-16 px-4 max-w-screen-xl mx-auto">
           <Link
             to="/recipes"
@@ -57,35 +57,48 @@ export function BottomNav() {
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
               <Button
-                variant="outline"
+                variant="default"
                 size="icon"
                 className={cn(
-                  "h-14 w-14 rounded-full border-2",
-                  open && "bg-accent text-accent-foreground border-primary"
+                  "h-14 w-14 rounded-full border-2 bg-[#0C111D] text-white border-primary hover:bg-[#0C111D] hover:text-white hover:opacity-100 relative",
+                  open && "bg-[#0C111D] text-white border-primary"
                 )}
               >
-                <Plus className="h-6 w-6" />
-                <span className="sr-only">Add</span>
+                <div className="relative w-6 h-6">
+                  <X 
+                    className={cn(
+                      "h-6 w-6 text-[#fff] absolute top-0 left-0 transition-all duration-300 ease-in-out",
+                      open ? "opacity-100 rotate-0" : "opacity-0 rotate-90"
+                    )} 
+                  />
+                  <Plus 
+                    className={cn(
+                      "h-6 w-6 text-[#fff] absolute top-0 left-0 transition-all duration-300 ease-in-out",
+                      open ? "opacity-0 -rotate-90" : "opacity-100 rotate-0"
+                    )} 
+                  />
+                </div>
+                <span className="sr-only">{open ? 'Close menu' : 'Add'}</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent 
-              className="w-screen max-w-[280px] p-2" 
+              className="w-screen max-w-[280px] p-4 rounded-3xl bg-background/80 backdrop-blur-lg border shadow-lg" 
               align="center"
               side="top"
               sideOffset={16}
             >
-              <div className="grid gap-2">
+              <div className="grid divide-y divide-[#000]/5">
                 {addMenuItems.map((item) => (
                   <Button
                     key={item.label}
                     variant="ghost"
-                    className="w-full justify-start gap-2"
+                    className="w-full flex items-center justify-center gap-3 py-8 px-4 text-lg hover:bg-transparent first:pt-4 last:pb-4"
                     onClick={() => {
                       item.onClick()
                       setOpen(false)
                     }}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className="h-6 w-6" />
                     {item.label}
                   </Button>
                 ))}

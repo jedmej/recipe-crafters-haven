@@ -18,10 +18,10 @@ interface RecipeData {
   portion_description: string;
   categories: {
     meal_type: string;
-    dietary_restrictions: string;
+    dietary_restrictions: string[];
     difficulty_level: string;
     cuisine_type: string;
-    cooking_method: string;
+    cooking_method: string[];
   };
 }
 
@@ -33,6 +33,51 @@ const SUPPORTED_LANGUAGES = {
   'de': 'German',
   'it': 'Italian'
 };
+
+function validateAndCleanRecipeData(data: any): RecipeData {
+  // Helper function to ensure number fields
+  const ensureNumber = (value: any, defaultValue: number): number => {
+    if (typeof value === 'number') return value;
+    const num = parseInt(value);
+    return isNaN(num) ? defaultValue : num;
+  };
+
+  // Helper function to ensure array fields
+  const ensureArray = (value: any, defaultValue: string[]): string[] => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') return [value];
+    return defaultValue;
+  };
+
+  // Helper function to ensure string fields
+  const ensureString = (value: any, defaultValue: string): string => {
+    if (typeof value === 'string' && value.trim()) return value.trim();
+    if (value && typeof value.toString === 'function') return value.toString().trim();
+    return defaultValue;
+  };
+
+  // Clean and validate the data
+  const cleanedData: RecipeData = {
+    title: ensureString(data.title, 'Untitled Recipe'),
+    description: ensureString(data.description, ''),
+    ingredients: ensureArray(data.ingredients, []),
+    instructions: ensureArray(data.instructions, []),
+    prep_time: ensureNumber(data.prep_time, 0),
+    cook_time: ensureNumber(data.cook_time, 0),
+    estimated_calories: ensureNumber(data.estimated_calories, 0),
+    suggested_portions: ensureNumber(data.suggested_portions, 1),
+    portion_description: ensureString(data.portion_description, 'serving'),
+    categories: {
+      meal_type: ensureString(data.categories?.meal_type, 'other'),
+      dietary_restrictions: ensureArray(data.categories?.dietary_restrictions, ['none']),
+      difficulty_level: ensureString(data.categories?.difficulty_level, 'intermediate'),
+      cuisine_type: ensureString(data.categories?.cuisine_type, 'other'),
+      cooking_method: ensureArray(data.categories?.cooking_method, ['other'])
+    }
+  };
+
+  return cleanedData;
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -102,10 +147,10 @@ serve(async (req) => {
       "portion_description": "Portion size description in ${SUPPORTED_LANGUAGES[language]}",
       "categories": {
         "meal_type": "One of: breakfast, lunch, dinner, snack, dessert",
-        "dietary_restrictions": "One of: vegetarian, vegan, gluten-free, low-carb, dairy-free, none",
+        "dietary_restrictions": ["Array of applicable options: vegetarian, vegan, gluten-free, low-carb, dairy-free, none"],
         "difficulty_level": "One of: easy, intermediate, advanced",
         "cuisine_type": "One of: Italian, Mexican, Asian, Mediterranean, French, American, Indian, etc.",
-        "cooking_method": "One of: baked, grilled, fried, slow-cooked, steamed, raw"
+        "cooking_method": ["Array of applicable options: baked, grilled, fried, slow-cooked, steamed, raw"]
       }
     }
 
@@ -115,13 +160,14 @@ serve(async (req) => {
     3. All text must be in ${SUPPORTED_LANGUAGES[language]}
     4. Follow the exact structure shown above
     5. Make sure all fields are present and properly formatted
-    6. ALL five category fields must be filled with appropriate values
-    7. For portion suggestions, analyze the dish type and provide realistic portions:
+    6. ALL category fields must be filled with appropriate values
+    7. For dietary_restrictions and cooking_method, you can include multiple relevant tags as an array
+    8. For portion suggestions, analyze the dish type and provide realistic portions:
        - Single-serve items (toast, sandwich): typically 1-2 portions
        - Family meals (casseroles, lasagna): typically 6-8 portions
        - Baked goods (cookies, muffins): typically 12-24 portions
        - Pizza: typically 6-8 slices
-    8. The portion_description should clearly describe what a portion means (e.g., "slices" for pizza, "cookies" for cookie recipes, "servings" for casseroles)`;
+    9. The portion_description should clearly describe what a portion means (e.g., "slices" for pizza, "cookies" for cookie recipes, "servings" for casseroles)`;
 
     try {
       console.log('Sending request to Gemini...');
@@ -140,41 +186,20 @@ serve(async (req) => {
         throw new Error('No valid JSON found in response');
       }
 
-      const recipeData = JSON.parse(jsonMatch[0]) as RecipeData;
-
-      // Validate the recipe data
-      const requiredFields: (keyof RecipeData)[] = [
-        'title', 'description', 'ingredients', 'instructions',
-        'prep_time', 'cook_time', 'estimated_calories',
-        'suggested_portions', 'portion_description', 'categories'
-      ];
-
-      for (const field of requiredFields) {
-        if (!recipeData[field]) {
-          throw new Error(`Missing required field: ${field}`);
-        }
+      let recipeData;
+      try {
+        const parsedData = JSON.parse(jsonMatch[0]);
+        recipeData = validateAndCleanRecipeData(parsedData);
+      } catch (parseError) {
+        console.error('Error parsing or validating recipe data:', parseError);
+        throw new Error('Failed to parse recipe data from AI response');
       }
-
-      // Validate categories
-      const requiredCategories = ['meal_type', 'dietary_restrictions', 'difficulty_level', 'cuisine_type', 'cooking_method'];
-      for (const category of requiredCategories) {
-        if (!recipeData.categories[category]) {
-          throw new Error(`Missing required category: ${category}`);
-        }
-      }
-
-      // Validate data types
-      if (!Array.isArray(recipeData.ingredients)) throw new Error('ingredients must be an array');
-      if (!Array.isArray(recipeData.instructions)) throw new Error('instructions must be an array');
-      if (typeof recipeData.prep_time !== 'number') throw new Error('prep_time must be a number');
-      if (typeof recipeData.cook_time !== 'number') throw new Error('cook_time must be a number');
-      if (typeof recipeData.estimated_calories !== 'number') throw new Error('estimated_calories must be a number');
-      if (typeof recipeData.suggested_portions !== 'number') throw new Error('suggested_portions must be a number');
 
       return new Response(
         JSON.stringify({
           success: true,
           data: recipeData,
+          defaultServingSize: recipeData.suggested_portions,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

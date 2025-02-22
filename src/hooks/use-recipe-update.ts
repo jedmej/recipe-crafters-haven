@@ -31,7 +31,14 @@ export function useRecipeUpdate(recipeId: string) {
           servings: data.servings,
           source_url: data.source_url,
           language: data.language,
-          image_url: data.image_url
+          image_url: data.image_url,
+          categories: {
+            meal_type: data.categories?.meal_type || null,
+            dietary_restrictions: data.categories?.dietary_restrictions || null,
+            difficulty_level: data.categories?.difficulty_level || null,
+            cuisine_type: data.categories?.cuisine_type || null,
+            cooking_method: data.categories?.cooking_method || null
+          }
         })
         .eq('id', recipeId)
         .select()

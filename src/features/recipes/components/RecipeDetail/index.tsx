@@ -169,6 +169,13 @@ export default function RecipeDetailPage() {
                   handleDelete={handleDelete}
                   measurementSystem={measurementSystem}
                   toggleMeasurementSystem={toggleMeasurementSystem}
+                  recipe={{
+                    title: recipe.title,
+                    description: recipe.description,
+                    ingredients: recipe.ingredients,
+                    instructions: recipe.instructions,
+                    categories: recipe.categories
+                  }}
                 />
               </CardContent>
             </Card>

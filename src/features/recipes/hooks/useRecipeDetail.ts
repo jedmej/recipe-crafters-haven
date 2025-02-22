@@ -27,6 +27,8 @@ export function useRecipeDetail(id: string | undefined) {
       if (error) throw error;
       if (!data) throw new Error('Recipe not found');
       
+      setDesiredServings(data.suggested_portions);
+      
       return data as Recipe;
     },
     enabled: !!id

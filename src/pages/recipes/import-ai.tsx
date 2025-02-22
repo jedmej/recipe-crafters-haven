@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ArrowLeft, Bot, ImageIcon } from "lucide-react";
+import { Loader2, ArrowLeft, Bot, ImageIcon, Tags } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,6 +14,7 @@ import ImageGenerator from '@/components/ImageGenerator';
 import { Switch } from "@/components/ui/switch";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeData } from "@/types/recipe";
+import { Badge } from "@/components/ui/badge";
 
 export default function ImportRecipeAIPage() {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export default function ImportRecipeAIPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [recipeTitle, setRecipeTitle] = useState<string | null>(null);
   const [recipeImage, setRecipeImage] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
 
   const importRecipe = useMutation({
     mutationFn: async (data: { url: string; language: string }) => {
@@ -39,6 +41,9 @@ export default function ImportRecipeAIPage() {
       if (!recipeData) throw new Error('No recipe data returned');
 
       setRecipeTitle(recipeData.title);
+      if (recipeData.categories) {
+        setCategories(recipeData.categories);
+      }
       return await saveRecipeToDatabase(recipeData, session.user.id, data);
     },
     onSuccess: (data) => {
@@ -67,7 +72,8 @@ export default function ImportRecipeAIPage() {
         user_id: userId,
         source_url: data.url,
         language: data.language,
-        image_url: recipeImage
+        image_url: recipeImage,
+        categories: categories
       }])
       .select()
       .single();
@@ -182,6 +188,25 @@ export default function ImportRecipeAIPage() {
                 </p>
               </div>
 
+              {categories.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium leading-none flex items-center gap-2">
+                    <Tags className="h-4 w-4" />
+                    Categories
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {categories.map((category, index) => (
+                      <Badge key={index} variant="secondary">
+                        {category}
+                      </Badge>
+                    ))}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    AI-detected categories for this recipe
+                  </p>
+                </div>
+              )}
+
               <ImageUploadOrGenerate
                 onImageSelected={handleImageSelected}
                 title={recipeTitle || undefined}
@@ -190,7 +215,7 @@ export default function ImportRecipeAIPage() {
 
               <Alert variant="default" className="bg-muted">
                 <AlertDescription>
-                  Our AI will extract and translate the recipe information from the provided URL.
+                  Our AI will extract and translate the recipe information, including categories, from the provided URL.
                 </AlertDescription>
               </Alert>
 

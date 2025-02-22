@@ -103,6 +103,13 @@ export type Database = {
           suggested_portions: number | null
           title: string
           user_id: string
+          categories: {
+            meal_type: string | null
+            dietary_restrictions: string | null
+            difficulty_level: string | null
+            cuisine_type: string | null
+            cooking_method: string | null
+          }
         }
         Insert: {
           cook_time?: number | null
@@ -122,6 +129,13 @@ export type Database = {
           suggested_portions?: number | null
           title: string
           user_id: string
+          categories: {
+            meal_type: string | null
+            dietary_restrictions: string | null
+            difficulty_level: string | null
+            cuisine_type: string | null
+            cooking_method: string | null
+          }
         }
         Update: {
           cook_time?: number | null
@@ -141,6 +155,13 @@ export type Database = {
           suggested_portions?: number | null
           title?: string
           user_id?: string
+          categories: {
+            meal_type: string | null
+            dietary_restrictions: string | null
+            difficulty_level: string | null
+            cuisine_type: string | null
+            cooking_method: string | null
+          }
         }
         Relationships: [
           {

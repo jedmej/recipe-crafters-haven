@@ -15,6 +15,13 @@ export interface RecipeData {
   user_id?: string;
   created_at?: string;
   portion_description: string;
+  categories?: {
+    meal_type: string;
+    dietary_restrictions: string;
+    difficulty_level: string;
+    cuisine_type: string;
+    cooking_method: string;
+  };
 }
 
 export interface ScaledIngredient {
@@ -32,3 +39,11 @@ export const SUPPORTED_LANGUAGES = [
   { value: 'de', label: 'German' },
   { value: 'it', label: 'Italian' },
 ] as const;
+
+export const RECIPE_CATEGORIES = {
+  meal_type: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert'],
+  dietary_restrictions: ['vegetarian', 'vegan', 'gluten-free', 'low-carb', 'dairy-free', 'none'],
+  difficulty_level: ['easy', 'intermediate', 'advanced'],
+  cuisine_type: ['Italian', 'Mexican', 'Asian', 'Mediterranean', 'French', 'American', 'Indian'],
+  cooking_method: ['baked', 'grilled', 'fried', 'slow-cooked', 'steamed', 'raw']
+} as const;

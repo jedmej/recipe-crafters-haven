@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, Image as ImageIcon, Clock, Timer, Flame } from 'lucide-react';
+import { Loader2, Image as ImageIcon, Clock, Timer, Flame, Tags } from 'lucide-react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -29,6 +29,13 @@ interface RecipeData {
   suggested_portions: number;
   portion_description: string;
   image_url?: string;
+  categories: {
+    meal_type: string;
+    dietary_restrictions: string;
+    difficulty_level: string;
+    cuisine_type: string;
+    cooking_method: string;
+  };
 }
 
 const SUPPORTED_LANGUAGES = {
@@ -69,6 +76,13 @@ export function AIRecipeSearch() {
         portion_size: recipeData.suggested_portions,
         portion_description: recipeData.portion_description || `Serves ${recipeData.suggested_portions}`,
         image_url: recipeData.image_url,
+        categories: {
+          meal_type: recipeData.categories.meal_type,
+          dietary_restrictions: recipeData.categories.dietary_restrictions,
+          difficulty_level: recipeData.categories.difficulty_level,
+          cuisine_type: recipeData.categories.cuisine_type,
+          cooking_method: recipeData.categories.cooking_method
+        },
         user_id: userId,
         created_at: new Date().toISOString(),
         language: language,
@@ -346,6 +360,62 @@ export function AIRecipeSearch() {
                   <div>
                     <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 break-words">{recipe.title}</h2>
                     <p className="text-gray-600 mt-3 break-words whitespace-pre-wrap">{recipe.description}</p>
+                    
+                    {recipe.categories && (
+                      <div className="space-y-4 mt-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                              <Tags className="h-4 w-4" />
+                              Meal Type
+                            </label>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              {recipe.categories.meal_type}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                              <Tags className="h-4 w-4" />
+                              Dietary Restrictions
+                            </label>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              {recipe.categories.dietary_restrictions}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                              <Tags className="h-4 w-4" />
+                              Difficulty Level
+                            </label>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              {recipe.categories.difficulty_level}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                              <Tags className="h-4 w-4" />
+                              Cuisine Type
+                            </label>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              {recipe.categories.cuisine_type}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                              <Tags className="h-4 w-4" />
+                              Cooking Method
+                            </label>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              {recipe.categories.cooking_method}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   {recipe.image_url && (

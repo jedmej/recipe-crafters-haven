@@ -82,25 +82,30 @@ serve(async (req) => {
       "cook_time": integer (in minutes),
       "estimated_calories": integer (estimated total calories),
       "suggested_portions": integer (recommended number of portions),
-      "portion_description": string (what a portion means in ${languageName}, e.g., "slices" for pizza)
+      "portion_description": string (what a portion means in ${languageName}, e.g., "slices" for pizza),
+      "categories": {
+        "meal_type": "One of: breakfast, lunch, dinner, snack, dessert",
+        "dietary_restrictions": "One of: vegetarian, vegan, gluten-free, low-carb, dairy-free, none",
+        "difficulty_level": "One of: easy, intermediate, advanced",
+        "cuisine_type": "One of: Italian, Mexican, Asian, Mediterranean, French, American, Indian, etc.",
+        "cooking_method": "One of: baked, grilled, fried, slow-cooked, steamed, raw"
+      }
     }
 
-    Important guidelines for portions:
-    1. Analyze the dish type and suggest a realistic portion count:
-       - Single-serve items (toast, sandwich): typically 1-2 portions
-       - Family meals (casseroles, lasagna): typically 6-8 portions
-       - Baked goods (cookies, muffins): typically 12-24 portions
-       - Pizza: typically 6-8 slices
-    2. Include a clear description of what a "portion" means
-    3. Base the suggestion on common serving sizes for this type of dish
-
-    Additional rules:
-    1. Extract all measurements and quantities precisely, converting them if needed
-    2. Return ONLY the JSON object, no other text
-    3. All number fields should be integers
-    4. If any information is missing, use reasonable estimates based on similar recipes
-    5. Clean up any formatting issues in the text
-    6. Make sure all text content is properly translated into ${languageName}`;
+    Important guidelines:
+    1. Analyze the recipe content carefully to determine:
+       - Meal type based on ingredients and serving suggestions
+       - Dietary restrictions based on ingredients used
+       - Difficulty level based on number of steps and techniques required
+       - Cuisine type based on ingredients and cooking style
+       - Cooking method based on the primary cooking technique used
+    2. ALL five category fields must be filled with appropriate values
+    3. Extract all measurements and quantities precisely
+    4. Return ONLY the JSON object, no other text
+    5. All number fields should be integers
+    6. If any information is missing, use reasonable estimates based on similar recipes
+    7. Clean up any formatting issues in the text
+    8. Make sure all text content is properly translated into ${languageName}`;
 
     console.log('Sending prompt to Gemini...');
     const result = await model.generateContent(prompt);
@@ -125,13 +130,26 @@ serve(async (req) => {
       const requiredFields = [
         'title', 'description', 'ingredients', 'instructions',
         'prep_time', 'cook_time', 'estimated_calories',
-        'suggested_portions', 'portion_description'
+        'suggested_portions', 'portion_description', 'categories'
       ];
 
       for (const field of requiredFields) {
         if (!recipeData[field]) {
           throw new Error(`Missing required field: ${field}`);
         }
+      }
+
+      // Validate categories
+      const requiredCategories = ['meal_type', 'dietary_restrictions', 'difficulty_level', 'cuisine_type', 'cooking_method'];
+      for (const category of requiredCategories) {
+        if (!recipeData.categories[category]) {
+          throw new Error(`Missing required category: ${category}`);
+        }
+      }
+
+      // Ensure categories is an array with 2-4 items
+      if (!Array.isArray(recipeData.categories)) {
+        throw new Error('categories must be an object with all required fields');
       }
 
       return new Response(

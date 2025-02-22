@@ -16,6 +16,13 @@ interface RecipeData {
   estimated_calories: number;
   suggested_portions: number;
   portion_description: string;
+  categories: {
+    meal_type: string;
+    dietary_restrictions: string;
+    difficulty_level: string;
+    cuisine_type: string;
+    cooking_method: string;
+  };
 }
 
 const SUPPORTED_LANGUAGES = {
@@ -92,7 +99,14 @@ serve(async (req) => {
       "cook_time": number (in minutes),
       "estimated_calories": number (per serving),
       "suggested_portions": number,
-      "portion_description": "Portion size description in ${SUPPORTED_LANGUAGES[language]}"
+      "portion_description": "Portion size description in ${SUPPORTED_LANGUAGES[language]}",
+      "categories": {
+        "meal_type": "One of: breakfast, lunch, dinner, snack, dessert",
+        "dietary_restrictions": "One of: vegetarian, vegan, gluten-free, low-carb, dairy-free, none",
+        "difficulty_level": "One of: easy, intermediate, advanced",
+        "cuisine_type": "One of: Italian, Mexican, Asian, Mediterranean, French, American, Indian, etc.",
+        "cooking_method": "One of: baked, grilled, fried, slow-cooked, steamed, raw"
+      }
     }
 
     Important:
@@ -101,12 +115,13 @@ serve(async (req) => {
     3. All text must be in ${SUPPORTED_LANGUAGES[language]}
     4. Follow the exact structure shown above
     5. Make sure all fields are present and properly formatted
-    6. For portion suggestions, analyze the dish type and provide realistic portions:
+    6. ALL five category fields must be filled with appropriate values
+    7. For portion suggestions, analyze the dish type and provide realistic portions:
        - Single-serve items (toast, sandwich): typically 1-2 portions
        - Family meals (casseroles, lasagna): typically 6-8 portions
        - Baked goods (cookies, muffins): typically 12-24 portions
        - Pizza: typically 6-8 slices
-    7. The portion_description should clearly describe what a portion means (e.g., "slices" for pizza, "cookies" for cookie recipes, "servings" for casseroles)`;
+    8. The portion_description should clearly describe what a portion means (e.g., "slices" for pizza, "cookies" for cookie recipes, "servings" for casseroles)`;
 
     try {
       console.log('Sending request to Gemini...');
@@ -131,12 +146,20 @@ serve(async (req) => {
       const requiredFields: (keyof RecipeData)[] = [
         'title', 'description', 'ingredients', 'instructions',
         'prep_time', 'cook_time', 'estimated_calories',
-        'suggested_portions', 'portion_description'
+        'suggested_portions', 'portion_description', 'categories'
       ];
 
       for (const field of requiredFields) {
         if (!recipeData[field]) {
           throw new Error(`Missing required field: ${field}`);
+        }
+      }
+
+      // Validate categories
+      const requiredCategories = ['meal_type', 'dietary_restrictions', 'difficulty_level', 'cuisine_type', 'cooking_method'];
+      for (const category of requiredCategories) {
+        if (!recipeData.categories[category]) {
+          throw new Error(`Missing required category: ${category}`);
         }
       }
 

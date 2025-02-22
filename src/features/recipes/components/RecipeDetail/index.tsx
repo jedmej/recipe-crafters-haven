@@ -2,7 +2,7 @@ import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, Clock, Timer, Flame, ListPlus } from "lucide-react";
+import { ArrowLeft, Loader2, Clock, Timer, Flame, ListPlus, Tags } from "lucide-react";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeIngredients } from './RecipeIngredients';
 import { RecipeActions } from './RecipeActions';
@@ -78,6 +78,62 @@ export default function RecipeDetailPage() {
                   <div>
                     <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">{recipe.title}</h1>
                     <p className="text-gray-600 mt-4 text-lg">{recipe.description}</p>
+                    
+                    {recipe.categories && (
+                      <div className="space-y-4 mt-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                              <Tags className="h-4 w-4" />
+                              Meal Type
+                            </label>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              {recipe.categories.meal_type}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                              <Tags className="h-4 w-4" />
+                              Dietary Restrictions
+                            </label>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              {recipe.categories.dietary_restrictions}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                              <Tags className="h-4 w-4" />
+                              Difficulty Level
+                            </label>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              {recipe.categories.difficulty_level}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                              <Tags className="h-4 w-4" />
+                              Cuisine Type
+                            </label>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              {recipe.categories.cuisine_type}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                              <Tags className="h-4 w-4" />
+                              Cooking Method
+                            </label>
+                            <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+                              {recipe.categories.cooking_method}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   {recipe.image_url && (

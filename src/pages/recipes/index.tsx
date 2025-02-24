@@ -238,13 +238,13 @@ export default function RecipesPage() {
       </style>
       <div className="max-w-7xl mx-auto">
         {/* New Recipe Section */}
-        <div className="mb-16 p-8 bg-gray-50 rounded-3xl shadow-sm">
-          <h2 className="text-3xl font-bold text-gray-900 mb-8">New Recipe</h2>
-          <div className="flex flex-wrap gap-4 max-w-3xl">
+        <div className="mb-16 p-6 sm:p-8 bg-gray-50 rounded-3xl shadow-sm">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6 sm:mb-8">New Recipe</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 max-w-3xl">
             <Button 
               onClick={() => navigate("/recipes/ai-search")} 
               variant="outline" 
-              className="flex-1 sm:flex-none gap-2 h-14 px-6 text-base rounded-xl"
+              className="gap-2 h-14 px-4 sm:px-6 text-base rounded-xl"
             >
               <Search className="h-5 w-5" />
               <span className="hidden sm:inline">AI Search</span>
@@ -253,7 +253,7 @@ export default function RecipesPage() {
             <Button 
               onClick={() => navigate("/recipes/import-ai")} 
               variant="outline" 
-              className="flex-1 sm:flex-none gap-2 h-14 px-6 text-base rounded-xl"
+              className="gap-2 h-14 px-4 sm:px-6 text-base rounded-xl"
             >
               <Bot className="h-5 w-5" />
               <span className="hidden sm:inline">Import from URL</span>
@@ -262,14 +262,14 @@ export default function RecipesPage() {
             <Button 
               onClick={() => navigate("/recipes/inspire")} 
               variant="outline" 
-              className="flex-1 sm:flex-none gap-2 h-14 px-6 text-base rounded-xl"
+              className="gap-2 h-14 px-4 sm:px-6 text-base rounded-xl"
             >
               <Sparkles className="h-5 w-5" />
               <span>Inspire Me</span>
             </Button>
             <Button 
               onClick={() => navigate("/recipes/new")} 
-              className="flex-1 sm:flex-none gap-2 h-14 px-6 text-base rounded-xl bg-gray-900 hover:bg-gray-800"
+              className="gap-2 h-14 px-4 sm:px-6 text-base rounded-xl bg-gray-900 hover:bg-gray-800"
             >
               <Plus className="h-5 w-5" />
               <span>Add Recipe</span>
@@ -292,7 +292,7 @@ export default function RecipesPage() {
                   placeholder="Search recipes..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-5 pr-12 h-14 text-lg bg-white border-none shadow-sm rounded-2xl"
+                  className="w-full pl-5 pr-12 h-12 sm:h-14 text-base sm:text-lg bg-white border-none shadow-sm rounded-2xl"
                 />
                 <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               </div>
@@ -302,7 +302,7 @@ export default function RecipesPage() {
                 <Button
                   variant="outline"
                   className={cn(
-                    "h-14 px-6 rounded-2xl border-none shadow-sm bg-white hover:bg-gray-50",
+                    "h-12 sm:h-14 px-4 sm:px-6 rounded-2xl border-none shadow-sm bg-white hover:bg-gray-50",
                     isFiltersVisible && "bg-gray-100 hover:bg-gray-100"
                   )}
                   onClick={() => setIsFiltersVisible(!isFiltersVisible)}
@@ -321,7 +321,7 @@ export default function RecipesPage() {
                 <Button
                   variant="outline"
                   className={cn(
-                    "h-14 px-6 rounded-2xl border-none shadow-sm bg-white hover:bg-gray-50",
+                    "h-12 sm:h-14 px-4 sm:px-6 rounded-2xl border-none shadow-sm bg-white hover:bg-gray-50",
                     isSelectionMode && "bg-gray-100 hover:bg-gray-100"
                   )}
                   onClick={toggleSelectionMode}
@@ -334,7 +334,7 @@ export default function RecipesPage() {
                     <AlertDialogTrigger asChild>
                       <Button 
                         variant="destructive" 
-                        className="h-14 px-6 rounded-2xl shadow-sm"
+                        className="h-12 sm:h-14 px-4 sm:px-6 rounded-2xl shadow-sm"
                       >
                         <div className="flex items-center gap-2">
                           <Trash className="h-5 w-5" />
@@ -360,7 +360,7 @@ export default function RecipesPage() {
             </div>
 
             {/* Recipe Count */}
-            <div className="flex items-center justify-between bg-white shadow-sm rounded-2xl px-6 py-4">
+            <div className="flex items-center justify-center bg-white shadow-sm rounded-2xl px-6 py-4">
               <div className="flex items-center gap-2">
                 <span className="text-2xl font-semibold text-gray-900">
                   {filteredRecipes?.length}
@@ -598,7 +598,7 @@ export default function RecipesPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
           {filteredRecipes?.map((recipe, index) => (
             <div key={recipe.id} className="relative group">
               <Card 
@@ -614,7 +614,7 @@ export default function RecipesPage() {
                   cursor-pointer 
                   shadow-sm
                   hover:shadow-lg
-                  h-[300px] md:h-[320px]
+                  h-[280px] sm:h-[300px] md:h-[320px]
                   rounded-[24px]
                   transform-gpu
                   ${selectedRecipes.includes(recipe.id) 

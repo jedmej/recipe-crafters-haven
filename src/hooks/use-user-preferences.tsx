@@ -20,6 +20,9 @@ const defaultPreferences: UserPreferences = {
   autoGenerateImages: true,
 };
 
+// Storage key for localStorage
+const STORAGE_KEY = 'recipe_crafters_user_preferences';
+
 // Create a context for user preferences
 interface UserPreferencesContextType {
   preferences: UserPreferences;
@@ -29,9 +32,27 @@ interface UserPreferencesContextType {
 
 const UserPreferencesContext = createContext<UserPreferencesContextType | undefined>(undefined);
 
+// Helper function to check if language code is valid
+const isValidLanguage = (lang: string): lang is LanguageCode => {
+  return ['en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'ko'].includes(lang);
+};
+
 // Provider component
 export function UserPreferencesProvider({ children }: { children: ReactNode }) {
-  const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
+  // Initialize with localStorage values if available, otherwise use defaults
+  const [preferences, setPreferences] = useState<UserPreferences>(() => {
+    try {
+      const savedPrefs = localStorage.getItem(STORAGE_KEY);
+      if (savedPrefs) {
+        const parsed = JSON.parse(savedPrefs);
+        return { ...defaultPreferences, ...parsed };
+      }
+    } catch (error) {
+      console.error('Error loading preferences from localStorage:', error);
+    }
+    return defaultPreferences;
+  });
+  
   const [loading, setLoading] = useState(true);
 
   // Fetch user preferences from Supabase on initial load
@@ -73,10 +94,16 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
           }
 
           // Update preferences with values from profile
-          setPreferences(prev => ({
-            ...prev,
-            ...updatedPreferences
-          }));
+          setPreferences(prev => {
+            const newPrefs = { ...prev, ...updatedPreferences };
+            // Save to localStorage
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(newPrefs));
+            } catch (e) {
+              console.error('Error saving preferences to localStorage:', e);
+            }
+            return newPrefs;
+          });
         }
       } catch (error) {
         console.error('Error fetching user preferences:', error);
@@ -88,52 +115,63 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
     fetchUserPreferences();
   }, []);
 
-  // Helper function to check if language code is valid
-  const isValidLanguage = (lang: string): lang is LanguageCode => {
-    return ['en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'ko'].includes(lang);
-  };
-
   // Update preferences function
-  const updatePreferences = (newPreferences: Partial<UserPreferences>) => {
+  const updatePreferences = async (newPreferences: Partial<UserPreferences>) => {
     setPreferences(prev => {
       const updated = { ...prev, ...newPreferences };
+      
+      // Save to localStorage
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Error saving preferences to localStorage:', e);
+      }
+      
       return updated;
     });
+
+    // Sync with Supabase
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const updateData: Record<string, any> = {};
+        
+        // Map preferences to profile fields
+        if (newPreferences.language) {
+          updateData.language = newPreferences.language;
+        }
+        
+        if (newPreferences.unitSystem) {
+          updateData.measurement_system = newPreferences.unitSystem;
+        }
+        
+        // Only update if we have data to update
+        if (Object.keys(updateData).length > 0) {
+          const { error } = await supabase
+            .from('profiles')
+            .update(updateData)
+            .eq('id', user.id);
+            
+          if (error) {
+            console.error('Error updating profile preferences:', error);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error syncing preferences with Supabase:', error);
+    }
   };
 
+  // Apply preferences globally
   useEffect(() => {
-    // Set document language attribute based on language preference
+    // Apply language preference
     document.documentElement.lang = preferences.language;
     
-    // Always use light theme
+    // Always use light theme for now
     document.documentElement.classList.remove('dark');
     
-    // Comment out the theme-switching logic for now
-    /*
-    // Apply theme preference
-    const applyTheme = () => {
-      const theme = preferences.theme === 'system' 
-        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-        : preferences.theme;
-      
-      if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-    };
-
-    applyTheme();
-    
-    // Listen for system theme changes if set to 'system'
-    if (preferences.theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = () => applyTheme();
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-    */
-  }, [preferences.language]);
+    // More effects can be added here
+  }, [preferences]);
 
   return (
     <UserPreferencesContext.Provider value={{ preferences, updatePreferences, loading }}>

@@ -9,12 +9,6 @@ export default defineConfig({
   server: {
     host: "::",
     port: 8080,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-    },
   },
   plugins: [
     react(),
@@ -51,7 +45,7 @@ export default defineConfig({
       },
       strategies: 'generateSW',
       workbox: {
-        globDirectory: 'dist',
+        globDirectory: process.env.NODE_ENV === 'development' ? 'public' : 'dist',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
         runtimeCaching: [
           {

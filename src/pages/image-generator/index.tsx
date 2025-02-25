@@ -1,16 +1,19 @@
 import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { Loader2, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useImageGeneration } from '@/features/recipes/hooks/useImageGeneration';
 
 const GenerateImagePage = () => {
   const [prompt, setPrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { generateImage, isLoading } = useImageGeneration();
 
-  const generateImage = async () => {
+  const handleGenerateImage = async () => {
     if (!prompt) {
       toast({
         title: 'Error',
@@ -20,19 +23,10 @@ const GenerateImagePage = () => {
       return;
     }
 
-    setIsLoading(true);
     try {
-      const response = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const data = await response.json();
-      if (data.imageUrl) {
-        setGeneratedImage(data.imageUrl);
+      const imageUrl = await generateImage(prompt);
+      if (imageUrl) {
+        setGeneratedImage(imageUrl);
       } else {
         throw new Error('Failed to generate image');
       }
@@ -42,15 +36,22 @@ const GenerateImagePage = () => {
         description: 'Failed to generate image',
         variant: 'destructive'
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+    <div className="min-h-screen p-4 md:p-6 lg:p-8">
       <div className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold">Generate Recipe Image</h1>
+        <div className="flex items-center gap-4 mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="p-0 hover:bg-transparent"
+          >
+            <ArrowLeft className="h-6 w-6" />
+          </Button>
+          <h1 className="text-3xl font-bold">Generate Recipe Image</h1>
+        </div>
         
         <div className="space-y-4">
           <Input
@@ -60,7 +61,7 @@ const GenerateImagePage = () => {
           />
           
           <Button 
-            onClick={generateImage}
+            onClick={handleGenerateImage}
             disabled={isLoading}
             className="w-full"
           >

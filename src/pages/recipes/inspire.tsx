@@ -12,6 +12,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -64,6 +65,7 @@ export default function InspirePage() {
   const [language, setLanguage] = useState<string>("English");
   const [generateImage, setGenerateImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [keywords, setKeywords] = useState<string>("");
 
   const mealTypes = [
     "Breakfast", "Brunch", "Lunch", "Dinner", "Snacks", "Dessert", "Appetizer"
@@ -124,6 +126,14 @@ export default function InspirePage() {
       if (cookingMethodFilters.length > 0) preferences.push(`cooking methods: ${cookingMethodFilters.join(", ")}`);
       if (caloriesRange[0]) preferences.push(`maximum calories per serving: ${caloriesRange[0]} - ${caloriesRange[1]}`);
       if (cookTimeRange[0]) preferences.push(`maximum cook time: ${cookTimeRange[0]} - ${cookTimeRange[1]} minutes`);
+      
+      // Add keywords to preferences if provided
+      if (keywords.trim()) {
+        const keywordsList = keywords.split(',').map(kw => kw.trim()).filter(kw => kw);
+        if (keywordsList.length > 0) {
+          preferences.push(`additional preferences: ${keywordsList.join(", ")}`);
+        }
+      }
 
       const query = `Create a recipe with these preferences: ${preferences.join(", ")}. Make sure to include all applicable dietary restrictions and cooking methods in the response, not just one.`;
       
@@ -546,6 +556,22 @@ export default function InspirePage() {
                       Generate AI image for recipe
                     </Label>
                   </div>
+                </div>
+
+                {/* Keywords Input */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-500">Additional Keywords</Label>
+                  <Input
+                    type="text"
+                    className="w-full h-12 rounded-xl bg-white border-gray-200"
+                    placeholder="e.g., quick, summer, festive, low-sugar, spicy (separated by commas)"
+                    value={keywords}
+                    onChange={(e) => setKeywords(e.target.value)}
+                    disabled={isGenerating || isGeneratingImage || isSaving}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Add any specific preferences or requests not covered by the options above
+                  </p>
                 </div>
               </div>
 

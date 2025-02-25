@@ -21,7 +21,7 @@ import InspirePage from "./pages/recipes/inspire";
 import GroceryListsPage from "./pages/grocery-lists";
 import GroceryListDetailPage from "./pages/grocery-lists/[id]";
 import NewGroceryListPage from "./pages/grocery-lists/new";
-import GenerateImagePage from "./pages/generate-image";
+import GenerateImagePage from "./pages/image-generator";
 
 const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => (
   <AuthGuard>

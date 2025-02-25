@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useReducer, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -17,33 +17,65 @@ import { RecipeData } from "@/types/recipe";
 import { Badge } from "@/components/ui/badge";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 
+// Reducer for form state management
+const initialFormState = {
+  recipeUrl: "",
+  language: "",
+  recipeTitle: null as string | null,
+  recipeImage: null as string | null,
+  categories: [] as string[],
+  isImporting: false
+};
+
+type FormAction = 
+  | { type: 'SET_URL', payload: string }
+  | { type: 'SET_LANGUAGE', payload: string }
+  | { type: 'SET_IMAGE', payload: string | null }
+  | { type: 'SET_TITLE', payload: string | null }
+  | { type: 'SET_CATEGORIES', payload: string[] }
+  | { type: 'SET_IMPORTING', payload: boolean }
+  | { type: 'RESET_FORM' };
+
+function formReducer(state: typeof initialFormState, action: FormAction) {
+  switch (action.type) {
+    case 'SET_URL': return { ...state, recipeUrl: action.payload };
+    case 'SET_LANGUAGE': return { ...state, language: action.payload };
+    case 'SET_IMAGE': return { ...state, recipeImage: action.payload };
+    case 'SET_TITLE': return { ...state, recipeTitle: action.payload };
+    case 'SET_CATEGORIES': return { ...state, categories: action.payload };
+    case 'SET_IMPORTING': return { ...state, isImporting: action.payload };
+    case 'RESET_FORM': return initialFormState;
+    default: return state;
+  }
+}
+
 export default function ImportRecipeAIPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { preferences } = useUserPreferences();
-  const [recipeUrl, setRecipeUrl] = useState("");
-  const [language, setLanguage] = useState(preferences.language);
-  const [isImporting, setIsImporting] = useState(false);
-  const [recipeTitle, setRecipeTitle] = useState<string | null>(null);
-  const [recipeImage, setRecipeImage] = useState<string | null>(null);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [formState, dispatch] = useReducer(formReducer, {
+    ...initialFormState,
+    language: preferences.language
+  });
+  
+  const { recipeUrl, language, recipeTitle, recipeImage, categories, isImporting } = formState;
 
   // Update language when user preferences change
   useEffect(() => {
-    setLanguage(preferences.language);
+    dispatch({ type: 'SET_LANGUAGE', payload: preferences.language });
   }, [preferences.language]);
 
   const importRecipe = useMutation({
-    mutationFn: async (data: { url: string; language: string }) => {
+    mutationFn: async ({ url, language }: { url: string; language: string }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("User not authenticated");
 
       // Call Gemini AI edge function with language
       const { data: recipeData, error } = await supabase.functions.invoke('ai-recipe-import', {
         body: { 
-          url: data.url, 
-          targetLanguage: data.language,
+          url, 
+          targetLanguage: language,
           measurementSystem: preferences.measurementSystem
         }
       });
@@ -51,11 +83,12 @@ export default function ImportRecipeAIPage() {
       if (error) throw error;
       if (!recipeData) throw new Error('No recipe data returned');
 
-      setRecipeTitle(recipeData.title);
+      dispatch({ type: 'SET_TITLE', payload: recipeData.title });
       if (recipeData.categories) {
-        setCategories(recipeData.categories);
+        dispatch({ type: 'SET_CATEGORIES', payload: recipeData.categories });
       }
-      return await saveRecipeToDatabase(recipeData, session.user.id, data);
+      
+      return saveRecipeToDatabase(recipeData, session.user.id, { url, language });
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
@@ -75,16 +108,20 @@ export default function ImportRecipeAIPage() {
     }
   });
 
-  const saveRecipeToDatabase = async (recipeData: RecipeData, userId: string, data: { url: string; language: string }) => {
+  const saveRecipeToDatabase = async (
+    recipeData: RecipeData, 
+    userId: string, 
+    { url, language }: { url: string; language: string }
+  ) => {
     const { data: savedRecipe, error: insertError } = await supabase
       .from('recipes')
       .insert([{
         ...recipeData,
         user_id: userId,
-        source_url: data.url,
-        language: data.language,
+        source_url: url,
+        language,
         image_url: recipeImage,
-        categories: categories
+        categories
       }])
       .select()
       .single();
@@ -94,7 +131,7 @@ export default function ImportRecipeAIPage() {
   };
 
   const handleImageSelected = (imageUrl: string) => {
-    setRecipeImage(imageUrl);
+    dispatch({ type: 'SET_IMAGE', payload: imageUrl });
     toast({
       title: "Image added",
       description: "The image will be saved with your recipe.",
@@ -113,11 +150,11 @@ export default function ImportRecipeAIPage() {
       return;
     }
 
-    setIsImporting(true);
+    dispatch({ type: 'SET_IMPORTING', payload: true });
     try {
       await importRecipe.mutateAsync({ url: recipeUrl, language });
     } finally {
-      setIsImporting(false);
+      dispatch({ type: 'SET_IMPORTING', payload: false });
     }
   };
 
@@ -163,7 +200,7 @@ export default function ImportRecipeAIPage() {
                 <Input
                   type="url"
                   value={recipeUrl}
-                  onChange={(e) => setRecipeUrl(e.target.value)}
+                  onChange={(e) => dispatch({ type: 'SET_URL', payload: e.target.value })}
                   placeholder="https://example.com/recipe"
                   required
                   className="w-full"
@@ -180,7 +217,7 @@ export default function ImportRecipeAIPage() {
                 </label>
                 <Select 
                   value={language} 
-                  onValueChange={setLanguage}
+                  onValueChange={(value) => dispatch({ type: 'SET_LANGUAGE', payload: value })}
                   disabled={isImporting}
                 >
                   <SelectTrigger className="w-full">

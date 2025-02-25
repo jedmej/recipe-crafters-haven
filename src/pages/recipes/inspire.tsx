@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Loader2, Save, RefreshCw, Clock, Timer, Flame } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +19,54 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 import ImageGenerator from "@/components/ImageGenerator";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
+import { RecipePageLayout } from "@/components/layout/RecipePageLayout";
+
+// Types and constants
+const LANGUAGE_CODES = {
+  'English': 'en',
+  'Spanish': 'es',
+  'French': 'fr',
+  'Italian': 'it',
+  'German': 'de',
+  'Polish': 'pl'
+};
+
+const LANGUAGE_NAMES = {
+  'en': 'English',
+  'es': 'Spanish', 
+  'fr': 'French',
+  'it': 'Italian',
+  'de': 'German',
+  'pl': 'Polish'
+};
+
+const FILTER_CATEGORIES = {
+  mealType: {
+    title: "Meal Type",
+    options: ["Breakfast", "Brunch", "Lunch", "Dinner", "Snacks", "Dessert", "Appetizer"],
+    badgeClass: "bg-blue-100 text-blue-800"
+  },
+  dietaryRestrictions: {
+    title: "Dietary Restrictions",
+    options: ["Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Keto", "Paleo", "Halal", "Kosher"],
+    badgeClass: "bg-green-100 text-green-800"
+  },
+  difficultyLevel: {
+    title: "Difficulty Level",
+    options: ["Easy", "Medium", "Hard"],
+    badgeClass: "bg-yellow-100 text-yellow-800"
+  },
+  cuisineType: {
+    title: "Cuisine Type",
+    options: ["Italian", "Asian", "Mexican", "Mediterranean", "American", "Indian", "Chinese", "Thai", "Middle Eastern", "Japanese", "French", "Other"],
+    badgeClass: "bg-purple-100 text-purple-800"
+  },
+  cookingMethod: {
+    title: "Cooking Method",
+    options: ["Oven-baked", "Stovetop", "Air Fryer", "Slow Cooker", "Instant Pot", "Grill", "Sous-vide", "Microwave", "Other"],
+    badgeClass: "bg-red-100 text-red-800"
+  }
+};
 
 interface RecipeData {
   title: string;
@@ -40,100 +88,162 @@ interface RecipeData {
   };
 }
 
-const LANGUAGE_CODES = {
-  'English': 'en',
-  'Spanish': 'es',
-  'French': 'fr',
-  'Italian': 'it',
-  'German': 'de',
-  'Polish': 'pl'
+interface FilterState {
+  mealTypeFilters: string[];
+  dietaryFilters: string[];
+  difficultyFilters: string[];
+  cuisineFilters: string[];
+  cookingMethodFilters: string[];
+  caloriesRange: number[];
+  cookTimeRange: number[];
+  keywords: string;
+  language: string;
+  generateImage: boolean;
+}
+
+// Helper Components
+const FilterButtons = ({ title, options, selected, onChange }: { 
+  title: string; 
+  options: string[]; 
+  selected: string[] | undefined; 
+  onChange: (value: string) => void;
+}) => (
+  <div>
+    <h3 className="font-medium text-sm text-gray-500 mb-3">{title}</h3>
+    <div className="flex flex-wrap gap-2">
+      {options.map((option) => (
+        <Button
+          key={option}
+          variant={selected?.includes(option.toLowerCase()) ? "default" : "outline"}
+          size="sm"
+          className="rounded-full h-8"
+          onClick={() => onChange(option.toLowerCase())}
+        >
+          {option}
+        </Button>
+      ))}
+    </div>
+  </div>
+);
+
+const RecipeMetric = ({ icon: Icon, label, value }: { icon: any; label: string; value: string }) => (
+  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl">
+    <Icon className="h-6 w-6 text-gray-500 mb-2" />
+    <p className="text-sm text-gray-500">{label}</p>
+    <p className="text-lg font-semibold">{value}</p>
+  </div>
+);
+
+const RecipeIngredients = ({ ingredients }: { ingredients: string[] }) => (
+  <Card className="h-full border-none shadow-sm rounded-2xl">
+    <div className="p-6 lg:p-8">
+      <h3 className="text-2xl font-semibold mb-6">Ingredients</h3>
+      <ul className="list-none space-y-4">
+        {ingredients.map((ingredient, index) => (
+          <li key={index} className="flex items-center gap-4">
+            <span className="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0" />
+            <span className="text-gray-700">{ingredient}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </Card>
+);
+
+const RecipeInstructions = ({ instructions }: { instructions: string[] }) => (
+  <Card className="h-full border-none shadow-sm rounded-2xl">
+    <div className="p-6 lg:p-8">
+      <h3 className="text-2xl font-semibold mb-6">Instructions</h3>
+      <div className="space-y-4">
+        {instructions.map((instruction, index) => (
+          <div key={index} className="flex items-start gap-4 text-lg text-gray-700">
+            <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-medium">
+              {index + 1}
+            </span>
+            <span>{instruction}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </Card>
+);
+
+// Utility functions
+const formatTime = (minutes: number) => 
+  minutes < 60 ? `${minutes}m` : `${Math.floor(minutes / 60)}h${minutes % 60 ? ` ${minutes % 60}m` : ''}`;
+
+const formatCalories = (cal: number) => `${cal} cal`;
+
+const toggleFilter = (value: string, currentFilters: string[]) => {
+  if (value === "all") return [];
+  return currentFilters.includes(value) 
+    ? currentFilters.filter(f => f !== value) 
+    : [...currentFilters, value];
 };
 
-const LANGUAGE_NAMES = {
-  'en': 'English',
-  'es': 'Spanish', 
-  'fr': 'French',
-  'it': 'Italian',
-  'de': 'German',
-  'pl': 'Polish'
-};
-
+// Main component
 export default function InspirePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { preferences } = useUserPreferences();
+  
+  // Process and UI states
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [generatedRecipe, setGeneratedRecipe] = useState<RecipeData | null>(null);
-  const [mealTypeFilters, setMealTypeFilters] = useState<string[]>([]);
-  const [dietaryFilters, setDietaryFilters] = useState<string[]>([]);
-  const [difficultyFilters, setDifficultyFilters] = useState<string[]>([]);
-  const [cuisineFilters, setCuisineFilters] = useState<string[]>([]);
-  const [cookingMethodFilters, setCookingMethodFilters] = useState<string[]>([]);
-  const [caloriesRange, setCaloriesRange] = useState<number[]>([0, 2000]);
-  const [cookTimeRange, setCookTimeRange] = useState<number[]>([0, 180]);
-  const [language, setLanguage] = useState<string>(LANGUAGE_NAMES[preferences.language] || "English");
-  const [generateImage, setGenerateImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [keywords, setKeywords] = useState<string>("");
+  const [generatedRecipe, setGeneratedRecipe] = useState<RecipeData | null>(null);
+  
+  // Filter states
+  const [filterState, setFilterState] = useState<FilterState>({
+    mealTypeFilters: [],
+    dietaryFilters: [],
+    difficultyFilters: [],
+    cuisineFilters: [],
+    cookingMethodFilters: [],
+    caloriesRange: [0, 2000],
+    cookTimeRange: [0, 180],
+    keywords: "",
+    language: LANGUAGE_NAMES[preferences.language] || "English",
+    generateImage: false
+  });
 
   // Update language when user preferences change
   useEffect(() => {
-    setLanguage(LANGUAGE_NAMES[preferences.language] || "English");
+    setFilterState(prev => ({
+      ...prev,
+      language: LANGUAGE_NAMES[preferences.language] || "English"
+    }));
   }, [preferences.language]);
 
-  const mealTypes = [
-    "Breakfast", "Brunch", "Lunch", "Dinner", "Snacks", "Dessert", "Appetizer"
-  ];
-
-  const dietaryRestrictions = [
-    "Vegetarian", "Vegan", "Gluten-free", "Dairy-free", 
-    "Keto", "Paleo", "Halal", "Kosher"
-  ];
-
-  const difficultyLevels = ["Easy", "Medium", "Hard"];
-
-  const cuisineTypes = [
-    "Italian", "Asian", "Mexican", "Mediterranean", "American",
-    "Indian", "Chinese", "Thai", "Middle Eastern", "Japanese", "French", "Other"
-  ];
-
-  const cookingMethods = [
-    "Oven-baked", "Stovetop", "Air Fryer", "Slow Cooker",
-    "Instant Pot", "Grill", "Sous-vide", "Microwave", "Other"
-  ];
-
-  const languages = Object.keys(LANGUAGE_CODES);
-
-  // Helper function to toggle a filter value
-  const toggleFilter = (value: string, currentFilters: string[], setFilters: (filters: string[]) => void) => {
-    if (value === "all") {
-      setFilters([]);
-      return;
-    }
-    
-    setFilters(prev => {
-      if (prev.includes(value)) {
-        return prev.filter(f => f !== value);
-      }
-      return [...prev, value];
-    });
+  // Filter update handlers
+  const updateFilter = (type: keyof FilterState, value: any) => {
+    setFilterState(prev => ({ ...prev, [type]: value }));
   };
 
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  const updateFilterByToggle = (type: keyof FilterState, value: string) => {
+    setFilterState(prev => ({
+      ...prev,
+      [type]: toggleFilter(value, prev[type] as string[])
+    }));
   };
 
-  const formatCalories = (cal: number) => {
-    return `${cal} cal`;
+  // Helper function to safely get filter array from state
+  const getFilterArray = (key: string): string[] => {
+    const filterKey = `${key}Filters` as keyof FilterState;
+    return (filterState[filterKey] as string[]) || [];
   };
 
+  // Recipe generation mutation
   const generateRecipe = useMutation({
     mutationFn: async () => {
+      const { 
+        mealTypeFilters, dietaryFilters, difficultyFilters, 
+        cuisineFilters, cookingMethodFilters, caloriesRange, 
+        cookTimeRange, keywords, language, generateImage 
+      } = filterState;
+      
+      // Build preferences array
       const preferences = [];
       if (mealTypeFilters.length > 0) preferences.push(`meal type: ${mealTypeFilters.join(", ")}`);
       if (dietaryFilters.length > 0) preferences.push(`dietary restrictions: ${dietaryFilters.join(", ")}`);
@@ -165,45 +275,24 @@ export default function InspirePage() {
         throw new Error(response.error?.message || 'Failed to generate recipe');
       }
 
+      // Process recipe data
       let recipeData = response.data.data as RecipeData;
       
-      // Ensure categories exist and are arrays
-      if (!recipeData.categories) {
-        recipeData.categories = {
-          meal_type: '',
-          dietary_restrictions: [],
-          difficulty_level: '',
-          cuisine_type: '',
-          cooking_method: []
-        };
-      }
-
-      // Convert string to array if needed for dietary restrictions
-      if (typeof recipeData.categories.dietary_restrictions === 'string') {
-        recipeData.categories.dietary_restrictions = [recipeData.categories.dietary_restrictions];
-      }
-
-      // Convert string to array if needed for cooking method
-      if (typeof recipeData.categories.cooking_method === 'string') {
-        recipeData.categories.cooking_method = [recipeData.categories.cooking_method];
-      }
-
-      // Merge AI-generated categories with user selections
+      // Ensure categories exist and are properly formatted
       recipeData.categories = {
-        meal_type: mealTypeFilters.length > 0 ? mealTypeFilters[0] : recipeData.categories.meal_type,
+        meal_type: mealTypeFilters.length > 0 ? mealTypeFilters[0] : recipeData.categories?.meal_type || '',
         dietary_restrictions: dietaryFilters.length > 0 ? dietaryFilters : 
-          (Array.isArray(recipeData.categories.dietary_restrictions) ? 
+          (Array.isArray(recipeData.categories?.dietary_restrictions) ? 
             recipeData.categories.dietary_restrictions : []),
-        difficulty_level: difficultyFilters.length > 0 ? difficultyFilters[0] : recipeData.categories.difficulty_level,
-        cuisine_type: cuisineFilters.length > 0 ? cuisineFilters[0] : recipeData.categories.cuisine_type,
+        difficulty_level: difficultyFilters.length > 0 ? difficultyFilters[0] : recipeData.categories?.difficulty_level || '',
+        cuisine_type: cuisineFilters.length > 0 ? cuisineFilters[0] : recipeData.categories?.cuisine_type || '',
         cooking_method: cookingMethodFilters.length > 0 ? cookingMethodFilters :
-          (Array.isArray(recipeData.categories.cooking_method) ? 
+          (Array.isArray(recipeData.categories?.cooking_method) ? 
             recipeData.categories.cooking_method : [])
       };
 
-      // Ensure all category arrays are properly initialized and non-empty
-      if (!Array.isArray(recipeData.categories.dietary_restrictions) || recipeData.categories.dietary_restrictions.length === 0) {
-        // If no dietary restrictions are specified, check the recipe description and ingredients for common indicators
+      // Infer categories if not specified
+      if (!recipeData.categories.dietary_restrictions.length) {
         const commonDietary = ['vegetarian', 'vegan', 'gluten-free', 'dairy-free'];
         const lowerDesc = recipeData.description.toLowerCase();
         const lowerIngredients = recipeData.ingredients.join(' ').toLowerCase();
@@ -212,8 +301,7 @@ export default function InspirePage() {
         );
       }
 
-      if (!Array.isArray(recipeData.categories.cooking_method) || recipeData.categories.cooking_method.length === 0) {
-        // If no cooking methods are specified, check the instructions for common cooking methods
+      if (!recipeData.categories.cooking_method.length) {
         const commonMethods = ['baked', 'grilled', 'fried', 'steamed', 'boiled', 'roasted'];
         const lowerInstructions = recipeData.instructions.join(' ').toLowerCase();
         recipeData.categories.cooking_method = commonMethods.filter(method => 
@@ -221,34 +309,20 @@ export default function InspirePage() {
         );
       }
 
-      // Convert all category values to proper case for display
-      recipeData.categories.meal_type = recipeData.categories.meal_type.charAt(0).toUpperCase() + 
-        recipeData.categories.meal_type.slice(1).toLowerCase();
-      recipeData.categories.difficulty_level = recipeData.categories.difficulty_level.charAt(0).toUpperCase() + 
-        recipeData.categories.difficulty_level.slice(1).toLowerCase();
-      recipeData.categories.cuisine_type = recipeData.categories.cuisine_type.charAt(0).toUpperCase() + 
-        recipeData.categories.cuisine_type.slice(1).toLowerCase();
-      recipeData.categories.dietary_restrictions = recipeData.categories.dietary_restrictions.map(
-        r => r.charAt(0).toUpperCase() + r.slice(1).toLowerCase()
-      );
-      recipeData.categories.cooking_method = recipeData.categories.cooking_method.map(
-        m => m.charAt(0).toUpperCase() + m.slice(1).toLowerCase()
-      );
+      // Format and clean categories
+      const formatCategory = (str: string) => str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+      
+      recipeData.categories.meal_type = formatCategory(recipeData.categories.meal_type);
+      recipeData.categories.difficulty_level = formatCategory(recipeData.categories.difficulty_level);
+      recipeData.categories.cuisine_type = formatCategory(recipeData.categories.cuisine_type);
+      recipeData.categories.dietary_restrictions = [...new Set(recipeData.categories.dietary_restrictions.map(formatCategory))];
+      recipeData.categories.cooking_method = [...new Set(recipeData.categories.cooking_method.map(formatCategory))];
 
-      // Remove duplicates from arrays
-      recipeData.categories.dietary_restrictions = [...new Set(recipeData.categories.dietary_restrictions)];
-      recipeData.categories.cooking_method = [...new Set(recipeData.categories.cooking_method)];
-
-      console.log('Recipe generated:', recipeData);
-
-      // Generate image if enabled
+      // Start image generation if enabled
       if (generateImage) {
-        console.log('Image generation enabled, starting process...');
         try {
           let imagePrompt;
-          // If the recipe is not in English, get an English version for better image generation
           if (language !== 'English') {
-            console.log('Non-English recipe, getting English version for image prompt...');
             const englishResponse = await supabase.functions.invoke('recipe-chat', {
               body: { 
                 query,
@@ -257,12 +331,9 @@ export default function InspirePage() {
               }
             });
             
-            if (englishResponse.data?.success && englishResponse.data?.data) {
-              imagePrompt = `${englishResponse.data.data.title}: ${englishResponse.data.data.description}`;
-            } else {
-              console.log('Failed to get English version, using original language for prompt');
-              imagePrompt = `${recipeData.title}: ${recipeData.description}`;
-            }
+            imagePrompt = englishResponse.data?.success ? 
+              `${englishResponse.data.data.title}: ${englishResponse.data.data.description}` : 
+              `${recipeData.title}: ${recipeData.description}`;
           } else {
             imagePrompt = `${recipeData.title}: ${recipeData.description}`;
           }
@@ -281,7 +352,6 @@ export default function InspirePage() {
       return recipeData;
     },
     onSuccess: (recipeData) => {
-      console.log('Setting generated recipe:', recipeData);
       setGeneratedRecipe(recipeData);
       toast({
         title: "Recipe generated",
@@ -298,6 +368,7 @@ export default function InspirePage() {
     }
   });
 
+  // Save recipe function
   const saveRecipe = async () => {
     if (!generatedRecipe) return;
 
@@ -322,15 +393,9 @@ export default function InspirePage() {
           portion_description: generatedRecipe.portion_description,
           user_id: user.id,
           created_at: new Date().toISOString(),
-          language: LANGUAGE_CODES[language as keyof typeof LANGUAGE_CODES],
+          language: LANGUAGE_CODES[filterState.language as keyof typeof LANGUAGE_CODES],
           image_url: generatedRecipe.image_url,
-          categories: {
-            meal_type: generatedRecipe.categories.meal_type,
-            dietary_restrictions: generatedRecipe.categories.dietary_restrictions,
-            difficulty_level: generatedRecipe.categories.difficulty_level,
-            cuisine_type: generatedRecipe.categories.cuisine_type,
-            cooking_method: generatedRecipe.categories.cooking_method
-          }
+          categories: generatedRecipe.categories
         }])
         .select()
         .single();
@@ -354,6 +419,7 @@ export default function InspirePage() {
     }
   };
 
+  // Generate recipe handler
   const handleInspire = async () => {
     setIsGenerating(true);
     try {
@@ -366,423 +432,287 @@ export default function InspirePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 py-8 md:px-6 lg:px-8">
-        <div className="flex items-center mb-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hover:bg-gray-100 transition-colors -ml-2"
-            onClick={() => navigate(-1)}
-          >
-            <ChevronLeft className="mr-1 h-4 w-4" />
-            <span className="text-sm">Back</span>
-          </Button>
-        </div>
+    <RecipePageLayout>
+      <div className="text-center">
+        <h1 className="text-4xl font-bold tracking-tight text-gray-900">Get Inspired</h1>
+        <p className="mt-3 text-lg text-gray-500">
+          Choose your preferences and let AI suggest the perfect recipe for you
+        </p>
+      </div>
 
-        <div className="w-full max-w-3xl mx-auto space-y-8">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900">Get Inspired</h1>
-            <p className="mt-3 text-lg text-gray-500">
-              Choose your preferences and let AI suggest the perfect recipe for you
-            </p>
+      <Card className="bg-white shadow-sm rounded-2xl border-none">
+        <div className="p-6 space-y-8">
+          <div className="space-y-8">
+            {/* Filter sections dynamically generated */}
+            {Object.entries(FILTER_CATEGORIES).map(([key, category]) => (
+              <FilterButtons
+                key={key}
+                title={category.title}
+                options={category.options}
+                selected={getFilterArray(key)}
+                onChange={(value) => updateFilterByToggle(`${key}Filters` as keyof FilterState, value)}
+              />
+            ))}
+
+            {/* Time Range Slider */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-gray-500">Total Time</Label>
+                <span className="text-sm text-gray-500">
+                  {formatTime(filterState.cookTimeRange[0])} - {formatTime(filterState.cookTimeRange[1])}
+                </span>
+              </div>
+              <div className="pt-2 px-3">
+                <div className="relative">
+                  <div className="absolute inset-x-0 h-2 bg-gray-100 rounded-full" />
+                  <div
+                    className="absolute h-2 bg-gray-900 rounded-full"
+                    style={{
+                      left: `${(filterState.cookTimeRange[0] / 180) * 100}%`,
+                      right: `${100 - (filterState.cookTimeRange[1] / 180) * 100}%`
+                    }}
+                  />
+                  <Slider
+                    min={0}
+                    max={180}
+                    step={5}
+                    value={filterState.cookTimeRange}
+                    onValueChange={(value) => updateFilter('cookTimeRange', value)}
+                    className="relative w-full"
+                    thumbClassName="block h-7 w-7 rounded-full border-2 border-gray-900 bg-white shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 cursor-grab active:cursor-grabbing"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Calories Range Slider */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-gray-500">Calories per Serving</Label>
+                <span className="text-sm text-gray-500">
+                  {formatCalories(filterState.caloriesRange[0])} - {formatCalories(filterState.caloriesRange[1])}
+                </span>
+              </div>
+              <div className="pt-2 px-3">
+                <div className="relative">
+                  <div className="absolute inset-x-0 h-2 bg-gray-100 rounded-full" />
+                  <div
+                    className="absolute h-2 bg-gray-900 rounded-full"
+                    style={{
+                      left: `${(filterState.caloriesRange[0] / 2000) * 100}%`,
+                      right: `${100 - (filterState.caloriesRange[1] / 2000) * 100}%`
+                    }}
+                  />
+                  <Slider
+                    min={0}
+                    max={2000}
+                    step={50}
+                    value={filterState.caloriesRange}
+                    onValueChange={(value) => updateFilter('caloriesRange', value)}
+                    className="relative w-full"
+                    thumbClassName="block h-7 w-7 rounded-full border-2 border-gray-900 bg-white shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 cursor-grab active:cursor-grabbing"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Language Selection */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-500">Language</Label>
+              <Select 
+                value={filterState.language} 
+                onValueChange={(value) => updateFilter('language', value)}
+              >
+                <SelectTrigger className="w-full h-12 rounded-xl bg-white border-gray-200">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.keys(LANGUAGE_CODES).map((lang) => (
+                    <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Image Generation Toggle */}
+            <div>
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="generate-image"
+                  checked={filterState.generateImage}
+                  onCheckedChange={(checked) => updateFilter('generateImage', checked)}
+                  disabled={isGenerating || isGeneratingImage}
+                  className="data-[state=checked]:bg-gray-900"
+                />
+                <Label htmlFor="generate-image" className="text-sm font-medium text-gray-700">
+                  Generate AI image for recipe
+                </Label>
+              </div>
+            </div>
+
+            {/* Keywords Input */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-500">Additional Keywords</Label>
+              <Input
+                type="text"
+                className="w-full h-12 rounded-xl bg-white border-gray-200"
+                placeholder="e.g., quick, summer, festive, low-sugar, spicy (separated by commas)"
+                value={filterState.keywords}
+                onChange={(e) => updateFilter('keywords', e.target.value)}
+                disabled={isGenerating || isGeneratingImage || isSaving}
+              />
+              <p className="text-xs text-gray-500">
+                Add any specific preferences or requests not covered by the options above
+              </p>
+            </div>
           </div>
 
-          <Card className="bg-white shadow-sm rounded-2xl border-none">
-            <div className="p-6 space-y-8">
-              <div className="space-y-8">
-                {/* Meal Type */}
-                <div>
-                  <h3 className="font-medium text-sm text-gray-500 mb-3">Meal Type</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {mealTypes.map((type) => (
-                      <Button
-                        key={type}
-                        variant={mealTypeFilters.includes(type.toLowerCase()) ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full h-8"
-                        onClick={() => toggleFilter(type.toLowerCase(), mealTypeFilters, setMealTypeFilters)}
-                      >
-                        {type}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Dietary Restrictions */}
-                <div>
-                  <h3 className="font-medium text-sm text-gray-500 mb-3">Dietary Restrictions</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {dietaryRestrictions.map((restriction) => (
-                      <Button
-                        key={restriction}
-                        variant={dietaryFilters.includes(restriction.toLowerCase()) ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full h-8"
-                        onClick={() => toggleFilter(restriction.toLowerCase(), dietaryFilters, setDietaryFilters)}
-                      >
-                        {restriction}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Difficulty Level */}
-                <div>
-                  <h3 className="font-medium text-sm text-gray-500 mb-3">Difficulty Level</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {difficultyLevels.map((level) => (
-                      <Button
-                        key={level}
-                        variant={difficultyFilters.includes(level.toLowerCase()) ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full h-8"
-                        onClick={() => toggleFilter(level.toLowerCase(), difficultyFilters, setDifficultyFilters)}
-                      >
-                        {level}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Cuisine Type */}
-                <div>
-                  <h3 className="font-medium text-sm text-gray-500 mb-3">Cuisine Type</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {cuisineTypes.map((type) => (
-                      <Button
-                        key={type}
-                        variant={cuisineFilters.includes(type.toLowerCase()) ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full h-8"
-                        onClick={() => toggleFilter(type.toLowerCase(), cuisineFilters, setCuisineFilters)}
-                      >
-                        {type}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Cooking Method */}
-                <div>
-                  <h3 className="font-medium text-sm text-gray-500 mb-3">Cooking Method</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {cookingMethods.map((method) => (
-                      <Button
-                        key={method}
-                        variant={cookingMethodFilters.includes(method.toLowerCase()) ? "default" : "outline"}
-                        size="sm"
-                        className="rounded-full h-8"
-                        onClick={() => toggleFilter(method.toLowerCase(), cookingMethodFilters, setCookingMethodFilters)}
-                      >
-                        {method}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Time Range Slider */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium text-gray-500">Total Time</Label>
-                    <span className="text-sm text-gray-500">
-                      {formatTime(cookTimeRange[0])} - {formatTime(cookTimeRange[1])}
-                    </span>
-                  </div>
-                  <div className="pt-2 px-3">
-                    <div className="relative">
-                      <div className="absolute inset-x-0 h-2 bg-gray-100 rounded-full" />
-                      <div
-                        className="absolute h-2 bg-gray-900 rounded-full"
-                        style={{
-                          left: `${(cookTimeRange[0] / 180) * 100}%`,
-                          right: `${100 - (cookTimeRange[1] / 180) * 100}%`
-                        }}
-                      />
-                      <Slider
-                        min={0}
-                        max={180}
-                        step={5}
-                        value={cookTimeRange}
-                        onValueChange={setCookTimeRange}
-                        className="relative w-full"
-                        thumbClassName="block h-7 w-7 rounded-full border-2 border-gray-900 bg-white shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 cursor-grab active:cursor-grabbing"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Calories Range Slider */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium text-gray-500">Calories per Serving</Label>
-                    <span className="text-sm text-gray-500">
-                      {formatCalories(caloriesRange[0])} - {formatCalories(caloriesRange[1])}
-                    </span>
-                  </div>
-                  <div className="pt-2 px-3">
-                    <div className="relative">
-                      <div className="absolute inset-x-0 h-2 bg-gray-100 rounded-full" />
-                      <div
-                        className="absolute h-2 bg-gray-900 rounded-full"
-                        style={{
-                          left: `${(caloriesRange[0] / 2000) * 100}%`,
-                          right: `${100 - (caloriesRange[1] / 2000) * 100}%`
-                        }}
-                      />
-                      <Slider
-                        min={0}
-                        max={2000}
-                        step={50}
-                        value={caloriesRange}
-                        onValueChange={setCaloriesRange}
-                        className="relative w-full"
-                        thumbClassName="block h-7 w-7 rounded-full border-2 border-gray-900 bg-white shadow-md hover:scale-110 transition-transform focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2 cursor-grab active:cursor-grabbing"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Language Selection */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-500">Language</Label>
-                  <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger className="w-full h-12 rounded-xl bg-white border-gray-200">
-                      <SelectValue placeholder="Select language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {languages.map((lang) => (
-                        <SelectItem key={lang} value={lang}>
-                          {lang}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Image Generation Toggle */}
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="generate-image"
-                      checked={generateImage}
-                      onCheckedChange={setGenerateImage}
-                      disabled={isGenerating || isGeneratingImage}
-                      className="data-[state=checked]:bg-gray-900"
-                    />
-                    <Label htmlFor="generate-image" className="text-sm font-medium text-gray-700">
-                      Generate AI image for recipe
-                    </Label>
-                  </div>
-                </div>
-
-                {/* Keywords Input */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-500">Additional Keywords</Label>
-                  <Input
-                    type="text"
-                    className="w-full h-12 rounded-xl bg-white border-gray-200"
-                    placeholder="e.g., quick, summer, festive, low-sugar, spicy (separated by commas)"
-                    value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
-                    disabled={isGenerating || isGeneratingImage || isSaving}
-                  />
-                  <p className="text-xs text-gray-500">
-                    Add any specific preferences or requests not covered by the options above
-                  </p>
-                </div>
-              </div>
-
-              {/* Generate Button */}
-              <div className="pt-4">
-                <Button 
-                  className="w-full h-14 text-base rounded-xl bg-gray-900 hover:bg-gray-800"
-                  onClick={handleInspire}
-                  disabled={isGenerating || isGeneratingImage || isSaving}
-                >
-                  {isGenerating || isGeneratingImage ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      {isGeneratingImage ? 'Generating Image...' : 'Generating Recipe...'}
-                    </>
-                  ) : (
-                    'Get Recipe Suggestion'
-                  )}
-                </Button>
-              </div>
-            </div>
-          </Card>
-
-          {generatedRecipe && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-              <div className="lg:col-span-8">
-                <Card className="overflow-hidden border-none shadow-sm rounded-2xl">
-                  <div className="p-6 lg:p-8">
-                    <div className="flex justify-end gap-4 mb-6">
-                      <Button
-                        className="flex-1 sm:flex-initial h-12 rounded-xl bg-gray-900 hover:bg-gray-800"
-                        onClick={saveRecipe}
-                        disabled={isSaving || isGenerating || isGeneratingImage}
-                      >
-                        {isSaving ? (
-                          <>
-                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <Save className="mr-2 h-5 w-5" />
-                            Save Recipe
-                          </>
-                        )}
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="h-12 rounded-xl border-gray-200"
-                        onClick={handleInspire}
-                        disabled={isGenerating || isGeneratingImage || isSaving}
-                      >
-                        <RefreshCw className="mr-2 h-5 w-5" />
-                        Regenerate
-                      </Button>
-                    </div>
-
-                    <div className="space-y-6">
-                      <div>
-                        <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">{generatedRecipe.title}</h1>
-                        <p className="text-gray-600 mt-4 text-lg">{generatedRecipe.description}</p>
-                        
-                        {/* Categories/Tags Display */}
-                        <div className="mt-6 space-y-4">
-                          <div className="flex flex-wrap gap-2">
-                            {/* Meal Type */}
-                            {generatedRecipe.categories?.meal_type && (
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                                {generatedRecipe.categories.meal_type}
-                              </span>
-                            )}
-                            
-                            {/* Dietary Restrictions */}
-                            {generatedRecipe.categories?.dietary_restrictions?.map((restriction, index) => (
-                              <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                                {restriction}
-                              </span>
-                            ))}
-                            
-                            {/* Difficulty Level */}
-                            {generatedRecipe.categories?.difficulty_level && (
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
-                                {generatedRecipe.categories.difficulty_level}
-                              </span>
-                            )}
-                            
-                            {/* Cuisine Type */}
-                            {generatedRecipe.categories?.cuisine_type && (
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                                {generatedRecipe.categories.cuisine_type}
-                              </span>
-                            )}
-                            
-                            {/* Cooking Methods */}
-                            {generatedRecipe.categories?.cooking_method?.map((method, index) => (
-                              <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                                {method}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {generatedRecipe.image_url && (
-                        <div className="relative w-full h-[500px] rounded-xl overflow-hidden">
-                          <img
-                            src={generatedRecipe.image_url}
-                            alt={generatedRecipe.title}
-                            className="object-cover w-full h-full"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              <div className="lg:col-span-4">
-                <Card className="border-none shadow-sm rounded-2xl">
-                  <div className="p-6">
-                    <div className="grid grid-cols-3 lg:grid-cols-1 gap-4">
-                      <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl">
-                        <Clock className="h-6 w-6 text-gray-500 mb-2" />
-                        <p className="text-sm text-gray-500">Prep Time</p>
-                        <p className="text-lg font-semibold">{generatedRecipe.prep_time} min</p>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl">
-                        <Timer className="h-6 w-6 text-gray-500 mb-2" />
-                        <p className="text-sm text-gray-500">Cook Time</p>
-                        <p className="text-lg font-semibold">{generatedRecipe.cook_time} min</p>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl">
-                        <Flame className="h-6 w-6 text-gray-500 mb-2" />
-                        <p className="text-sm text-gray-500">Calories</p>
-                        <p className="text-lg font-semibold">{generatedRecipe.estimated_calories} kcal</p>
-                      </div>
-                      <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl">
-                        <p className="text-sm text-gray-500">Portions</p>
-                        <p className="text-lg font-semibold">{generatedRecipe.suggested_portions} {generatedRecipe.portion_description}</p>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
-              <div className="lg:col-span-6">
-                <Card className="h-full border-none shadow-sm rounded-2xl">
-                  <div className="p-6 lg:p-8">
-                    <h3 className="text-2xl font-semibold mb-6">Ingredients</h3>
-                    <ul className="list-none space-y-4">
-                      {generatedRecipe.ingredients.map((ingredient, index) => (
-                        <li key={index} className="flex items-center gap-4">
-                          <span className="w-2 h-2 rounded-full bg-gray-500 flex-shrink-0" />
-                          <span className="text-gray-700">{ingredient}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </Card>
-              </div>
-
-              <div className="lg:col-span-6">
-                <Card className="h-full border-none shadow-sm rounded-2xl">
-                  <div className="p-6 lg:p-8">
-                    <h3 className="text-2xl font-semibold mb-6">Instructions</h3>
-                    <div className="space-y-4">
-                      {generatedRecipe.instructions.map((instruction, index) => (
-                        <div key={index} className="flex items-start gap-4 text-lg text-gray-700">
-                          <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-medium">
-                            {index + 1}
-                          </span>
-                          <span>{instruction}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            </div>
-          )}
-
-          {generateImage && generatedRecipe && !generatedRecipe.image_url && (
-            <ImageGenerator
-              prompt={`${generatedRecipe.title}: ${generatedRecipe.description}`}
-              embedded={true}
-              onImageGenerated={(imageUrl) => {
-                setGeneratedRecipe(prev => prev ? { ...prev, image_url: imageUrl } : null);
-                setIsGeneratingImage(false);
-              }}
-            />
-          )}
+          {/* Generate Button */}
+          <div className="pt-4">
+            <Button 
+              className="w-full h-14 text-base rounded-xl bg-gray-900 hover:bg-gray-800"
+              onClick={handleInspire}
+              disabled={isGenerating || isGeneratingImage || isSaving}
+            >
+              {isGenerating || isGeneratingImage ? (
+                <>
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  {isGeneratingImage ? 'Generating Image...' : 'Generating Recipe...'}
+                </>
+              ) : (
+                'Get Recipe Suggestion'
+              )}
+            </Button>
+          </div>
         </div>
-      </div>
-    </div>
+      </Card>
+
+      {generatedRecipe && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+          <div className="lg:col-span-8">
+            <Card className="overflow-hidden border-none shadow-sm rounded-2xl">
+              <div className="p-6 lg:p-8">
+                <div className="flex justify-end gap-4 mb-6">
+                  <Button
+                    className="flex-1 sm:flex-initial h-12 rounded-xl bg-gray-900 hover:bg-gray-800"
+                    onClick={saveRecipe}
+                    disabled={isSaving || isGenerating || isGeneratingImage}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-5 w-5" />
+                        Save Recipe
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="h-12 rounded-xl border-gray-200"
+                    onClick={handleInspire}
+                    disabled={isGenerating || isGeneratingImage || isSaving}
+                  >
+                    <RefreshCw className="mr-2 h-5 w-5" />
+                    Regenerate
+                  </Button>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">{generatedRecipe.title}</h1>
+                    <p className="text-gray-600 mt-4 text-lg">{generatedRecipe.description}</p>
+                    
+                    {/* Categories/Tags Display */}
+                    <div className="mt-6 space-y-4">
+                      <div className="flex flex-wrap gap-2">
+                        {/* Dynamically generate category badges */}
+                        {generatedRecipe.categories?.meal_type && (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                            {generatedRecipe.categories.meal_type}
+                          </span>
+                        )}
+                        
+                        {generatedRecipe.categories?.dietary_restrictions?.map((restriction, index) => (
+                          <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                            {restriction}
+                          </span>
+                        ))}
+                        
+                        {generatedRecipe.categories?.difficulty_level && (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
+                            {generatedRecipe.categories.difficulty_level}
+                          </span>
+                        )}
+                        
+                        {generatedRecipe.categories?.cuisine_type && (
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                            {generatedRecipe.categories.cuisine_type}
+                          </span>
+                        )}
+                        
+                        {generatedRecipe.categories?.cooking_method?.map((method, index) => (
+                          <span key={index} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                            {method}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {generatedRecipe.image_url && (
+                    <div className="relative w-full h-[500px] rounded-xl overflow-hidden">
+                      <img
+                        src={generatedRecipe.image_url}
+                        alt={generatedRecipe.title}
+                        className="object-cover w-full h-full"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div className="lg:col-span-4">
+            <Card className="border-none shadow-sm rounded-2xl">
+              <div className="p-6">
+                <div className="grid grid-cols-3 lg:grid-cols-1 gap-4">
+                  <RecipeMetric icon={Clock} label="Prep Time" value={`${generatedRecipe.prep_time} min`} />
+                  <RecipeMetric icon={Timer} label="Cook Time" value={`${generatedRecipe.cook_time} min`} />
+                  <RecipeMetric icon={Flame} label="Calories" value={`${generatedRecipe.estimated_calories} kcal`} />
+                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-xl">
+                    <p className="text-sm text-gray-500">Portions</p>
+                    <p className="text-lg font-semibold">{generatedRecipe.suggested_portions} {generatedRecipe.portion_description}</p>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          <div className="lg:col-span-6">
+            <RecipeIngredients ingredients={generatedRecipe.ingredients} />
+          </div>
+
+          <div className="lg:col-span-6">
+            <RecipeInstructions instructions={generatedRecipe.instructions} />
+          </div>
+        </div>
+      )}
+
+      {filterState.generateImage && generatedRecipe && !generatedRecipe.image_url && (
+        <ImageGenerator
+          prompt={`${generatedRecipe.title}: ${generatedRecipe.description}`}
+          embedded={true}
+          onImageGenerated={(imageUrl) => {
+            setGeneratedRecipe(prev => prev ? { ...prev, image_url: imageUrl } : null);
+            setIsGeneratingImage(false);
+          }}
+        />
+      )}
+    </RecipePageLayout>
   );
 } 

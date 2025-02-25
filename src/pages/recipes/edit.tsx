@@ -14,12 +14,8 @@ import { Input } from "@/components/ui/input";
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
 
-export default function EditRecipePage() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
+// Custom hook to manage recipe form state
+function useRecipeForm(initialRecipe?: Recipe) {
   const [formData, setFormData] = useState<Partial<Recipe>>({
     title: "",
     description: "",
@@ -39,7 +35,130 @@ export default function EditRecipePage() {
       cooking_method: ""
     }
   });
+  
+  // Update form data when initial recipe changes
+  useEffect(() => {
+    if (initialRecipe) {
+      setFormData({
+        title: initialRecipe.title,
+        description: initialRecipe.description || "",
+        ingredients: initialRecipe.ingredients as string[],
+        instructions: initialRecipe.instructions as string[],
+        prep_time: initialRecipe.prep_time || 0,
+        cook_time: initialRecipe.cook_time || 0,
+        estimated_calories: initialRecipe.estimated_calories || 0,
+        servings: initialRecipe.servings || 1,
+        source_url: initialRecipe.source_url || "",
+        language: initialRecipe.language || "en",
+        image_url: initialRecipe.image_url || "",
+        categories: {
+          meal_type: initialRecipe.categories?.meal_type || "",
+          dietary_restrictions: initialRecipe.categories?.dietary_restrictions || "",
+          difficulty_level: initialRecipe.categories?.difficulty_level || "",
+          cuisine_type: initialRecipe.categories?.cuisine_type || "",
+          cooking_method: initialRecipe.categories?.cooking_method || ""
+        }
+      });
+    }
+  }, [initialRecipe]);
 
+  // Form update handlers
+  const updateFormData = (updates: Partial<Recipe>) => 
+    setFormData(prev => ({ ...prev, ...updates }));
+  
+  const addListItem = (key: "ingredients" | "instructions") => 
+    setFormData(prev => ({
+      ...prev,
+      [key]: [...((prev[key] as string[]) || []), ""]
+    }));
+  
+  const updateListItem = (key: "ingredients" | "instructions", index: number, value: string) => 
+    setFormData(prev => ({
+      ...prev,
+      [key]: ((prev[key] as string[]) || []).map((item, i) => i === index ? value : item)
+    }));
+  
+  const removeListItem = (key: "ingredients" | "instructions", index: number) => 
+    setFormData(prev => ({
+      ...prev,
+      [key]: ((prev[key] as string[]) || []).filter((_, i) => i !== index)
+    }));
+
+  // Validation
+  const validateForm = () => {
+    if (!formData.title?.trim()) return "Please provide a recipe title.";
+    if (!(formData.ingredients as string[])?.some(i => i.trim() !== "")) 
+      return "Please add at least one ingredient.";
+    if (!(formData.instructions as string[])?.some(i => i.trim() !== "")) 
+      return "Please add at least one instruction step.";
+    return null;
+  };
+
+  return {
+    formData,
+    updateFormData,
+    addListItem,
+    updateListItem,
+    removeListItem,
+    validateForm
+  };
+}
+
+// Component for recipe metadata fields
+const RecipeMetadata = ({ formData, updateFormData }) => (
+  <Card>
+    <CardContent className="p-6">
+      <div className="grid grid-cols-3 lg:grid-cols-1 gap-4">
+        <MetadataField 
+          icon={<Clock className="h-6 w-6 text-gray-500 mb-2" />}
+          label="Prep Time"
+          value={formData.prep_time}
+          onChange={val => updateFormData({ prep_time: parseInt(val) || 0 })}
+        />
+        <MetadataField 
+          icon={<Timer className="h-6 w-6 text-gray-500 mb-2" />}
+          label="Cook Time"
+          value={formData.cook_time}
+          onChange={val => updateFormData({ cook_time: parseInt(val) || 0 })}
+        />
+        <MetadataField 
+          icon={<Flame className="h-6 w-6 text-gray-500 mb-2" />}
+          label="Calories"
+          value={formData.estimated_calories}
+          onChange={val => updateFormData({ estimated_calories: parseInt(val) || 0 })}
+        />
+        <MetadataField 
+          label="Servings"
+          value={formData.servings}
+          onChange={val => updateFormData({ servings: parseInt(val) || 1 })}
+        />
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Reusable metadata field component
+const MetadataField = ({ icon, label, value, onChange }) => (
+  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
+    {icon}
+    <p className="text-sm text-gray-500">{label}</p>
+    <Input
+      type="number"
+      min="0"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      className="w-24 mt-1"
+    />
+  </div>
+);
+
+export default function EditRecipePage() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch recipe data
   const { data: recipe, isLoading, error } = useQuery({
     queryKey: ['recipes', id],
     queryFn: async () => {
@@ -62,60 +181,17 @@ export default function EditRecipePage() {
     enabled: !!id
   });
 
+  // Use custom hooks
+  const { formData, updateFormData, addListItem, updateListItem, removeListItem, validateForm } = useRecipeForm(recipe);
   const updateRecipe = useRecipeUpdate(id as string);
 
-  useEffect(() => {
-    if (recipe) {
-      setFormData({
-        title: recipe.title,
-        description: recipe.description || "",
-        ingredients: recipe.ingredients as string[],
-        instructions: recipe.instructions as string[],
-        prep_time: recipe.prep_time || 0,
-        cook_time: recipe.cook_time || 0,
-        estimated_calories: recipe.estimated_calories || 0,
-        servings: recipe.servings || 1,
-        source_url: recipe.source_url || "",
-        language: recipe.language || "en",
-        image_url: recipe.image_url || "",
-        categories: {
-          meal_type: recipe.categories?.meal_type || "",
-          dietary_restrictions: recipe.categories?.dietary_restrictions || "",
-          difficulty_level: recipe.categories?.difficulty_level || "",
-          cuisine_type: recipe.categories?.cuisine_type || "",
-          cooking_method: recipe.categories?.cooking_method || ""
-        }
-      });
-    }
-  }, [recipe]);
-
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!formData.title?.trim()) {
-      toast({
-        variant: "destructive",
-        title: "Invalid form",
-        description: "Please provide a recipe title.",
-      });
-      return;
-    }
-
-    if (!(formData.ingredients as string[])?.some(i => i.trim() !== "")) {
-      toast({
-        variant: "destructive",
-        title: "Invalid form",
-        description: "Please add at least one ingredient.",
-      });
-      return;
-    }
-
-    if (!(formData.instructions as string[])?.some(i => i.trim() !== "")) {
-      toast({
-        variant: "destructive",
-        title: "Invalid form",
-        description: "Please add at least one instruction step.",
-      });
+    
+    const validationError = validateForm();
+    if (validationError) {
+      toast({ variant: "destructive", title: "Invalid form", description: validationError });
       return;
     }
 
@@ -124,16 +200,6 @@ export default function EditRecipePage() {
       const dataToUpdate = {
         ...formData,
         image_url: formData.image_url || recipe?.image_url,
-        ingredients: formData.ingredients,
-        instructions: formData.instructions,
-        title: formData.title,
-        description: formData.description,
-        prep_time: formData.prep_time,
-        cook_time: formData.cook_time,
-        estimated_calories: formData.estimated_calories,
-        servings: formData.servings,
-        source_url: formData.source_url,
-        language: formData.language
       };
       
       await updateRecipe.mutateAsync(dataToUpdate);
@@ -142,69 +208,24 @@ export default function EditRecipePage() {
     }
   };
 
-  const addListItem = (key: "ingredients" | "instructions") => {
-    setFormData(prev => ({
-      ...prev,
-      [key]: [...((prev[key] as string[]) || []), ""]
-    }));
-  };
-
-  const updateListItem = (key: "ingredients" | "instructions", index: number, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [key]: ((prev[key] as string[]) || []).map((item, i) => i === index ? value : item)
-    }));
-  };
-
-  const removeListItem = (key: "ingredients" | "instructions", index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      [key]: ((prev[key] as string[]) || []).filter((_, i) => i !== index)
-    }));
-  };
-
+  // Handle error states
   if (!id) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-lg text-red-500">Recipe ID is required</p>
-        <Button variant="ghost" onClick={() => navigate('/recipes')}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Recipes
-        </Button>
-      </div>
-    );
+    return <ErrorState message="Recipe ID is required" onBack={() => navigate('/recipes')} />;
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-lg text-red-500">{error instanceof Error ? error.message : 'Error loading recipe'}</p>
-        <Button variant="ghost" onClick={() => navigate('/recipes')}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Recipes
-        </Button>
-      </div>
-    );
+    return <ErrorState 
+      message={error instanceof Error ? error.message : 'Error loading recipe'}
+      onBack={() => navigate('/recipes')} 
+    />;
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+    return <LoadingState />;
   }
 
   if (!recipe) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-lg text-red-500">Recipe not found</p>
-        <Button variant="ghost" onClick={() => navigate('/recipes')}>
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Recipes
-        </Button>
-      </div>
-    );
+    return <ErrorState message="Recipe not found" onBack={() => navigate('/recipes')} />;
   }
 
   return (
@@ -223,79 +244,22 @@ export default function EditRecipePage() {
           <div className="lg:col-span-8">
             <Card className="overflow-hidden">
               <CardContent className="p-6 lg:p-8">
-                <div className="space-y-6">                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Recipe Image</label>
-                    <div className="relative">
-                      <ImageUploadOrGenerate
-                        onImageSelected={(imageUrl) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            image_url: imageUrl
-                          }));
-                        }}
-                        title={formData.title}
-                        disabled={isSubmitting}
-                        initialImage={formData.image_url}
-                        hasExistingImage={!!formData.image_url}
-                      />
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Recipe Image</label>
+                  <ImageUploadOrGenerate
+                    onImageSelected={(imageUrl) => updateFormData({ image_url: imageUrl })}
+                    title={formData.title}
+                    disabled={isSubmitting}
+                    initialImage={formData.image_url}
+                    hasExistingImage={!!formData.image_url}
+                  />
                 </div>
               </CardContent>
             </Card>
           </div>
 
           <div className="lg:col-span-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-3 lg:grid-cols-1 gap-4">
-                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
-                    <Clock className="h-6 w-6 text-gray-500 mb-2" />
-                    <p className="text-sm text-gray-500">Prep Time</p>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={formData.prep_time}
-                      onChange={e => setFormData(prev => ({ ...prev, prep_time: parseInt(e.target.value) || 0 }))}
-                      className="w-24 mt-1"
-                    />
-                  </div>
-                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
-                    <Timer className="h-6 w-6 text-gray-500 mb-2" />
-                    <p className="text-sm text-gray-500">Cook Time</p>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={formData.cook_time}
-                      onChange={e => setFormData(prev => ({ ...prev, cook_time: parseInt(e.target.value) || 0 }))}
-                      className="w-24 mt-1"
-                    />
-                  </div>
-                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
-                    <Flame className="h-6 w-6 text-gray-500 mb-2" />
-                    <p className="text-sm text-gray-500">Calories</p>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={formData.estimated_calories}
-                      onChange={e => setFormData(prev => ({ ...prev, estimated_calories: parseInt(e.target.value) || 0 }))}
-                      className="w-24 mt-1"
-                    />
-                  </div>
-                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-500">Servings</p>
-                    <Input
-                      type="number"
-                      min="1"
-                      value={formData.servings}
-                      onChange={e => setFormData(prev => ({ ...prev, servings: parseInt(e.target.value) || 1 }))}
-                      className="w-24 mt-1"
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <RecipeMetadata formData={formData} updateFormData={updateFormData} />
           </div>
 
           <div className="lg:col-span-12">
@@ -308,7 +272,7 @@ export default function EditRecipePage() {
                   formData={formData}
                   isSubmitting={isSubmitting}
                   onSubmit={handleSubmit}
-                  onUpdateFormData={(updates) => setFormData(prev => ({ ...prev, ...updates }))}
+                  onUpdateFormData={updateFormData}
                   onAddListItem={addListItem}
                   onUpdateListItem={updateListItem}
                   onRemoveListItem={removeListItem}
@@ -321,3 +285,21 @@ export default function EditRecipePage() {
     </div>
   );
 }
+
+// Loading state component
+const LoadingState = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <Loader2 className="h-8 w-8 animate-spin" />
+  </div>
+);
+
+// Error state component
+const ErrorState = ({ message, onBack }) => (
+  <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+    <p className="text-lg text-red-500">{message}</p>
+    <Button variant="ghost" onClick={onBack}>
+      <ArrowLeft className="mr-2 h-4 w-4" />
+      Back to Recipes
+    </Button>
+  </div>
+);

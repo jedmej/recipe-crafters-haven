@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -17,15 +17,44 @@ export default function ImportRecipePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("url");
-  const [url, setUrl] = useState("");
-  const [language, setLanguage] = useState<string>("en");
-  const [isImporting, setIsImporting] = useState(false);
-  const [importedRecipe, setImportedRecipe] = useState<RecipeData | null>(null);
-  const [chosenPortions, setChosenPortions] = useState<number>(0);
-  const [scaledRecipe, setScaledRecipe] = useState<RecipeData | null>(null);
-  const [measurementSystem, setMeasurementSystem] = useState<MeasurementSystem>('metric');
+  
+  // State consolidation
+  const [formState, setFormState] = useState({
+    activeTab: "url",
+    url: "",
+    language: "en" as string,
+    isImporting: false
+  });
+  
+  const [recipeState, setRecipeState] = useState<{
+    importedRecipe: RecipeData | null,
+    scaledRecipe: RecipeData | null,
+    chosenPortions: number,
+    measurementSystem: MeasurementSystem
+  }>({
+    importedRecipe: null,
+    scaledRecipe: null,
+    chosenPortions: 0,
+    measurementSystem: 'metric'
+  });
+  
+  // Destructure for convenience
+  const { activeTab, url, language, isImporting } = formState;
+  const { importedRecipe, scaledRecipe, chosenPortions, measurementSystem } = recipeState;
 
+  // Update recipe scaling when portions change
+  useEffect(() => {
+    if (importedRecipe && chosenPortions) {
+      const scaled = scaleRecipe(
+        importedRecipe, 
+        chosenPortions, 
+        importedRecipe.suggested_portions
+      );
+      setRecipeState(prev => ({ ...prev, scaledRecipe: scaled }));
+    }
+  }, [importedRecipe, chosenPortions]);
+
+  // Import recipe mutation
   const importRecipe = useMutation({
     mutationFn: async (url: string) => {
       const response = await supabase.functions.invoke('ai-recipe-import', {
@@ -40,9 +69,13 @@ export default function ImportRecipePage() {
       return response.data as RecipeData;
     },
     onSuccess: (data) => {
-      setImportedRecipe(data);
-      setChosenPortions(data.suggested_portions);
-      setScaledRecipe(data);
+      setRecipeState({
+        importedRecipe: data,
+        scaledRecipe: data,
+        chosenPortions: data.suggested_portions,
+        measurementSystem: 'metric'
+      });
+      
       toast({
         title: "Recipe imported",
         description: "Successfully imported and translated the recipe.",
@@ -57,6 +90,7 @@ export default function ImportRecipePage() {
     }
   });
 
+  // Save recipe mutation
   const saveRecipe = useMutation({
     mutationFn: async () => {
       if (!scaledRecipe) throw new Error("No recipe to save");
@@ -92,20 +126,45 @@ export default function ImportRecipePage() {
       toast({
         variant: "destructive",
         title: "Save failed",
-        description: error.message || "Failed to save the recipe. Please try again.",
+        description: error.message || "Failed to save recipe. Please try again.",
       });
     }
   });
 
+  // Handle form value updates
+  const updateFormState = (key: string, value: any) => {
+    setFormState(prev => ({ ...prev, [key]: value }));
+  };
+  
+  // Update portions and scale recipe
+  const updatePortions = (portions: number) => {
+    if (!importedRecipe) return;
+    setRecipeState(prev => ({ ...prev, chosenPortions: portions }));
+  };
+  
+  // Toggle measurement system
+  const toggleMeasurementSystem = () => {
+    setRecipeState(prev => ({
+      ...prev,
+      measurementSystem: prev.measurementSystem === 'metric' ? 'imperial' : 'metric'
+    }));
+  };
+  
+  // Handle import submission
   const handleImport = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsImporting(true);
-    setImportedRecipe(null);
-    setScaledRecipe(null);
+    updateFormState('isImporting', true);
+    setRecipeState({
+      importedRecipe: null,
+      scaledRecipe: null,
+      chosenPortions: 0,
+      measurementSystem: 'metric'
+    });
+    
     try {
       await importRecipe.mutateAsync(url);
     } finally {
-      setIsImporting(false);
+      updateFormState('isImporting', false);
     }
   };
 
@@ -121,6 +180,7 @@ export default function ImportRecipePage() {
           Back to Recipes
         </Button>
 
+        {/* Recipe Import Form */}
         <Card className="mb-8">
           <CardHeader className="space-y-1">
             <div className="flex items-center gap-2">
@@ -132,7 +192,7 @@ export default function ImportRecipePage() {
             </p>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <Tabs value={activeTab} onValueChange={val => updateFormState('activeTab', val)}>
               <TabsList className="grid w-full grid-cols-2 mb-6">
                 <TabsTrigger value="url">Import from URL</TabsTrigger>
                 <TabsTrigger value="text">Import from Text</TabsTrigger>
@@ -142,8 +202,8 @@ export default function ImportRecipePage() {
                   url={url}
                   language={language}
                   isImporting={isImporting}
-                  onUrlChange={setUrl}
-                  onLanguageChange={setLanguage}
+                  onUrlChange={val => updateFormState('url', val)}
+                  onLanguageChange={val => updateFormState('language', val)}
                   onSubmit={handleImport}
                 />
               </TabsContent>
@@ -158,6 +218,7 @@ export default function ImportRecipePage() {
           </CardContent>
         </Card>
 
+        {/* Recipe Display */}
         {importedRecipe && scaledRecipe && (
           <Card className="overflow-hidden">
             <CardHeader className="border-b bg-gray-50/50">
@@ -184,9 +245,11 @@ export default function ImportRecipePage() {
                 recipe={importedRecipe}
                 scaledRecipe={scaledRecipe}
                 chosenPortions={chosenPortions}
-                onPortionsChange={setChosenPortions}
+                onPortionsChange={updatePortions}
                 onSave={() => saveRecipe.mutate()}
                 isSaving={saveRecipe.isPending}
+                measurementSystem={measurementSystem}
+                onMeasurementSystemChange={toggleMeasurementSystem}
               />
             </CardContent>
             {url && (
@@ -207,6 +270,7 @@ export default function ImportRecipePage() {
           </Card>
         )}
 
+        {/* Loading Indicator */}
         {isImporting && (
           <div className="text-center py-12">
             <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />

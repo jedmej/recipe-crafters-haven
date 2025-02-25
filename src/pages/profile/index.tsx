@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useUserPreferences } from '@/hooks/use-user-preferences';
 
 const LANGUAGE_OPTIONS = {
   en: 'English',
@@ -39,6 +40,7 @@ export default function ProfilePage() {
   } | null>(null);
   const [user, setUser] = useState<any>(null);
   const { toast } = useToast();
+  const { updatePreferences } = useUserPreferences();
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -98,6 +100,12 @@ export default function ProfilePage() {
         });
         throw error;
       }
+
+      // Update in-memory user preferences to match profile settings
+      updatePreferences({
+        language: profile.language,
+        unitSystem: profile.measurement_system === 'metric' ? 'metric' : 'imperial',
+      });
 
       toast({
         title: "Success",

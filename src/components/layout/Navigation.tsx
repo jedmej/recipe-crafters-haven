@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LogOut, Sparkles } from "lucide-react";
+import { LogOut, Sparkles, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 const Navigation = () => {
@@ -49,15 +49,30 @@ const Navigation = () => {
             </div>
           </div>
           
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSignOut}
-            className="text-muted-foreground hover:text-primary transition-colors"
-          >
-            <LogOut className="h-5 w-5" />
-            <span className="sr-only">Sign out</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link 
+              to="/profile"
+              className={cn(
+                "flex items-center gap-2 text-sm font-medium transition-all duration-200",
+                location.pathname.startsWith("/profile")
+                  ? "text-primary"
+                  : "text-muted-foreground hover:text-primary"
+              )}
+            >
+              <User className="h-5 w-5" />
+              <span className="sr-only">Profile</span>
+            </Link>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleSignOut}
+              className="text-muted-foreground hover:text-primary transition-colors"
+            >
+              <LogOut className="h-5 w-5" />
+              <span className="sr-only">Sign out</span>
+            </Button>
+          </div>
         </div>
       </div>
     </nav>

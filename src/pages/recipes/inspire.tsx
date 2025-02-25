@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Loader2, Save, RefreshCw, Clock, Timer, Flame } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
 import ImageGenerator from "@/components/ImageGenerator";
+import { useUserPreferences } from "@/hooks/use-user-preferences";
 
 interface RecipeData {
   title: string;
@@ -48,10 +49,20 @@ const LANGUAGE_CODES = {
   'Polish': 'pl'
 };
 
+const LANGUAGE_NAMES = {
+  'en': 'English',
+  'es': 'Spanish', 
+  'fr': 'French',
+  'it': 'Italian',
+  'de': 'German',
+  'pl': 'Polish'
+};
+
 export default function InspirePage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { preferences } = useUserPreferences();
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [generatedRecipe, setGeneratedRecipe] = useState<RecipeData | null>(null);
@@ -62,10 +73,15 @@ export default function InspirePage() {
   const [cookingMethodFilters, setCookingMethodFilters] = useState<string[]>([]);
   const [caloriesRange, setCaloriesRange] = useState<number[]>([0, 2000]);
   const [cookTimeRange, setCookTimeRange] = useState<number[]>([0, 180]);
-  const [language, setLanguage] = useState<string>("English");
+  const [language, setLanguage] = useState<string>(LANGUAGE_NAMES[preferences.language] || "English");
   const [generateImage, setGenerateImage] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [keywords, setKeywords] = useState<string>("");
+
+  // Update language when user preferences change
+  useEffect(() => {
+    setLanguage(LANGUAGE_NAMES[preferences.language] || "English");
+  }, [preferences.language]);
 
   const mealTypes = [
     "Breakfast", "Brunch", "Lunch", "Dinner", "Snacks", "Dessert", "Appetizer"
@@ -140,7 +156,8 @@ export default function InspirePage() {
       const response = await supabase.functions.invoke('recipe-chat', {
         body: { 
           query,
-          language: LANGUAGE_CODES[language as keyof typeof LANGUAGE_CODES]
+          language: LANGUAGE_CODES[language as keyof typeof LANGUAGE_CODES],
+          measurementSystem: preferences.measurementSystem
         }
       });
 
@@ -235,7 +252,8 @@ export default function InspirePage() {
             const englishResponse = await supabase.functions.invoke('recipe-chat', {
               body: { 
                 query,
-                language: 'en'
+                language: 'en',
+                measurementSystem: preferences.measurementSystem
               }
             });
             

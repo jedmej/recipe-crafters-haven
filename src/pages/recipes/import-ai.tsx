@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -15,17 +15,24 @@ import { Switch } from "@/components/ui/switch";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeData } from "@/types/recipe";
 import { Badge } from "@/components/ui/badge";
+import { useUserPreferences } from "@/hooks/use-user-preferences";
 
 export default function ImportRecipeAIPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { preferences } = useUserPreferences();
   const [recipeUrl, setRecipeUrl] = useState("");
-  const [language, setLanguage] = useState("en");
+  const [language, setLanguage] = useState(preferences.language);
   const [isImporting, setIsImporting] = useState(false);
   const [recipeTitle, setRecipeTitle] = useState<string | null>(null);
   const [recipeImage, setRecipeImage] = useState<string | null>(null);
   const [categories, setCategories] = useState<string[]>([]);
+
+  // Update language when user preferences change
+  useEffect(() => {
+    setLanguage(preferences.language);
+  }, [preferences.language]);
 
   const importRecipe = useMutation({
     mutationFn: async (data: { url: string; language: string }) => {
@@ -34,7 +41,11 @@ export default function ImportRecipeAIPage() {
 
       // Call Gemini AI edge function with language
       const { data: recipeData, error } = await supabase.functions.invoke('ai-recipe-import', {
-        body: { url: data.url, targetLanguage: data.language }
+        body: { 
+          url: data.url, 
+          targetLanguage: data.language,
+          measurementSystem: preferences.measurementSystem
+        }
       });
 
       if (error) throw error;

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import ImageGenerator from '@/components/ImageGenerator';
+import { useUserPreferences, LanguageCode } from '@/hooks/use-user-preferences';
 
 interface RecipeData {
   title: string;
@@ -47,11 +48,10 @@ const SUPPORTED_LANGUAGES = {
   it: 'Italian'
 } as const;
 
-type LanguageCode = keyof typeof SUPPORTED_LANGUAGES;
-
 export function AIRecipeSearch() {
   const [query, setQuery] = useState('');
-  const [language, setLanguage] = useState<LanguageCode>('en');
+  const { preferences } = useUserPreferences();
+  const [language, setLanguage] = useState<LanguageCode>(preferences.language);
   const [generateImage, setGenerateImage] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [recipe, setRecipe] = useState<RecipeData | null>(null);
@@ -59,6 +59,11 @@ export function AIRecipeSearch() {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  // Update language when user preferences change
+  useEffect(() => {
+    setLanguage(preferences.language);
+  }, [preferences.language]);
 
   const saveRecipeToDatabase = async (recipeData: RecipeData, userId: string) => {
     const { data: savedRecipe, error: insertError } = await supabase
@@ -161,7 +166,11 @@ export function AIRecipeSearch() {
 
           const response = await supabase.functions.invoke('recipe-chat', {
             method: 'POST',
-            body: { query, language },
+            body: { 
+              query, 
+              language,
+              measurementSystem: preferences.measurementSystem 
+            },
           });
 
           const { data, error } = response;
@@ -229,7 +238,11 @@ export function AIRecipeSearch() {
                 try {
                   const { data: englishData } = await supabase.functions.invoke('recipe-chat', {
                     method: 'POST',
-                    body: { query, language: 'en' },
+                    body: { 
+                      query, 
+                      language: 'en',
+                      measurementSystem: preferences.measurementSystem 
+                    },
                   });
                   
                   if (englishData?.success && englishData?.data) {

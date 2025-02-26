@@ -39,6 +39,7 @@ interface CategoryFilters {
   cooking_method: string | null;
   occasion: string | null;
   course_category: string | null;
+  taste_profile: string | null;
 }
 
 interface FilterState {
@@ -49,6 +50,7 @@ interface FilterState {
   cookingMethod: string[];
   occasion: string[];
   courseCategory: string[];
+  tasteProfile: string[];
   customValues: Record<string, string>;
 }
 
@@ -173,6 +175,23 @@ const FILTER_CATEGORIES = {
       "Other"
     ],
     badgeClass: "bg-indigo-100 text-indigo-800"
+  },
+  // Taste/Flavor Profile
+  tasteProfile: {
+    title: "Taste/Flavor Profile",
+    options: [
+      "Sweet",
+      "Savory",
+      "Spicy",
+      "Sour",
+      "Salty",
+      "Bitter",
+      "Umami",
+      "Tangy",
+      "Mild",
+      "Other"
+    ],
+    badgeClass: "bg-orange-100 text-orange-800"
   }
 };
 
@@ -477,6 +496,7 @@ export function InspireContainer() {
     cookingMethod: [],
     occasion: [],
     courseCategory: [],
+    tasteProfile: [],
     customValues: {}
   });
   const [language, setLanguage] = useState<string>(preferences.language || 'en');
@@ -616,7 +636,10 @@ export function InspireContainer() {
           : filters.occasion?.[0] || null,
         course_category: filters.courseCategory?.[0] === "Other" 
           ? filters.customValues.courseCategory || null 
-          : filters.courseCategory?.[0] || null
+          : filters.courseCategory?.[0] || null,
+        taste_profile: filters.tasteProfile?.[0] === "Other" 
+          ? filters.customValues.tasteProfile || null 
+          : filters.tasteProfile?.[0] || null
       };
 
       // Prepare input for AI edge function
@@ -652,7 +675,7 @@ export function InspireContainer() {
       }
       
       // If categories are in the recipe root instead of the categories object, move them
-      const categoryFields = ['meal_type', 'dietary_restrictions', 'difficulty_level', 'cuisine_type', 'cooking_method', 'occasion', 'course_category'];
+      const categoryFields = ['meal_type', 'dietary_restrictions', 'difficulty_level', 'cuisine_type', 'cooking_method', 'occasion', 'course_category', 'taste_profile'];
       
       categoryFields.forEach(field => {
         if (recipeData[field] && !recipeData.categories[field]) {
@@ -669,6 +692,7 @@ export function InspireContainer() {
       if (!recipeData.categories.cooking_method) recipeData.categories.cooking_method = "Various";
       if (!recipeData.categories.occasion) recipeData.categories.occasion = filters.occasion?.[0] || "Everyday";
       if (!recipeData.categories.course_category) recipeData.categories.course_category = filters.courseCategory?.[0] || "Main Course";
+      if (!recipeData.categories.taste_profile) recipeData.categories.taste_profile = filters.tasteProfile?.[0] || "Balanced";
       
       setGeneratedRecipe(recipeData);
       toast({
@@ -716,7 +740,10 @@ export function InspireContainer() {
           "International",
         cooking_method: recipeData.categories?.cooking_method || "Various",
         occasion: recipeData.categories?.occasion || "Everyday",
-        course_category: recipeData.categories?.course_category || "Main Course"
+        course_category: recipeData.categories?.course_category || "Main Course",
+        taste_profile: recipeData.categories?.taste_profile || 
+          (filters.tasteProfile?.[0] === "Other" ? filters.customValues.tasteProfile : filters.tasteProfile?.[0]) || 
+          "Balanced"
       };
       
       // Handle additional dietary restrictions if selected by user
@@ -811,6 +838,7 @@ export function InspireContainer() {
       cookingMethod: [],
       occasion: [],
       courseCategory: [],
+      tasteProfile: [],
       customValues: {}
     });
     setUseIngredients(false);

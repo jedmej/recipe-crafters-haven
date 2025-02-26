@@ -7,15 +7,15 @@ export function NewRecipeActions() {
 
   const actions = [
     {
+      label: "Inspire Me",
+      icon: Sparkles,
+      path: "/recipes/inspire"
+    },
+    {
       label: "Import from URL",
       mobileLabel: "Import",
       icon: Bot,
       path: "/recipes/import-ai"
-    },
-    {
-      label: "Inspire Me",
-      icon: Sparkles,
-      path: "/recipes/inspire"
     },
     {
       label: "Add Recipe",

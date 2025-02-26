@@ -56,6 +56,9 @@ export default function RecipesPage() {
     );
   }
 
+  const recipesToDisplay = filteredRecipes || [];
+  const hasRecipes = recipesToDisplay.length > 0;
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
       <style>
@@ -95,7 +98,7 @@ export default function RecipesPage() {
 
             {/* Recipe Count */}
             <RecipeCount 
-              filteredCount={filteredRecipes?.length || 0}
+              filteredCount={recipesToDisplay.length}
               totalCount={recipes?.length || 0}
               hasActiveFilters={getActiveFilterCount() > 0}
               onClearFilters={resetFilters}
@@ -126,19 +129,21 @@ export default function RecipesPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
-          {filteredRecipes?.map((recipe) => (
-            <RecipeCard 
-              key={recipe.id}
-              recipe={recipe}
-              isSelected={selectedRecipes.includes(recipe.id)}
-              isSelectionMode={isSelectionMode}
-              onClick={handleCardClick}
-            />
-          ))}
-        </div>
-
-        {filteredRecipes?.length === 0 && <EmptyState />}
+        {hasRecipes ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
+            {recipesToDisplay.map((recipe) => (
+              <RecipeCard 
+                key={recipe.id}
+                recipe={recipe}
+                isSelected={selectedRecipes.includes(recipe.id)}
+                isSelectionMode={isSelectionMode}
+                onClick={handleCardClick}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyState />
+        )}
       </div>
     </div>
   );

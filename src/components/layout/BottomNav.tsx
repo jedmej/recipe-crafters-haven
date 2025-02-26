@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { ChefHat, Plus, X, ShoppingCart, Search, Bot, FileText, Sparkles, User } from "lucide-react"
+import { ChefHat, Plus, X, ShoppingCart, Bot, FileText, Sparkles } from "lucide-react"
 
 export function BottomNav() {
   const location = useLocation()
@@ -16,19 +16,14 @@ export function BottomNav() {
 
   const addMenuItems = [
     {
-      label: "AI Search",
-      icon: Search,
-      onClick: () => navigate("/recipes/ai-search"),
+      label: "Inspire Me",
+      icon: Sparkles,
+      onClick: () => navigate("/recipes/inspire"),
     },
     {
       label: "Import from URL",
       icon: Bot,
       onClick: () => navigate("/recipes/import-ai"),
-    },
-    {
-      label: "Inspire Me",
-      icon: Sparkles,
-      onClick: () => navigate("/recipes/inspire"),
     },
     {
       label: "Add Recipe",
@@ -117,19 +112,6 @@ export function BottomNav() {
           >
             <ShoppingCart className="h-6 w-6" />
             <span>Groceries</span>
-          </Link>
-          
-          <Link
-            to="/profile"
-            className={cn(
-              "flex flex-col items-center gap-1 text-xs font-medium transition-colors",
-              location.pathname.startsWith("/profile") 
-                ? "text-primary" 
-                : "text-muted-foreground hover:text-primary"
-            )}
-          >
-            <User className="h-6 w-6" />
-            <span>Profile</span>
           </Link>
         </div>
       </div>

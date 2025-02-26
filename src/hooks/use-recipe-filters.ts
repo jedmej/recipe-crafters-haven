@@ -19,36 +19,47 @@ export function useRecipeFilters({ recipes }: UseRecipeFiltersProps) {
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
 
   // Apply all filters to recipes
-  const filteredRecipes = recipes?.filter(recipe => {
+  const filteredRecipes = recipes?.filter((recipe) => {
+    if (!recipe) return false;
+
     // Text search filter
     const matchesSearch = 
-      recipe.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipe.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      recipe.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      recipe.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      false;
+
+    // Helper function to normalize category values
+    const normalizeCategory = (value: string | string[] | null | undefined): string[] => {
+      if (!value) return [];
+      return Array.isArray(value) ? value : [value];
+    };
 
     // Category filters - if no filters selected, show all
     const matchesMealType = mealTypeFilters.length === 0 || 
       (recipe.categories?.meal_type && mealTypeFilters.some(f => 
-        f.toLowerCase() === recipe.categories.meal_type?.toLowerCase()
+        recipe.categories?.meal_type?.toLowerCase() === f.toLowerCase()
       ));
 
     const matchesDietary = dietaryFilters.length === 0 || 
       (recipe.categories?.dietary_restrictions && dietaryFilters.some(f => 
-        f.toLowerCase() === recipe.categories.dietary_restrictions?.toLowerCase()
+        normalizeCategory(recipe.categories?.dietary_restrictions)
+          .some(r => r.toLowerCase() === f.toLowerCase())
       ));
 
     const matchesDifficulty = difficultyFilters.length === 0 || 
       (recipe.categories?.difficulty_level && difficultyFilters.some(f => 
-        f.toLowerCase() === recipe.categories.difficulty_level?.toLowerCase()
+        recipe.categories?.difficulty_level?.toLowerCase() === f.toLowerCase()
       ));
 
     const matchesCuisine = cuisineFilters.length === 0 || 
       (recipe.categories?.cuisine_type && cuisineFilters.some(f => 
-        f.toLowerCase() === recipe.categories.cuisine_type?.toLowerCase()
+        recipe.categories?.cuisine_type?.toLowerCase() === f.toLowerCase()
       ));
 
     const matchesCookingMethod = cookingMethodFilters.length === 0 || 
       (recipe.categories?.cooking_method && cookingMethodFilters.some(f => 
-        f.toLowerCase() === recipe.categories.cooking_method?.toLowerCase()
+        normalizeCategory(recipe.categories?.cooking_method)
+          .some(m => m.toLowerCase() === f.toLowerCase())
       ));
 
     // Time and calories filters
@@ -66,7 +77,7 @@ export function useRecipeFilters({ recipes }: UseRecipeFiltersProps) {
            matchesCookingMethod &&
            matchesCookTime &&
            matchesCalories;
-  });
+  }) || [];
 
   // Helper function to toggle a filter value
   const toggleFilter = (value: string, currentFilters: string[], setFilters: (filters: string[]) => void) => {

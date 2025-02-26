@@ -111,8 +111,7 @@ const FILTER_CATEGORIES = {
       "Easy",
       "Medium",
       "Hard",
-      "Expert",
-      "Other"
+      "Expert"
     ],
     badgeClass: "bg-yellow-100 text-yellow-800"
   },
@@ -605,9 +604,7 @@ export function InspireContainer() {
         dietary_restrictions: filters.dietaryRestrictions?.[0] === "Other" 
           ? filters.customValues.dietaryRestrictions || null 
           : filters.dietaryRestrictions?.[0] || null,
-        difficulty_level: filters.difficultyLevel?.[0] === "Other" 
-          ? filters.customValues.difficultyLevel || null 
-          : filters.difficultyLevel?.[0] || null,
+        difficulty_level: filters.difficultyLevel?.[0] || null,
         cuisine_type: filters.cuisineType?.[0] === "Other" 
           ? filters.customValues.cuisineType || null 
           : filters.cuisineType?.[0] || null,
@@ -712,7 +709,7 @@ export function InspireContainer() {
           (filters.dietaryRestrictions?.[0] === "Other" ? filters.customValues.dietaryRestrictions : filters.dietaryRestrictions?.[0]) || 
           "Regular",
         difficulty_level: recipeData.categories?.difficulty_level || 
-          (filters.difficultyLevel?.[0] === "Other" ? filters.customValues.difficultyLevel : filters.difficultyLevel?.[0]) || 
+          filters.difficultyLevel?.[0] || 
           "Medium",
         cuisine_type: recipeData.categories?.cuisine_type || 
           (filters.cuisineType?.[0] === "Other" ? filters.customValues.cuisineType : filters.cuisineType?.[0]) || 

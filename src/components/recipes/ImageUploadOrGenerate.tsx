@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { ImageIcon, Upload, Loader2, Link as LinkIcon, Trash } from "lucide-react";
+import { ImageIcon, Upload, Loader2, Link as LinkIcon, Trash, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/utils/cn";
@@ -30,6 +30,7 @@ export function ImageUploadOrGenerate({
   const [imageUrl, setImageUrl] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialImage || null);
   const [isImageLoading, setIsImageLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const { toast } = useToast();
   const { generateImage, isLoading: isGeneratingImage } = useImageGeneration();
   const generationInProgressRef = useRef(false);
@@ -183,6 +184,7 @@ export function ImageUploadOrGenerate({
   const handleRemoveImage = () => {
     setPreviewUrl(null);
     onImageSelected('');
+    setIsEditMode(false);
   };
 
   return (
@@ -209,22 +211,33 @@ export function ImageUploadOrGenerate({
       ) : (
         <>
           {previewUrl && (
-            <div className="relative w-full max-w-2xl mx-auto">
+            <div className="relative w-full max-w-2xl mx-auto rounded-lg overflow-hidden shadow-lg">
               <img
                 src={previewUrl}
                 alt="Preview"
-                className="w-full rounded-lg shadow-md"
+                className="w-full rounded-lg"
                 onLoad={() => setIsImageLoading(false)}
               />
-              <Button
-                variant="outline"
-                size="sm"
-                className="absolute top-2 right-2"
-                onClick={handleRemoveImage}
-                type="button"
-              >
-                <Trash className="h-4 w-4" />
-              </Button>
+              <div className="absolute top-2 right-2 flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditMode(!isEditMode)}
+                  type="button"
+                  className="bg-white/80 backdrop-blur-sm hover:bg-white"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleRemoveImage}
+                  type="button"
+                  className="bg-white/80 backdrop-blur-sm hover:bg-white"
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
 
@@ -239,63 +252,65 @@ export function ImageUploadOrGenerate({
             </div>
           ) : (
             <>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateClick}
-                  disabled={disabled || isGeneratingImage || isUploading}
-                  type="button"
-                  className="w-full sm:w-auto"
-                >
-                  <ImageIcon className="mr-2 h-4 w-4" />
-                  {previewUrl ? 'Regenerate Image' : 'Generate Image'}
-                </Button>
+              {(!previewUrl || isEditMode) && (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateClick}
+                    disabled={disabled || isGeneratingImage || isUploading}
+                    type="button"
+                    className="w-full sm:w-auto"
+                  >
+                    <ImageIcon className="mr-2 h-4 w-4" />
+                    {previewUrl ? 'Regenerate Image' : 'Generate Image'}
+                  </Button>
 
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <input
-                    type="file"
-                    id="image-upload"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={disabled || isGeneratingImage}
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => document.getElementById('image-upload')?.click()}
-                    disabled={disabled || isGeneratingImage || isUploading}
-                    type="button"
-                    className="flex-1 sm:flex-initial"
-                  >
-                    {isUploading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Uploading...
-                      </>
-                    ) : (
-                      <>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleUrlButtonClick}
-                    disabled={disabled || isGeneratingImage || isUploading}
-                    type="button"
-                    className="flex-1 sm:flex-initial"
-                  >
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    URL
-                  </Button>
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <input
+                      type="file"
+                      id="image-upload"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={disabled || isGeneratingImage}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('image-upload')?.click()}
+                      disabled={disabled || isGeneratingImage || isUploading}
+                      type="button"
+                      className="flex-1 sm:flex-initial"
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Uploading...
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleUrlButtonClick}
+                      disabled={disabled || isGeneratingImage || isUploading}
+                      type="button"
+                      className="flex-1 sm:flex-initial"
+                    >
+                      <LinkIcon className="mr-2 h-4 w-4" />
+                      URL
+                    </Button>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {showUrlInput && (
+              {showUrlInput && (!previewUrl || isEditMode) && (
                 <div className="flex gap-2 mt-4">
                   <Input
                     type="url"

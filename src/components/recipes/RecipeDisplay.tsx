@@ -146,16 +146,29 @@ export function RecipeDisplay({
       <Card className="overflow-hidden">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Recipe Image</h3>
-          <div className="w-full max-w-2xl mx-auto p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-            <ImageUploadOrGenerate
-              onImageSelected={handleImageUpdate}
-              title={recipe.title}
-              disabled={isSaving || isUpdatingImage}
-              toggleMode={false}
-              hasExistingImage={!!recipe.imageUrl}
-              initialImage={recipe.imageUrl}
-            />
-          </div>
+          {!recipe.imageUrl ? (
+            <div className="w-full max-w-2xl mx-auto p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+              <ImageUploadOrGenerate
+                onImageSelected={handleImageUpdate}
+                title={recipe.title}
+                disabled={isSaving || isUpdatingImage}
+                toggleMode={false}
+                hasExistingImage={false}
+                initialImage={null}
+              />
+            </div>
+          ) : (
+            <div className="w-full max-w-3xl mx-auto">
+              <ImageUploadOrGenerate
+                onImageSelected={handleImageUpdate}
+                title={recipe.title}
+                disabled={isSaving || isUpdatingImage}
+                toggleMode={false}
+                hasExistingImage={true}
+                initialImage={recipe.imageUrl}
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
 

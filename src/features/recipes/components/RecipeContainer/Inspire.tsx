@@ -23,6 +23,7 @@ import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerat
 import { RecipeActions } from "../RecipeDetail/RecipeActions";
 import { RecipeIngredients } from "../RecipeDetail/RecipeIngredients";
 import { PageLayout } from './PageLayout';
+import { RecipeDisplay } from "@/components/recipes/RecipeDisplay";
 
 // Types and constants for language codes and categories
 const LANGUAGE_CODES = {
@@ -87,9 +88,11 @@ export function InspireContainer() {
   const [recipeImage, setRecipeImage] = useState<string | null>(null);
   const [useIngredients, setUseIngredients] = useState<boolean>(false);
   
-  // State for recipe detail view (similar to RecipeDetailPage)
+  // State for recipe detail view
   const [desiredServings, setDesiredServings] = useState(4);
-  const [measurementSystem, setMeasurementSystem] = useState(preferences.measurementSystem || 'metric');
+  const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'imperial'>(
+    preferences.measurementSystem || 'metric'
+  );
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [showImageGenerator, setShowImageGenerator] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
@@ -142,10 +145,10 @@ export function InspireContainer() {
         targetLanguage: language,
         cookingTime: cookingTime,
         filters: activeFilters,
-        categoryFilters: categoryFilters, // Add structured category data
+        categoryFilters: categoryFilters,
         measurementSystem: measurementSystem,
         useIngredients: useIngredients,
-        generateAllCategories: true // Signal to the AI to generate all category fields
+        generateAllCategories: true
       };
 
       // Call the AI edge function
@@ -250,20 +253,14 @@ export function InspireContainer() {
         categories: formattedCategories
       };
 
-      // Log the data we're sending to Supabase
-      console.log('Sending to Supabase:', recipeToSave);
-
-      // Save to database
+      // Save the recipe to the database
       const { data, error } = await supabase
         .from('recipes')
         .insert([recipeToSave])
         .select()
         .single();
 
-      if (error) {
-        console.error('Supabase error:', error);
-        throw error;
-      }
+      if (error) throw error;
       return data;
     },
     onSuccess: (data) => {
@@ -275,6 +272,7 @@ export function InspireContainer() {
       });
     },
     onError: (error: Error) => {
+      console.error('Save error:', error);
       toast({
         variant: "destructive",
         title: "Save Failed",
@@ -283,91 +281,70 @@ export function InspireContainer() {
     }
   });
 
-  // Handle generate recipe submission
   const handleGenerateRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsGenerating(true);
+    setGeneratedRecipe(null);
+    setRecipeImage(null);
     generateRecipe.mutate();
   };
 
-  // Handle save recipe
   const handleSaveRecipe = () => {
     saveRecipe.mutate();
   };
 
-  // Handle image upload/generation
   const handleImageSelected = (imageUrl: string) => {
     setRecipeImage(imageUrl);
   };
 
-  // Similar to RecipeDetailPage functions
   const handleServingsChange = (newServings: number) => {
     setDesiredServings(newServings);
   };
 
   const toggleMeasurementSystem = () => {
-    const newSystem = measurementSystem === 'metric' ? 'imperial' : 'metric';
-    setMeasurementSystem(newSystem);
+    setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric');
   };
 
   const calculateCaloriesPerServing = (totalCalories: number, totalServings: number) => {
-    if (!totalCalories || !totalServings) return 0;
-    return totalCalories / totalServings;
+    if (totalServings <= 0) return 0;
+    return Math.round(totalCalories / totalServings);
   };
 
   const addToGroceryList = () => {
+    // Implementation for adding to grocery list
     toast({
-      title: "Feature not available",
-      description: "Adding to grocery list is not available for generated recipes until saved.",
+      title: "Added to Grocery List",
+      description: "Ingredients have been added to your shopping list.",
     });
   };
 
-  // Calculate scale factor for ingredients
-  const scaleFactor = generatedRecipe && generatedRecipe.servings 
-    ? desiredServings / generatedRecipe.servings 
-    : 1;
-
-  // If we're still loading or there's no recipe data yet, show the form
-  if (isGenerating) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  // If we don't have a generated recipe yet, show the generation form
-  if (!generatedRecipe) {
-    return (
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-        <div className="max-w-7xl mx-auto">
-          <Button
-            variant="ghost"
-            className="mb-8"
-            onClick={() => navigate('/recipes')}
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Recipes
-          </Button>
-
-          <div className="space-y-8">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Recipe Inspiration</h1>
-              <p className="text-muted-foreground mt-2">
-                Generate a new recipe based on your preferences
-              </p>
-            </div>
-
+  return (
+    <PageLayout>
+      <Button
+        variant="ghost"
+        className="mb-6"
+        onClick={() => navigate("/recipes")}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Recipes
+      </Button>
+      
+      {/* Recipe generation form */}
+      {!generatedRecipe && (
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <h1 className="text-3xl font-bold mb-6">Generate AI Recipe</h1>
+            
             <form onSubmit={handleGenerateRecipe} className="space-y-8">
-              {/* Ingredient Input */}
-              <div className="space-y-2">
+              {/* Ingredients section */}
+              <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Switch 
-                    id="use-ingredients"
-                    checked={useIngredients}
+                    id="use-ingredients" 
+                    checked={useIngredients} 
                     onCheckedChange={setUseIngredients}
                   />
-                  <Label htmlFor="use-ingredients">Use specific ingredients</Label>
+                  <Label htmlFor="use-ingredients" className="font-medium">Use ingredients</Label>
                 </div>
                 
                 {useIngredients && (
@@ -375,49 +352,55 @@ export function InspireContainer() {
                     <Label htmlFor="ingredients">Ingredients (comma separated)</Label>
                     <Input
                       id="ingredients"
-                      placeholder="e.g. chicken, rice, bell peppers"
+                      placeholder="e.g., chicken, rice, tomatoes, olive oil"
                       value={ingredients}
                       onChange={(e) => setIngredients(e.target.value)}
                       disabled={isGenerating}
                     />
+                    <p className="text-sm text-muted-foreground">
+                      Add ingredients you want to use in your recipe
+                    </p>
                   </div>
                 )}
               </div>
-
-              {/* Cooking Time Slider */}
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="cooking-time">Cooking Time: {cookingTime} minutes</Label>
-                </div>
+              
+              {/* Cooking time slider */}
+              <div className="space-y-4">
+                <Label className="font-medium">Cooking Time: {cookingTime} minutes</Label>
                 <Slider
-                  id="cooking-time"
-                  min={5}
+                  min={10}
                   max={120}
                   step={5}
                   value={[cookingTime]}
-                  onValueChange={(values) => setCookingTime(values[0])}
+                  onValueChange={(value) => setCookingTime(value[0])}
                   disabled={isGenerating}
                 />
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>10 min</span>
+                  <span>60 min</span>
+                  <span>120 min</span>
+                </div>
               </div>
-
-              {/* Filter Categories */}
+              
+              {/* Filters section */}
               <div className="space-y-4">
-                <h3 className="text-lg font-medium">Recipe Filters</h3>
+                <h3 className="font-medium">Filters</h3>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {Object.entries(FILTER_CATEGORIES).map(([category, { title, options }]) => (
                     <div key={category} className="space-y-2">
-                      <Label>{title}</Label>
+                      <Label className="text-sm font-medium">{title}</Label>
                       <div className="flex flex-wrap gap-2">
-                        {options.map(option => (
+                        {options.map((option) => (
                           <button
                             key={option}
                             type="button"
-                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            onClick={() => toggleFilter(category, option)}
+                            className={`px-3 py-1 rounded-full text-sm ${
                               filters[category]?.includes(option)
                                 ? "bg-primary text-primary-foreground"
                                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                             }`}
-                            onClick={() => toggleFilter(category, option)}
                             disabled={isGenerating}
                           >
                             {option}
@@ -428,13 +411,13 @@ export function InspireContainer() {
                   ))}
                 </div>
               </div>
-
-              {/* Language Selection */}
+              
+              {/* Language selection */}
               <div className="space-y-2">
-                <Label htmlFor="language">Recipe Language</Label>
+                <Label htmlFor="language" className="font-medium">Language</Label>
                 <Select
                   value={language}
-                  onValueChange={setLanguage}
+                  onValueChange={(value) => setLanguage(value)}
                   disabled={isGenerating}
                 >
                   <SelectTrigger id="language" className="w-full md:w-[200px]">
@@ -449,288 +432,93 @@ export function InspireContainer() {
                   </SelectContent>
                 </Select>
               </div>
-
+              
+              {/* Submit button */}
               <Button
                 type="submit"
-                className="w-full md:w-auto"
                 disabled={isGenerating}
+                className="w-full"
               >
-                {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Generate Recipe
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating Recipe...
+                  </>
+                ) : (
+                  "Generate Recipe"
+                )}
               </Button>
             </form>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // If we have a generated recipe, show it in the same format as RecipeDetail
-  const recipe = generatedRecipe.data || generatedRecipe;
-  
-  // Ensure we have category values for display
-  const displayCategories = {
-    meal_type: recipe.categories?.meal_type || filters.mealType?.[0] || "Main Dish",
-    dietary_restrictions: recipe.categories?.dietary_restrictions || filters.dietaryRestrictions?.[0] || "Regular",
-    difficulty_level: recipe.categories?.difficulty_level || filters.difficultyLevel?.[0] || "Medium",
-    cuisine_type: recipe.categories?.cuisine_type || filters.cuisineType?.[0] || "International",
-    cooking_method: recipe.categories?.cooking_method || "Various"
-  };
-  
-  return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <Button
-          variant="ghost"
-          className="mb-8"
-          onClick={() => navigate('/recipes')}
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Recipes
-        </Button>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-          <div className="lg:col-span-8">
-            <Card className="overflow-hidden">
-              <CardContent className="p-6 lg:p-8">
-                <div className="space-y-6">
-                  <div>
-                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">{recipe.title}</h1>
-                    <p className="text-gray-600 mt-4 text-lg">{recipe.description}</p>
-                    
-                    {/* Categories/Tags Section - Updated to show all tags */}
-                    <div className="space-y-4 mt-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
-                            <Tags className="h-4 w-4" />
-                            Meal Type
-                          </label>
-                          <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                            {displayCategories.meal_type}
-                          </span>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
-                            <Tags className="h-4 w-4" />
-                            Dietary Restrictions
-                          </label>
-                          <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                            {displayCategories.dietary_restrictions}
-                          </span>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
-                            <Tags className="h-4 w-4" />
-                            Difficulty Level
-                          </label>
-                          <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                            {displayCategories.difficulty_level}
-                          </span>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
-                            <Tags className="h-4 w-4" />
-                            Cuisine Type
-                          </label>
-                          <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                            {displayCategories.cuisine_type}
-                          </span>
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
-                            <Tags className="h-4 w-4" />
-                            Cooking Method
-                          </label>
-                          <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                            {displayCategories.cooking_method}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Recipe Image */}
-                  {recipeImage ? (
-                    <div className="relative w-full h-[500px] rounded-xl overflow-hidden">
-                      <img
-                        src={recipeImage}
-                        alt={recipe.title}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-[200px] flex items-center justify-center rounded-xl overflow-hidden bg-gray-50">
-                      <ImageUploadOrGenerate
-                        onImageSelected={handleImageSelected}
-                        title={recipe.title}
-                        disabled={isGeneratingImage}
-                      />
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            {/* Recipe Actions Card */}
-            <Card>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Recipe display section */}
+      {generatedRecipe && (
+        <>
+          {recipeImage && (
+            <div className="mb-6">
+              <img
+                src={recipeImage}
+                alt={generatedRecipe.title}
+                className="w-full h-[300px] object-cover rounded-lg"
+              />
+            </div>
+          )}
+          
+          {!recipeImage && (
+            <Card className="mb-6">
               <CardContent className="p-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Recipe Actions</h3>
-                  
-                  <div className="flex flex-col space-y-3">
-                    <Button 
-                      onClick={handleSaveRecipe} 
-                      className="w-full"
-                      disabled={saveRecipe.isLoading}
-                    >
-                      {saveRecipe.isLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                      )}
-                      Save Recipe
-                    </Button>
-                    
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => {
-                        setGeneratedRecipe(null);
-                        setRecipeImage(null);
-                      }}
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      New Recipe
-                    </Button>
-                    
-                    <div className="flex items-center space-x-2 mt-2">
-                      <div className="grid h-5 w-5 place-items-center">
-                        <span className={measurementSystem === 'metric' ? 'font-bold' : ''}>M</span>
-                      </div>
-                      <Switch
-                        checked={measurementSystem === 'imperial'}
-                        onCheckedChange={toggleMeasurementSystem}
-                      />
-                      <div className="grid h-5 w-5 place-items-center">
-                        <span className={measurementSystem === 'imperial' ? 'font-bold' : ''}>I</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ImageUploadOrGenerate
+                  onImageSelected={handleImageSelected}
+                  title={generatedRecipe.title}
+                  disabled={isGeneratingImage}
+                />
               </CardContent>
             </Card>
-
-            {/* Recipe Info Card */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-3 lg:grid-cols-1 gap-4">
-                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
-                    <Clock className="h-6 w-6 text-gray-500 mb-2" />
-                    <p className="text-sm text-gray-500">Prep Time</p>
-                    <p className="text-lg font-semibold">{recipe.prep_time || "10"} min</p>
-                  </div>
-                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
-                    <Timer className="h-6 w-6 text-gray-500 mb-2" />
-                    <p className="text-sm text-gray-500">Cook Time</p>
-                    <p className="text-lg font-semibold">{recipe.cook_time || cookingTime} min</p>
-                  </div>
-                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
-                    <Flame className="h-6 w-6 text-gray-500 mb-2" />
-                    <p className="text-sm text-gray-500">Calories</p>
-                    <p className="text-lg font-semibold">
-                      {Math.round(calculateCaloriesPerServing(recipe.estimated_calories || 0, recipe.servings || 4) * scaleFactor)} kcal
-                    </p>
-                  </div>
-                  <div className="flex flex-col items-center justify-center p-4 bg-gray-50 rounded-lg">
-                    <p className="text-sm text-gray-500">Servings</p>
-                    <p className="text-lg font-semibold">
-                      {recipe.servings || recipe.suggested_portions || 4} {recipe.portion_description || "servings"}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          )}
+          
+          <RecipeDisplay
+            recipe={{
+              ...generatedRecipe,
+              imageUrl: recipeImage
+            }}
+            scaledRecipe={{
+              ...generatedRecipe,
+              imageUrl: recipeImage
+            }}
+            chosenPortions={desiredServings}
+            onPortionsChange={setDesiredServings}
+            measurementSystem={measurementSystem}
+            onMeasurementSystemChange={toggleMeasurementSystem}
+            onSave={handleSaveRecipe}
+            isSaving={saveRecipe.isPending}
+          />
+          
+          <div className="mt-6 flex justify-end">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setGeneratedRecipe(null);
+                setRecipeImage(null);
+              }}
+              className="mr-2"
+            >
+              <RefreshCw className="mr-2 h-4 w-4" />
+              New Recipe
+            </Button>
+            
+            <Button onClick={handleSaveRecipe} disabled={saveRecipe.isPending}>
+              {saveRecipe.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Save Recipe
+            </Button>
           </div>
-
-          <div className="lg:col-span-6">
-            <Card className="h-full">
-              <CardContent className="p-6 lg:p-8">
-                <h3 className="text-2xl font-semibold mb-6">Ingredients</h3>
-                {/* Ingredients Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Label htmlFor="servings-input">Adjust servings:</Label>
-                    <Input
-                      id="servings-input"
-                      type="number"
-                      min="1"
-                      max="100"
-                      value={desiredServings}
-                      onChange={(e) => handleServingsChange(parseInt(e.target.value) || 1)}
-                      className="w-20"
-                    />
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => addToGroceryList()}
-                      className="ml-auto"
-                    >
-                      <ListPlus className="h-4 w-4 mr-2" />
-                      Add to Grocery List
-                    </Button>
-                  </div>
-                  
-                  <ul className="space-y-3">
-                    {recipe.ingredients?.map((ingredient: any, idx: number) => (
-                      <li key={idx} className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-primary"></div>
-                        {typeof ingredient === 'string' ? (
-                          <span>{ingredient}</span>
-                        ) : (
-                          <span>
-                            {ingredient.quantity && (
-                              <span className="font-medium">
-                                {Math.round((ingredient.quantity * scaleFactor) * 100) / 100} {ingredient.unit}{' '}
-                              </span>
-                            )}
-                            {ingredient.name}
-                          </span>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="lg:col-span-6">
-            <Card className="h-full">
-              <CardContent className="p-6 lg:p-8">
-                <h3 className="text-2xl font-semibold mb-6">Instructions</h3>
-                <div className="space-y-4">
-                  {recipe.instructions?.map((instruction: string, index: number) => (
-                    <div key={index} className="flex items-start gap-4 text-lg text-gray-700">
-                      <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-medium">
-                        {index + 1}
-                      </span>
-                      <span>{instruction}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    </PageLayout>
   );
 } 

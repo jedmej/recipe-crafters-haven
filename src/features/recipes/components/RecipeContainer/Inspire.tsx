@@ -564,69 +564,33 @@ export function InspireContainer() {
       
       {/* Recipe display section */}
       {generatedRecipe && (
-        <>
-          {recipeImage && (
-            <div className="mb-6">
-              <img
-                src={recipeImage}
-                alt={generatedRecipe.title}
-                className="w-full h-[300px] object-cover rounded-lg"
-              />
-            </div>
-          )}
-          
-          {!recipeImage && (
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <ImageUploadOrGenerate
-                  onImageSelected={handleImageSelected}
-                  title={generatedRecipe.title}
-                  disabled={isGeneratingImage}
-                />
-              </CardContent>
-            </Card>
-          )}
-          
-          <RecipeDisplay
-            recipe={{
-              ...generatedRecipe,
-              imageUrl: recipeImage
-            }}
-            scaledRecipe={{
-              ...generatedRecipe,
-              imageUrl: recipeImage
-            }}
-            chosenPortions={desiredServings}
-            onPortionsChange={setDesiredServings}
-            measurementSystem={measurementSystem}
-            onMeasurementSystemChange={toggleMeasurementSystem}
-            onSave={handleSaveRecipe}
-            isSaving={saveRecipe.isPending}
-          />
-          
-          <div className="mt-6 flex justify-end">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setGeneratedRecipe(null);
-                setRecipeImage(null);
-              }}
-              className="mr-2"
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              New Recipe
-            </Button>
-            
-            <Button onClick={handleSaveRecipe} disabled={saveRecipe.isPending}>
-              {saveRecipe.isPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="mr-2 h-4 w-4" />
-              )}
-              Save Recipe
-            </Button>
-          </div>
-        </>
+        <RecipeDisplay
+          recipe={{
+            ...generatedRecipe,
+            imageUrl: recipeImage
+          }}
+          scaledRecipe={{
+            ...generatedRecipe,
+            imageUrl: recipeImage
+          }}
+          chosenPortions={desiredServings}
+          onPortionsChange={setDesiredServings}
+          measurementSystem={measurementSystem}
+          onMeasurementSystemChange={toggleMeasurementSystem}
+          onSave={handleSaveRecipe}
+          isSaving={saveRecipe.isPending}
+          onImageUpdate={handleImageSelected}
+          onEditOrGenerate={() => {
+            if (!generatedRecipe.id) {
+              setGeneratedRecipe(null);
+              setRecipeImage(null);
+            } else {
+              // Handle edit case if needed
+              console.log("Edit functionality not implemented yet");
+            }
+          }}
+          isRegenerating={false}
+        />
       )}
     </PageLayout>
   );

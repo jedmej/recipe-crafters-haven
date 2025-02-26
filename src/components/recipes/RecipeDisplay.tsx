@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Clock, Flame, Loader2, Plus, Tags, RefreshCw } from "lucide-react";
+import { Clock, Flame, Loader2, Plus, Tags, RefreshCw, Trash2, Save, Edit, Wand2 } from "lucide-react";
 import { Tag } from "@/components/ui/tag";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeData } from "@/types/recipe";
@@ -17,9 +17,12 @@ interface RecipeDisplayProps {
   isSaving: boolean;
   measurementSystem: 'metric' | 'imperial';
   onMeasurementSystemChange: () => void;
+  onImageUpdate?: (imageUrl: string) => void;
+  onAddToGroceryList?: () => void;
+  isAddingToGroceryList?: boolean;
+  onEditOrGenerate: () => void;
   onRegenerate?: () => void;
   isRegenerating?: boolean;
-  onImageUpdate?: (imageUrl: string) => void;
 }
 
 export function RecipeDisplay({
@@ -31,34 +34,66 @@ export function RecipeDisplay({
   isSaving,
   measurementSystem,
   onMeasurementSystemChange,
+  onImageUpdate,
+  onAddToGroceryList,
+  isAddingToGroceryList,
+  onEditOrGenerate,
   onRegenerate,
   isRegenerating,
-  onImageUpdate,
 }: RecipeDisplayProps) {
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Action Buttons Container */}
+      <Card className="overflow-hidden">
+        <CardContent className="p-6">
+          <div className="flex justify-end gap-4">
+            <Button 
+              onClick={onEditOrGenerate}
+              variant="outline"
+              className="gap-2"
+            >
+              {recipe.id ? (
+                <>
+                  <Edit className="h-4 w-4" />
+                  Edit Recipe
+                </>
+              ) : (
+                <>
+                  <Wand2 className="h-4 w-4" />
+                  Generate New
+                </>
+              )}
+            </Button>
+            <Button 
+              onClick={onSave}
+              variant={recipe.id ? "destructive" : "outline"}
+              className="gap-2"
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {recipe.id ? 'Deleting Recipe...' : 'Saving Recipe...'}
+                </>
+              ) : (
+                <>
+                  {recipe.id ? (
+                    <Trash2 className="h-4 w-4" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {recipe.id ? 'Delete Recipe' : 'Save Recipe'}
+                </>
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Title and Description */}
       <Card className="overflow-hidden">
         <CardContent className="p-6">
           <div className="space-y-6">
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-4">
-              {onRegenerate && (
-                <Button
-                  variant="outline"
-                  onClick={onRegenerate}
-                  disabled={isRegenerating}
-                >
-                  {isRegenerating ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                  )}
-                  New Recipe
-                </Button>
-              )}
-            </div>
-
             <div>
               <h1 className="text-3xl font-bold mb-4">{recipe.title}</h1>
               {recipe.description && (
@@ -74,11 +109,11 @@ export function RecipeDisplay({
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Recipe Image</h3>
           {recipe.imageUrl ? (
-            <div className="relative w-full max-w-2xl mx-auto">
+            <div className="relative w-full max-w-2xl mx-auto aspect-video">
               <img
                 src={recipe.imageUrl}
                 alt={recipe.title}
-                className="w-full rounded-lg shadow-md"
+                className="w-full h-full object-cover rounded-lg shadow-md"
               />
             </div>
           ) : (
@@ -226,7 +261,7 @@ export function RecipeDisplay({
         {/* Ingredients Card */}
         <Card className="overflow-hidden">
           <CardContent className="p-6">
-            <div className="flex flex-col space-y-4 mb-4">
+            <div className="flex flex-col space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">Ingredients</h3>
                 <div className="flex items-center gap-4">
@@ -257,32 +292,32 @@ export function RecipeDisplay({
                   </div>
                 </div>
               </div>
+              <ul className="space-y-2">
+                {scaledRecipe.ingredients.map((ingredient, index) => (
+                  <li key={index} className="flex items-center gap-3">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
+                    <span>{ingredient}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="pt-4">
+                {onAddToGroceryList && (
+                  <Button
+                    variant="outline"
+                    onClick={onAddToGroceryList}
+                    disabled={isAddingToGroceryList}
+                    className="w-full gap-2"
+                  >
+                    {isAddingToGroceryList ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                    Add to Grocery List
+                  </Button>
+                )}
+              </div>
             </div>
-            <ul className="space-y-2 mb-4">
-              {scaledRecipe.ingredients.map((ingredient, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                  <span>{ingredient}</span>
-                </li>
-              ))}
-            </ul>
-            <Button 
-              onClick={onSave}
-              className="button-modern w-full gap-2"
-              disabled={isSaving}
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Saving Recipe...
-                </>
-              ) : (
-                <>
-                  <Plus className="h-5 w-5" />
-                  Save Recipe
-                </>
-              )}
-            </Button>
           </CardContent>
         </Card>
 

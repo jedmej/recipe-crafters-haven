@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Loader2, Save, RefreshCw, Clock, Timer, Flame, ArrowLeft, Tags, ListPlus } from "lucide-react";
+import { ChevronLeft, Loader2, Save, RefreshCw, Clock, Timer, Flame, ArrowLeft, Tags, ListPlus, Search } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Select,
@@ -66,12 +66,14 @@ const FILTER_CATEGORIES = {
     badgeClass: "bg-purple-100 text-purple-800"
   }
 };
+import { Separator } from "@/components/ui/separator";
 
 export function InspireContainer() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { preferences } = useUserPreferences();
+  const [searchQuery, setSearchQuery] = useState('');
 
   // State for recipe inspiration form
   const [ingredients, setIngredients] = useState<string>("");
@@ -126,9 +128,19 @@ export function InspireContainer() {
 
   // Recipe generation mutation
   const generateRecipe = useMutation({
-    mutationFn: async () => {
+    mutationFn: async ({ query, mode }: { query?: string; mode: 'search' | 'inspire' } = { mode: 'inspire' }) => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("User not authenticated");
+
+      // If in search mode, use the search query directly
+      if (mode === 'search' && query) {
+        const { data, error } = await supabase.functions.invoke('recipe-chat', {
+          body: { query, language }
+        });
+
+        if (error) throw error;
+        return data;
+      }
 
       // Transform filters into categories object with all required fields
       const categoryFilters = {
@@ -283,10 +295,46 @@ export function InspireContainer() {
 
   const handleGenerateRecipe = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Clear search query when using inspire section
+    setSearchQuery("");
+    
     setIsGenerating(true);
     setGeneratedRecipe(null);
     setRecipeImage(null);
-    generateRecipe.mutate();
+    generateRecipe.mutate({ mode: 'inspire' });
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a search query",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsGenerating(true);
+    setGeneratedRecipe(null);
+    setRecipeImage(null);
+    
+    // Clear any inspire section inputs
+    setIngredients("");
+    setCookingTime(30);
+    setFilters({
+      mealType: [],
+      dietaryRestrictions: [],
+      difficultyLevel: [],
+      cuisineType: []
+    });
+    setUseIngredients(false);
+    
+    try {
+      await generateRecipe.mutateAsync({ query: searchQuery, mode: 'search' });
+    } catch (error) {
+      setIsGenerating(false);
+    }
   };
 
   const handleSaveRecipe = () => {
@@ -329,13 +377,74 @@ export function InspireContainer() {
         Back to Recipes
       </Button>
       
+      {/* Search Section */}
+      {!generatedRecipe && <Card className="mb-8">
+        <CardContent className="p-6">
+          <h1 className="text-3xl font-bold text-gray-900 mb-6">Find Your Perfect Recipe</h1>
+          
+          <form onSubmit={handleSearch} className="space-y-4" disabled={isGenerating}>
+            <div className="space-y-2">
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="What would you like to cook? (e.g., 'vegetarian pasta', 'quick breakfast')"
+                className="text-lg"
+                disabled={isGenerating}
+              />
+            </div>
+            
+            <div className="flex gap-4">
+              <Select
+                value={language}
+                onValueChange={setLanguage}
+                disabled={isGenerating}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Select language" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
+                    <SelectItem key={code} value={code}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button type="submit" disabled={isGenerating} className="flex-1">
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Search
+                  </>
+                )}
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>}
+      
+      {/* Divider */}
+      {!generatedRecipe && <div className="relative my-8">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-gray-50 px-2 text-muted-foreground">or let us inspire you</span>
+        </div>
+      </div>}
+      
       {/* Recipe generation form */}
       {!generatedRecipe && (
         <Card className="mb-8">
           <CardContent className="p-6">
-            <h1 className="text-3xl font-bold mb-6">Generate AI Recipe</h1>
+            <h1 className="text-3xl font-bold mb-6">Get Inspired with AI</h1>
             
-            <form onSubmit={handleGenerateRecipe} className="space-y-8">
+            <form onSubmit={handleGenerateRecipe} className="space-y-8" disabled={isGenerating}>
               {/* Ingredients section */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2">

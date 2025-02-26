@@ -117,9 +117,21 @@ export function useAISearch() {
   const saveRecipe = useMutation({
     mutationFn: async () => {
       if (!suggestedRecipe) throw new Error("No recipe to save");
-
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
+
+      // Ensure categories are properly formatted
+      const formattedCategories = {
+        meal_type: suggestedRecipe.categories?.meal_type || 'Other',
+        dietary_restrictions: Array.isArray(suggestedRecipe.categories?.dietary_restrictions)
+          ? suggestedRecipe.categories.dietary_restrictions
+          : [suggestedRecipe.categories?.dietary_restrictions || 'None'],
+        difficulty_level: suggestedRecipe.categories?.difficulty_level || 'Medium',
+        cuisine_type: suggestedRecipe.categories?.cuisine_type || 'Other',
+        cooking_method: Array.isArray(suggestedRecipe.categories?.cooking_method)
+          ? suggestedRecipe.categories.cooking_method
+          : [suggestedRecipe.categories?.cooking_method || 'Other']
+      };
 
       const scaledRecipe = scaleRecipe(
         suggestedRecipe,
@@ -139,6 +151,7 @@ export function useAISearch() {
         portion_size: chosenPortions,
         source_url: scaledRecipe.source_url,
         image_url: scaledRecipe.imageUrl,
+        categories: formattedCategories,
         user_id: user.id
       };
 

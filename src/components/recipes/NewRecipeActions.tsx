@@ -7,12 +7,6 @@ export function NewRecipeActions() {
 
   const actions = [
     {
-      label: "AI Search",
-      mobileLabel: "Search",
-      icon: Search,
-      path: "/recipes/ai-search"
-    },
-    {
       label: "Import from URL",
       mobileLabel: "Import",
       icon: Bot,

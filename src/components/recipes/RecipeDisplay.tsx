@@ -40,10 +40,32 @@ export function RecipeDisplay({
       {/* Title and Description */}
       <Card className="overflow-hidden">
         <CardContent className="p-6">
-          <h1 className="text-3xl font-bold mb-4">{recipe.title}</h1>
-          {recipe.description && (
-            <p className="text-muted-foreground leading-relaxed">{recipe.description}</p>
-          )}
+          <div className="space-y-6">
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-4">
+              {onRegenerate && (
+                <Button
+                  variant="outline"
+                  onClick={onRegenerate}
+                  disabled={isRegenerating}
+                >
+                  {isRegenerating ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                  )}
+                  New Recipe
+                </Button>
+              )}
+            </div>
+
+            <div>
+              <h1 className="text-3xl font-bold mb-4">{recipe.title}</h1>
+              {recipe.description && (
+                <p className="text-muted-foreground leading-relaxed">{recipe.description}</p>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
@@ -285,24 +307,6 @@ export function RecipeDisplay({
       {/* Decorative sphere accents */}
       <div className="sphere-accent opacity-10 top-[20%] left-[-150px]" />
       <div className="sphere-accent opacity-10 bottom-[10%] right-[-150px]" />
-      
-      {/* Action Buttons */}
-      <div className="mt-6 flex justify-end gap-4">
-        {onRegenerate && (
-          <Button
-            variant="outline"
-            onClick={onRegenerate}
-            disabled={isRegenerating}
-          >
-            {isRegenerating ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="mr-2 h-4 w-4" />
-            )}
-            New Recipe
-          </Button>
-        )}
-      </div>
     </div>
   );
 }

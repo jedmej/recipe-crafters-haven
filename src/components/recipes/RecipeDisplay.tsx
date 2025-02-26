@@ -3,8 +3,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Clock, Flame, Loader2, Plus } from "lucide-react";
+import { Clock, Flame, Loader2, Plus, Tags } from "lucide-react";
 import { RecipeData } from "@/types/recipe";
+import { Tag } from "@/components/ui/tag";
 
 interface RecipeDisplayProps {
   recipe: RecipeData;
@@ -29,12 +30,79 @@ export function RecipeDisplay({
 }: RecipeDisplayProps) {
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Description Card */}
-      {recipe.description && (
+      {/* Title and Description */}
+      <Card className="overflow-hidden">
+        <CardContent className="p-6">
+          <h1 className="text-3xl font-bold mb-4">{recipe.title}</h1>
+          {recipe.description && (
+            <p className="text-muted-foreground leading-relaxed">{recipe.description}</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recipe Tags */}
+      {recipe.categories && (
         <Card className="overflow-hidden">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-2">Description</h3>
-            <p className="text-muted-foreground leading-relaxed">{recipe.description}</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recipe.categories.meal_type && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <Tags className="h-4 w-4" />
+                    Meal Type
+                  </label>
+                  <Tag variant="meal">{recipe.categories.meal_type}</Tag>
+                </div>
+              )}
+              
+              {recipe.categories.dietary_restrictions && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <Tags className="h-4 w-4" />
+                    Dietary Restrictions
+                  </label>
+                  <Tag variant="dietary">
+                    {Array.isArray(recipe.categories.dietary_restrictions) 
+                      ? recipe.categories.dietary_restrictions.join(', ') 
+                      : recipe.categories.dietary_restrictions || "none"}
+                  </Tag>
+                </div>
+              )}
+              
+              {recipe.categories.difficulty_level && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <Tags className="h-4 w-4" />
+                    Difficulty Level
+                  </label>
+                  <Tag variant="difficulty">{recipe.categories.difficulty_level}</Tag>
+                </div>
+              )}
+              
+              {recipe.categories.cuisine_type && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <Tags className="h-4 w-4" />
+                    Cuisine Type
+                  </label>
+                  <Tag variant="cuisine">{recipe.categories.cuisine_type}</Tag>
+                </div>
+              )}
+              
+              {recipe.categories.cooking_method && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                    <Tags className="h-4 w-4" />
+                    Cooking Method
+                  </label>
+                  <Tag variant="cooking">
+                    {Array.isArray(recipe.categories.cooking_method) 
+                      ? recipe.categories.cooking_method.join(', ') 
+                      : recipe.categories.cooking_method}
+                  </Tag>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

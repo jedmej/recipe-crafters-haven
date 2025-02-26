@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { MeasurementSystem } from "@/lib/types";
 import {
@@ -16,6 +16,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUserPreferences } from '@/hooks/use-user-preferences';
+import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CharacterAttributesInput, CharacterAttributes } from "@/components/profile/CharacterAttributesInput";
+import { AvatarUploader } from "@/components/profile/AvatarUploader";
 
 const LANGUAGE_OPTIONS = {
   en: 'English',
@@ -39,8 +51,13 @@ export default function ProfilePage() {
     language: LanguageCode;
   } | null>(null);
   const [user, setUser] = useState<any>(null);
+  const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [characterAttributes, setCharacterAttributes] = useState<CharacterAttributes>({});
+  const [customPrompt, setCustomPrompt] = useState<string | null>(null);
   const { toast } = useToast();
   const { updatePreferences } = useUserPreferences();
+  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -59,6 +76,7 @@ export default function ProfilePage() {
 
         if (error) throw error;
         setProfile(profile);
+        setAvatarUrl(profile.avatar_url);
       } catch (error) {
         console.error('Error fetching profile:', error);
         toast({
@@ -85,6 +103,7 @@ export default function ProfilePage() {
         .update({
           full_name: profile.full_name,
           username: profile.username,
+          avatar_url: avatarUrl,
           measurement_system: profile.measurement_system,
           language: profile.language,
           updated_at: new Date().toISOString(),
@@ -132,6 +151,61 @@ export default function ProfilePage() {
     }
   };
 
+  const handleAvatarSelected = (url: string) => {
+    setAvatarUrl(url);
+    // Don't close the dialog or save the avatar yet
+    // The user will need to click the Save Avatar button explicitly
+  };
+
+  const handleSaveAvatar = async (url: string) => {
+    if (!user || !profile) return;
+    
+    setIsSavingAvatar(true);
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          avatar_url: url,
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      // Update the local profile state
+      setProfile({
+        ...profile,
+        avatar_url: url,
+      });
+      
+      toast({
+        title: "Avatar updated",
+        description: "Your avatar has been updated successfully.",
+      });
+    } catch (error: any) {
+      console.error('Error updating avatar:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update avatar. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSavingAvatar(false);
+    }
+  };
+
+  const handleAttributesChange = (attributes: CharacterAttributes) => {
+    setCharacterAttributes(attributes);
+  };
+
+  const handleGeneratePrompt = (prompt: string) => {
+    setCustomPrompt(prompt);
+  };
+
+  const resetCustomPrompt = () => {
+    setCustomPrompt(null);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
@@ -163,6 +237,7 @@ export default function ProfilePage() {
                   type="button"
                   variant="outline"
                   disabled={isSaving}
+                  onClick={() => setIsAvatarDialogOpen(true)}
                 >
                   Change Avatar
                 </Button>
@@ -298,6 +373,72 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Avatar Change Dialog */}
+      <Dialog open={isAvatarDialogOpen} onOpenChange={(open) => {
+        setIsAvatarDialogOpen(open);
+        if (!open) {
+          resetCustomPrompt();
+        }
+      }}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Change Avatar</DialogTitle>
+            <DialogDescription>
+              Update your profile picture by uploading an image, using a URL, or generating a character.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto pr-1 -mr-1">
+            <Tabs defaultValue="simple" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="simple">Simple</TabsTrigger>
+                <TabsTrigger value="character">Character Creator</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="simple" className="space-y-4 py-4">
+                <AvatarUploader 
+                  onImageSelected={handleAvatarSelected}
+                  initialImage={profile?.avatar_url || undefined}
+                />
+              </TabsContent>
+              
+              <TabsContent value="character" className="space-y-4 py-4">
+                <CharacterAttributesInput
+                  initialAttributes={characterAttributes}
+                  onAttributesChange={setCharacterAttributes}
+                  onImageSelected={handleAvatarSelected}
+                  userName={profile?.full_name || profile?.username || user?.email}
+                  initialImage={profile?.avatar_url || undefined}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+          
+          <div className="flex justify-between pt-4 pb-2 bg-white border-t mt-4">
+            <DialogClose asChild>
+              <Button type="button" variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button 
+              type="button" 
+              onClick={() => {
+                handleSaveAvatar(avatarUrl || '');
+                setIsAvatarDialogOpen(false);
+              }}
+              disabled={isSavingAvatar}
+            >
+              {isSavingAvatar ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Avatar'
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 } 

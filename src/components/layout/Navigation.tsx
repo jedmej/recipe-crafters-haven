@@ -1,19 +1,84 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { LogOut, User } from "lucide-react";
+import { User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Navigation = () => {
   const location = useLocation();
+  const [profile, setProfile] = useState<{
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  } | null>(null);
+  const [user, setUser] = useState<any>(null);
   
   const links = [
     { href: "/recipes", label: "Recipes" },
     { href: "/grocery-lists", label: "Grocery Lists" },
   ];
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
+  // Add a refresh trigger state to force profile refresh
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  // Set up an interval to periodically check for profile updates
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setRefreshTrigger(prev => prev + 1);
+    }, 30000); // Check every 30 seconds
+    
+    return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const fetchUserAndProfile = async () => {
+      try {
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        setUser(user);
+
+        // Get user's profile
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('full_name, username, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        setProfile(profile);
+      } catch (error) {
+        console.error('Error fetching profile for navigation:', error);
+      }
+    };
+
+    fetchUserAndProfile();
+  }, [refreshTrigger, location.pathname]); // Re-fetch when location changes or refresh is triggered
+
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name[0].toUpperCase();
+    } else if (profile?.username) {
+      return profile.username[0].toUpperCase();
+    } else if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return "U";
+  };
+
+  const getDisplayName = () => {
+    if (profile?.username) {
+      return profile.username;
+    } else if (profile?.full_name) {
+      // Get first name only
+      return profile.full_name.split(' ')[0];
+    } else if (user?.email) {
+      // Get part before @ in email
+      return user.email.split('@')[0];
+    }
+    return "there";
   };
 
   return (
@@ -23,13 +88,22 @@ const Navigation = () => {
         <Link 
           to="/profile"
           className={cn(
-            "flex items-center justify-center w-10 h-10 rounded-full transition-all duration-200",
+            "flex items-center justify-center transition-all duration-200",
             location.pathname.startsWith("/profile")
-              ? "bg-primary/10 text-primary"
-              : "bg-background/80 text-muted-foreground hover:text-primary hover:bg-primary/5"
+              ? "opacity-100"
+              : "opacity-90 hover:opacity-100"
           )}
         >
-          <User className="h-5 w-5" />
+          <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
+            <AvatarImage src={profile?.avatar_url || undefined} />
+            <AvatarFallback className={cn(
+              location.pathname.startsWith("/profile")
+                ? "bg-primary/10 text-primary"
+                : "bg-background/80 text-muted-foreground"
+            )}>
+              {getInitials()}
+            </AvatarFallback>
+          </Avatar>
         </Link>
       </div>
 
@@ -76,19 +150,14 @@ const Navigation = () => {
                     : "text-muted-foreground hover:text-primary hover:bg-primary/5"
                 )}
               >
-                <User className="h-5 w-5" />
-                <span>Profile</span>
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={profile?.avatar_url || undefined} />
+                  <AvatarFallback>
+                    {getInitials()}
+                  </AvatarFallback>
+                </Avatar>
+                <span>{getDisplayName()}</span>
               </Link>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleSignOut}
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="sr-only">Sign out</span>
-              </Button>
             </div>
           </div>
         </div>

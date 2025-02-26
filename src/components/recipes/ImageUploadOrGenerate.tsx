@@ -9,7 +9,8 @@ import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration"
 
 // Constants
 const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB
-const STORAGE_BUCKET = 'recipe-images';
+const RECIPE_STORAGE_BUCKET = 'recipe-images';
+const AVATAR_STORAGE_BUCKET = 'avatar-images';
 
 interface ImageUploadOrGenerateProps {
   onImageSelected: (imageUrl: string) => void;
@@ -18,6 +19,8 @@ interface ImageUploadOrGenerateProps {
   toggleMode?: boolean;
   hasExistingImage?: boolean;
   initialImage?: string;
+  imageType?: 'recipe' | 'avatar';
+  customPrompt?: string;
 }
 
 export function ImageUploadOrGenerate({ 
@@ -26,7 +29,9 @@ export function ImageUploadOrGenerate({
   disabled,
   toggleMode = false,
   hasExistingImage = false,
-  initialImage
+  initialImage,
+  imageType = 'recipe',
+  customPrompt
 }: ImageUploadOrGenerateProps) {
   // State management
   const [isUploading, setIsUploading] = useState(false);
@@ -40,6 +45,9 @@ export function ImageUploadOrGenerate({
   const { toast } = useToast();
   const { generateImage, isLoading: isGeneratingImage } = useImageGeneration();
   const generationInProgressRef = useRef(false);
+
+  // Get the appropriate storage bucket based on image type
+  const storageBucket = imageType === 'avatar' ? AVATAR_STORAGE_BUCKET : RECIPE_STORAGE_BUCKET;
 
   // Effects
   useEffect(() => {
@@ -98,7 +106,7 @@ export function ImageUploadOrGenerate({
     try {
       const filename = `${Date.now()}-${file.name}`;
       const { error: uploadError } = await supabase.storage
-        .from(STORAGE_BUCKET)
+        .from(storageBucket)
         .upload(filename, file, {
           cacheControl: '3600',
           upsert: false
@@ -109,7 +117,7 @@ export function ImageUploadOrGenerate({
       }
 
       const { data: { publicUrl } } = supabase.storage
-        .from(STORAGE_BUCKET)
+        .from(storageBucket)
         .getPublicUrl(filename);
 
       updateImagePreview(publicUrl);
@@ -132,10 +140,35 @@ export function ImageUploadOrGenerate({
 
   // Image generation handlers
   const handleGenerateImage = async () => {
-    if (!title) {
+    // If a custom prompt is provided, use it directly
+    if (customPrompt) {
+      if (generationInProgressRef.current) {
+        return; // Prevent double generation
+      }
+
+      try {
+        generationInProgressRef.current = true;
+        setPreviewUrl(null);
+        
+        const imageUrl = await generateImage(customPrompt, imageType);
+        if (imageUrl) {
+          updateImagePreview(imageUrl);
+        }
+      } finally {
+        generationInProgressRef.current = false;
+      }
+      return;
+    }
+
+    // Otherwise, use the default prompt generation logic
+    const promptText = title || (imageType === 'avatar' ? 'profile avatar' : 'food dish');
+    
+    if (!promptText) {
       showToast({
         title: "Error",
-        description: "Recipe title is required for image generation",
+        description: imageType === 'avatar' 
+          ? "Username or full name is required for avatar generation" 
+          : "Recipe title is required for image generation",
         variant: "destructive",
       });
       return;
@@ -149,7 +182,12 @@ export function ImageUploadOrGenerate({
       generationInProgressRef.current = true;
       setPreviewUrl(null);
       
-      const imageUrl = await generateImage(title);
+      // Use different prompts based on image type
+      const imagePrompt = imageType === 'avatar' 
+        ? `professional profile avatar: ${promptText.trim()}, stylized character portrait, friendly expression, clean background, high quality, detailed, digital art style, no text, no words, no writing, no labels, no watermarks`
+        : `professional food photography: ${promptText.trim()}, appetizing presentation, elegant plating, soft natural lighting, shallow depth of field, bokeh effect, clean background, no text overlay, minimalist style, high resolution, food magazine quality, centered composition, vibrant colors, crisp details, no text, no words, no writing, no labels, no watermarks`;
+      
+      const imageUrl = await generateImage(imagePrompt, imageType);
       if (imageUrl) {
         updateImagePreview(imageUrl);
       }
@@ -256,7 +294,7 @@ export function ImageUploadOrGenerate({
       <div className="flex flex-col items-center gap-2 my-4">
         <Loader2 className="h-8 w-8 animate-spin" />
         <p className="text-sm text-muted-foreground">
-          {isGeneratingImage ? "Generating Recipe Image..." :
+          {isGeneratingImage ? `Generating ${imageType === 'avatar' ? 'Avatar' : 'Recipe Image'}...` :
           isUploading ? "Uploading Image..." :
           "Loading Image..."}
         </p>
@@ -278,7 +316,7 @@ export function ImageUploadOrGenerate({
           className="w-full sm:w-auto"
         >
           <ImageIcon className="mr-2 h-4 w-4" />
-          {previewUrl ? 'Regenerate Image' : 'Generate Image'}
+          {previewUrl ? `Regenerate ${imageType === 'avatar' ? 'Avatar' : 'Image'}` : `Generate ${imageType === 'avatar' ? 'Avatar' : 'Image'}`}
         </Button>
 
         <div className="flex gap-2 w-full sm:w-auto">
@@ -373,7 +411,7 @@ export function ImageUploadOrGenerate({
           disabled={disabled || isUploading || isGeneratingImage}
         />
         <label htmlFor="generate-image" className="text-sm text-gray-600 ml-2">
-          Generate AI image
+          Generate AI {imageType === 'avatar' ? 'avatar' : 'image'}
         </label>
       </div>
     );

@@ -15,7 +15,7 @@ export function useImageGeneration() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const generateImage = async (prompt: string): Promise<string | null> => {
+  const generateImage = async (prompt: string, imageType: 'recipe' | 'avatar' = 'recipe'): Promise<string | null> => {
     setIsLoading(true);
     let lastError: any = null;
 
@@ -32,10 +32,10 @@ export function useImageGeneration() {
           
           const result = await fal.subscribe('fal-ai/recraft-20b', {
             input: {
-              prompt: `professional food photography: ${prompt.trim()}, appetizing presentation, elegant plating, soft natural lighting, shallow depth of field, bokeh effect, clean background, no text overlay, minimalist style, high resolution, food magazine quality, centered composition, vibrant colors, crisp details`,
+              prompt: prompt,
               image_size: "square_hd",
               style: "realistic_image",
-              negative_prompt: "text, watermark, label, logo, title, words, letters, numbers, signature, date"
+              negative_prompt: "text, watermark, label, logo, title, words, letters, numbers, signature, date, writing, typography, font, caption, inscription, handwriting, calligraphy, script, alphabet, character, symbol, glyph"
             },
             pollInterval: 1000,
             logs: true,
@@ -45,7 +45,7 @@ export function useImageGeneration() {
                 if (latestMessage) {
                   console.log('Image generation progress:', latestMessage);
                   toast({
-                    title: 'Generating Image',
+                    title: `Generating ${imageType === 'avatar' ? 'Avatar' : 'Image'}`,
                     description: latestMessage,
                     duration: 2000,
                   });
@@ -74,7 +74,7 @@ export function useImageGeneration() {
           
           if (attempt === MAX_RETRIES) {
             toast({
-              title: 'Image Generation Failed',
+              title: `${imageType === 'avatar' ? 'Avatar' : 'Image'} Generation Failed`,
               description: error.message || 'Failed to generate image. Please try again.',
               variant: 'destructive',
             });

@@ -1,12 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { ImageIcon, Upload, Loader2, Link as LinkIcon, Trash } from "lucide-react";
-import ImageGenerator from "@/components/ImageGenerator";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/utils/cn";
+import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration";
 
 interface ImageUploadOrGenerateProps {
   onImageSelected: (imageUrl: string) => void;
@@ -25,29 +25,20 @@ export function ImageUploadOrGenerate({
   hasExistingImage = false,
   initialImage
 }: ImageUploadOrGenerateProps) {
-  const [generateImage, setGenerateImage] = useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialImage || null);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const { toast } = useToast();
+  const { generateImage, isLoading: isGeneratingImage } = useImageGeneration();
+  const generationInProgressRef = useRef(false);
 
   useEffect(() => {
     if (initialImage) {
       setPreviewUrl(initialImage);
-      setGenerateImage(false);
-      setIsGeneratingImage(false);
     }
   }, [initialImage]);
-
-  useEffect(() => {
-    return () => {
-      setGenerateImage(false);
-      setIsGeneratingImage(false);
-    };
-  }, []);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -110,12 +101,32 @@ export function ImageUploadOrGenerate({
     }
   };
 
-  const handleImageGenerated = (imageUrl: string) => {
-    if (!imageUrl) return;
-    setIsGeneratingImage(false);
-    setGenerateImage(false);
-    setPreviewUrl(imageUrl);
-    onImageSelected(imageUrl);
+  const handleGenerateImage = async () => {
+    if (!title) {
+      toast({
+        title: "Error",
+        description: "Recipe title is required for image generation",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (generationInProgressRef.current) {
+      return; // Prevent double generation
+    }
+
+    try {
+      generationInProgressRef.current = true;
+      setPreviewUrl(null);
+      
+      const imageUrl = await generateImage(title);
+      if (imageUrl) {
+        setPreviewUrl(imageUrl);
+        onImageSelected(imageUrl);
+      }
+    } finally {
+      generationInProgressRef.current = false;
+    }
   };
 
   const validateAndSubmitUrl = async () => {
@@ -166,25 +177,11 @@ export function ImageUploadOrGenerate({
   };
 
   const handleGenerateClick = () => {
-    if (!title) {
-      toast({
-        title: "Error",
-        description: "Recipe title is required for image generation",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Clear existing image first
-    setPreviewUrl(null);
-    setGenerateImage(true);
-    setIsGeneratingImage(true);
+    handleGenerateImage();
   };
 
   const handleRemoveImage = () => {
     setPreviewUrl(null);
-    setGenerateImage(false);
-    setIsGeneratingImage(false);
     onImageSelected('');
   };
 
@@ -194,14 +191,16 @@ export function ImageUploadOrGenerate({
         <div className="flex items-center p-2 border rounded-md bg-white">
           <Switch
             id="generate-image"
-            checked={generateImage}
+            checked={isGeneratingImage}
             onCheckedChange={(checked) => {
-              setGenerateImage(checked);
               if (checked) {
-                setIsGeneratingImage(true);
+                handleGenerateImage();
+              } else {
+                setPreviewUrl(null);
+                onImageSelected('');
               }
             }}
-            disabled={disabled || isUploading}
+            disabled={disabled || isUploading || isGeneratingImage}
           />
           <label htmlFor="generate-image" className="text-sm text-gray-600 ml-2">
             Generate AI image
@@ -325,14 +324,6 @@ export function ImageUploadOrGenerate({
             </>
           )}
         </>
-      )}
-
-      {generateImage && title && !isImageLoading && !isUploading && (
-        <ImageGenerator
-          prompt={title}
-          onImageGenerated={handleImageGenerated}
-          embedded={true}
-        />
       )}
     </div>
   );

@@ -7,6 +7,8 @@ import { Clock, Flame, Loader2, Plus, Tags, RefreshCw, Trash2, Save, Edit, Wand2
 import { Tag } from "@/components/ui/tag";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeData } from "@/types/recipe";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 interface RecipeDisplayProps {
   recipe: RecipeData;
@@ -41,6 +43,42 @@ export function RecipeDisplay({
   onRegenerate,
   isRegenerating,
 }: RecipeDisplayProps) {
+  const { toast } = useToast();
+  const [isUpdatingImage, setIsUpdatingImage] = useState(false);
+
+  const handleImageUpdate = async (imageUrl: string) => {
+    if (!onImageUpdate) return;
+    
+    try {
+      setIsUpdatingImage(true);
+      
+      // Show a loading toast
+      toast({
+        title: "Saving image...",
+        description: "Please wait while we save your changes.",
+      });
+
+      // Call the mutation and wait for it to complete
+      await onImageUpdate(imageUrl);
+      
+      // Show success toast
+      toast({
+        title: "Success",
+        description: "Recipe image has been updated.",
+      });
+    } catch (error) {
+      console.error('Error updating image:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update the recipe image. Please try again.",
+      });
+      throw error;
+    } finally {
+      setIsUpdatingImage(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Action Buttons Container */}
@@ -108,25 +146,16 @@ export function RecipeDisplay({
       <Card className="overflow-hidden">
         <CardContent className="p-6">
           <h3 className="text-lg font-semibold mb-4">Recipe Image</h3>
-          {recipe.imageUrl ? (
-            <div className="relative w-full max-w-2xl mx-auto aspect-video">
-              <img
-                src={recipe.imageUrl}
-                alt={recipe.title}
-                className="w-full h-full object-cover rounded-lg shadow-md"
-              />
-            </div>
-          ) : (
-            <div className="w-full max-w-2xl mx-auto p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-              <ImageUploadOrGenerate
-                onImageSelected={(imageUrl) => onImageUpdate?.(imageUrl)}
-                title={recipe.title}
-                disabled={isSaving}
-                toggleMode={false}
-                hasExistingImage={false}
-              />
-            </div>
-          )}
+          <div className="w-full max-w-2xl mx-auto p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+            <ImageUploadOrGenerate
+              onImageSelected={handleImageUpdate}
+              title={recipe.title}
+              disabled={isSaving || isUpdatingImage}
+              toggleMode={false}
+              hasExistingImage={!!recipe.imageUrl}
+              initialImage={recipe.imageUrl}
+            />
+          </div>
         </CardContent>
       </Card>
 

@@ -131,7 +131,7 @@ export default function RecipeDetailRoute() {
         isSaving={isDeleting}
         measurementSystem={measurementSystem}
         onMeasurementSystemChange={toggleMeasurementSystem}
-        onImageUpdate={updateRecipeImage}
+        onImageUpdate={(imageUrl) => updateRecipeImage.mutateAsync(imageUrl)}
         onAddToGroceryList={() => addToGroceryList.mutate()}
         isAddingToGroceryList={addToGroceryList.isPending}
         onEditOrGenerate={() => {

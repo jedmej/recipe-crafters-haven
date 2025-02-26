@@ -37,6 +37,8 @@ interface CategoryFilters {
   difficulty_level: string | null;
   cuisine_type: string | null;
   cooking_method: string | null;
+  occasion: string | null;
+  course_category: string | null;
 }
 
 interface FilterState {
@@ -44,6 +46,9 @@ interface FilterState {
   dietaryRestrictions: string[];
   difficultyLevel: string[];
   cuisineType: string[];
+  cookingMethod: string[];
+  occasion: string[];
+  courseCategory: string[];
   customValues: Record<string, string>;
 }
 
@@ -69,23 +74,106 @@ const LANGUAGE_NAMES = {
 const FILTER_CATEGORIES = {
   mealType: {
     title: "Meal Type",
-    options: ["Breakfast", "Brunch", "Lunch", "Dinner", "Snacks", "Dessert", "Appetizer", "Other"],
+    options: [
+      "Breakfast",
+      "Brunch",
+      "Lunch",
+      "Dinner",
+      "Snacks",
+      "Dessert",
+      "Appetizer",
+      "Soup",
+      "Side Dish",
+      "Other"
+    ],
     badgeClass: "bg-blue-100 text-blue-800"
   },
   dietaryRestrictions: {
     title: "Dietary Restrictions",
-    options: ["Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Keto", "Paleo", "Halal", "Kosher", "Other"],
+    options: [
+      "Vegetarian",
+      "Vegan",
+      "Gluten-free",
+      "Dairy-free",
+      "Keto",
+      "Paleo",
+      "Halal",
+      "Kosher",
+      "Nut-free",
+      "Low-Sodium",
+      "Other"
+    ],
     badgeClass: "bg-green-100 text-green-800"
   },
   difficultyLevel: {
     title: "Difficulty Level",
-    options: ["Easy", "Medium", "Hard", "Other"],
+    options: [
+      "Easy",
+      "Medium",
+      "Hard",
+      "Expert",
+      "Other"
+    ],
     badgeClass: "bg-yellow-100 text-yellow-800"
   },
   cuisineType: {
     title: "Cuisine Type",
-    options: ["Italian", "Mexican", "Asian", "French", "Middle Eastern", "Indian", "American", "Mediterranean", "Other"],
+    options: [
+      "Italian",
+      "Mexican",
+      "Chinese",
+      "Japanese",
+      "Thai",
+      "French",
+      "Middle Eastern",
+      "Indian",
+      "American",
+      "Mediterranean",
+      "Caribbean",
+      "Greek",
+      "Spanish",
+      "Other"
+    ],
     badgeClass: "bg-purple-100 text-purple-800"
+  },
+  cookingMethod: {
+    title: "Cooking Method",
+    options: [
+      "Baking",
+      "Frying",
+      "Grilling",
+      "Roasting",
+      "Steaming",
+      "Boiling",
+      "Slow Cooking",
+      "Sous Vide",
+      "Other"
+    ],
+    badgeClass: "bg-red-100 text-red-800"
+  },
+  occasion: {
+    title: "Occasion",
+    options: [
+      "Everyday",
+      "Party",
+      "Holiday",
+      "Birthday",
+      "Other"
+    ],
+    badgeClass: "bg-pink-100 text-pink-800"
+  },
+  courseCategory: {
+    title: "Course Category",
+    options: [
+      "Soup",
+      "Salad",
+      "Main Course",
+      "Side Dish",
+      "Dessert",
+      "Beverage",
+      "Other"
+    ],
+    badgeClass: "bg-indigo-100 text-indigo-800"
   }
 };
 
@@ -387,6 +475,9 @@ export function InspireContainer() {
     dietaryRestrictions: [],
     difficultyLevel: [],
     cuisineType: [],
+    cookingMethod: [],
+    occasion: [],
+    courseCategory: [],
     customValues: {}
   });
   const [language, setLanguage] = useState<string>(preferences.language || 'en');
@@ -520,7 +611,15 @@ export function InspireContainer() {
         cuisine_type: filters.cuisineType?.[0] === "Other" 
           ? filters.customValues.cuisineType || null 
           : filters.cuisineType?.[0] || null,
-        cooking_method: null // Add this field even if we don't have UI for it yet
+        cooking_method: filters.cookingMethod?.[0] === "Other" 
+          ? filters.customValues.cookingMethod || null 
+          : filters.cookingMethod?.[0] || null,
+        occasion: filters.occasion?.[0] === "Other" 
+          ? filters.customValues.occasion || null 
+          : filters.occasion?.[0] || null,
+        course_category: filters.courseCategory?.[0] === "Other" 
+          ? filters.customValues.courseCategory || null 
+          : filters.courseCategory?.[0] || null
       };
 
       // Prepare input for AI edge function
@@ -556,7 +655,7 @@ export function InspireContainer() {
       }
       
       // If categories are in the recipe root instead of the categories object, move them
-      const categoryFields = ['meal_type', 'dietary_restrictions', 'difficulty_level', 'cuisine_type', 'cooking_method'];
+      const categoryFields = ['meal_type', 'dietary_restrictions', 'difficulty_level', 'cuisine_type', 'cooking_method', 'occasion', 'course_category'];
       
       categoryFields.forEach(field => {
         if (recipeData[field] && !recipeData.categories[field]) {
@@ -571,6 +670,8 @@ export function InspireContainer() {
       if (!recipeData.categories.difficulty_level) recipeData.categories.difficulty_level = filters.difficultyLevel?.[0] || "Medium"; 
       if (!recipeData.categories.cuisine_type) recipeData.categories.cuisine_type = filters.cuisineType?.[0] || "International";
       if (!recipeData.categories.cooking_method) recipeData.categories.cooking_method = "Various";
+      if (!recipeData.categories.occasion) recipeData.categories.occasion = filters.occasion?.[0] || "Everyday";
+      if (!recipeData.categories.course_category) recipeData.categories.course_category = filters.courseCategory?.[0] || "Main Course";
       
       setGeneratedRecipe(recipeData);
       toast({
@@ -616,7 +717,9 @@ export function InspireContainer() {
         cuisine_type: recipeData.categories?.cuisine_type || 
           (filters.cuisineType?.[0] === "Other" ? filters.customValues.cuisineType : filters.cuisineType?.[0]) || 
           "International",
-        cooking_method: recipeData.categories?.cooking_method || "Various"
+        cooking_method: recipeData.categories?.cooking_method || "Various",
+        occasion: recipeData.categories?.occasion || "Everyday",
+        course_category: recipeData.categories?.course_category || "Main Course"
       };
       
       // Handle additional dietary restrictions if selected by user
@@ -708,6 +811,9 @@ export function InspireContainer() {
       dietaryRestrictions: [],
       difficultyLevel: [],
       cuisineType: [],
+      cookingMethod: [],
+      occasion: [],
+      courseCategory: [],
       customValues: {}
     });
     setUseIngredients(false);

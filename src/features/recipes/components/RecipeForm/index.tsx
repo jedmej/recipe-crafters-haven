@@ -194,6 +194,63 @@ export const CategoriesField = ({
             </SelectContent>
           </Select>
         </FormField>
+        
+        <FormField label="Occasion" id="occasion">
+          <Select 
+            value={formData.categories?.occasion || ""} 
+            onValueChange={(value) => updateFormField("categories", { 
+              ...formData.categories, 
+              occasion: value 
+            })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select occasion" />
+            </SelectTrigger>
+            <SelectContent>
+              {FILTER_CATEGORIES.occasion.options.map(option => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        
+        <FormField label="Course Category" id="course_category">
+          <Select 
+            value={formData.categories?.course_category || ""} 
+            onValueChange={(value) => updateFormField("categories", { 
+              ...formData.categories, 
+              course_category: value 
+            })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select course category" />
+            </SelectTrigger>
+            <SelectContent>
+              {FILTER_CATEGORIES.courseCategory.options.map(option => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
+        
+        <FormField label="Taste Profile" id="taste_profile">
+          <Select 
+            value={formData.categories?.taste_profile || ""} 
+            onValueChange={(value) => updateFormField("categories", { 
+              ...formData.categories, 
+              taste_profile: value 
+            })}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select taste profile" />
+            </SelectTrigger>
+            <SelectContent>
+              {FILTER_CATEGORIES.tasteProfile.options.map(option => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </FormField>
       </div>
     </div>
   );

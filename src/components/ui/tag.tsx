@@ -12,6 +12,9 @@ const tagVariants = cva(
         difficulty: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
         cuisine: "bg-purple-100 text-purple-800 hover:bg-purple-200",
         cooking: "bg-red-100 text-red-800 hover:bg-red-200",
+        occasion: "bg-pink-100 text-pink-800 hover:bg-pink-200",
+        course: "bg-indigo-100 text-indigo-800 hover:bg-indigo-200",
+        taste: "bg-orange-100 text-orange-800 hover:bg-orange-200",
       },
       size: {
         default: "h-8",

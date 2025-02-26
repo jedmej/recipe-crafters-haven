@@ -17,10 +17,14 @@ export interface RecipeData {
   portion_description: string;
   categories?: {
     meal_type: string;
-    dietary_restrictions: string[];
+    dietary_restrictions: string | string[];
     difficulty_level: string;
     cuisine_type: string;
-    cooking_method: string[];
+    cooking_method: string | string[];
+    occasion?: string;
+    course_category?: string;
+    taste_profile?: string | string[];
+    secondary_dietary_restrictions?: string[];
   };
 }
 
@@ -41,9 +45,12 @@ export const SUPPORTED_LANGUAGES = [
 ] as const;
 
 export const RECIPE_CATEGORIES = {
-  meal_type: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert'],
-  dietary_restrictions: ['vegetarian', 'vegan', 'gluten-free', 'low-carb', 'dairy-free', 'none'],
-  difficulty_level: ['easy', 'intermediate', 'advanced'],
-  cuisine_type: ['Italian', 'Mexican', 'Asian', 'Mediterranean', 'French', 'American', 'Indian'],
-  cooking_method: ['baked', 'grilled', 'fried', 'slow-cooked', 'steamed', 'raw']
+  meal_type: ['breakfast', 'lunch', 'dinner', 'snack', 'dessert', 'appetizer', 'soup', 'side dish'],
+  dietary_restrictions: ['vegetarian', 'vegan', 'gluten-free', 'low-carb', 'dairy-free', 'none', 'halal', 'kosher', 'nut-free', 'low-sodium'],
+  difficulty_level: ['easy', 'medium', 'hard', 'expert'],
+  cuisine_type: ['Italian', 'Mexican', 'Chinese', 'Japanese', 'Thai', 'French', 'Middle Eastern', 'Indian', 'American', 'Mediterranean', 'Caribbean', 'Greek', 'Spanish'],
+  cooking_method: ['baking', 'frying', 'grilling', 'roasting', 'steaming', 'boiling', 'slow cooking', 'sous vide'],
+  occasion: ['everyday', 'party', 'holiday', 'birthday'],
+  course_category: ['soup', 'salad', 'main course', 'side dish', 'dessert', 'beverage'],
+  taste_profile: ['sweet', 'savory', 'spicy', 'sour', 'salty', 'bitter', 'umami', 'tangy', 'mild']
 } as const;

@@ -152,19 +152,47 @@ const RecipeImage = ({
   </Card>
 );
 
-const CategoryItem = ({ icon, label, value, variant }: CategoryItemProps) => (
-  <div className="space-y-2">
-    <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
-      {icon}
-      {label}
-    </label>
-    <Tag variant={variant}>
-      {Array.isArray(value) 
-        ? value.join(', ') 
-        : value || (variant === 'cooking' ? 'Other' : 'None')}
-    </Tag>
-  </div>
-);
+const CategoryItem = ({ icon, label, value, variant }: CategoryItemProps) => {
+  // Helper function to normalize a single category value
+  const normalizeValue = (val: string): string => {
+    // Capitalize first letter of each word
+    return val.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  };
+  
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-gray-500 flex items-center gap-2">
+        {icon}
+        {label}
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {!value ? (
+          <Tag variant={variant}>
+            {variant === 'cooking' ? 'Other' : 'None'}
+          </Tag>
+        ) : Array.isArray(value) ? (
+          value.length > 0 ? (
+            value.map((item, index) => (
+              <Tag key={index} variant={variant}>
+                {normalizeValue(item)}
+              </Tag>
+            ))
+          ) : (
+            <Tag variant={variant}>
+              {variant === 'cooking' ? 'Other' : 'None'}
+            </Tag>
+          )
+        ) : (
+          <Tag variant={variant}>
+            {normalizeValue(value)}
+          </Tag>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const RecipeCategories = ({ categories }: { categories: RecipeData['categories'] }) => {
   if (!categories) return null;
@@ -215,6 +243,33 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
               label="Cooking Method"
               value={categories.cooking_method}
               variant="cooking"
+            />
+          )}
+          
+          {categories.occasion && (
+            <CategoryItem 
+              icon={<Tags className="h-4 w-4" />}
+              label="Occasion"
+              value={categories.occasion}
+              variant="occasion"
+            />
+          )}
+          
+          {categories.course_category && (
+            <CategoryItem 
+              icon={<Tags className="h-4 w-4" />}
+              label="Course Category"
+              value={categories.course_category}
+              variant="course"
+            />
+          )}
+          
+          {categories.taste_profile && (
+            <CategoryItem 
+              icon={<Tags className="h-4 w-4" />}
+              label="Taste Profile"
+              value={categories.taste_profile}
+              variant="taste"
             />
           )}
         </div>

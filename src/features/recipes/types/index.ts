@@ -4,6 +4,10 @@ export interface RecipeCategory {
   difficulty_level?: string;
   cuisine_type?: string;
   cooking_method?: string | string[];
+  occasion?: string;
+  course_category?: string;
+  taste_profile?: string | string[];
+  secondary_dietary_restrictions?: string[];
 }
 
 export interface RecipeFormData {
@@ -38,10 +42,13 @@ export interface AiRecipeResponse {
   suggested_portions: number;
   categories?: {
     meal_type: string;
-    dietary_restrictions: string[];
+    dietary_restrictions: string | string[];
     difficulty_level: string;
     cuisine_type: string;
-    cooking_method: string[];
+    cooking_method: string | string[];
+    occasion?: string;
+    course_category?: string;
+    taste_profile?: string | string[];
   };
 }
 

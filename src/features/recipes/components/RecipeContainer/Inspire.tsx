@@ -33,13 +33,13 @@ type GenerationMode = 'search' | 'inspire';
 
 interface CategoryFilters {
   meal_type: string | null;
-  dietary_restrictions: string | null;
+  dietary_restrictions: string | null | string[];
   difficulty_level: string | null;
   cuisine_type: string | null;
-  cooking_method: string | null;
+  cooking_method: string | null | string[];
   occasion: string | null;
   course_category: string | null;
-  taste_profile: string | null;
+  taste_profile: string | null | string[];
 }
 
 interface FilterState {
@@ -52,6 +52,7 @@ interface FilterState {
   courseCategory: string[];
   tasteProfile: string[];
   customValues: Record<string, string>;
+  dynamicCategories: Record<string, string[]>;
 }
 
 // Constants for language codes and categories
@@ -73,7 +74,8 @@ const LANGUAGE_NAMES = {
   'pl': 'Polish'
 };
 
-const FILTER_CATEGORIES = {
+// Create a mutable version of filter categories that can be updated with new values
+let FILTER_CATEGORIES = {
   mealType: {
     title: "Meal Type",
     options: [
@@ -283,7 +285,8 @@ const FilterButtons = ({
   toggleFilter, 
   isGenerating,
   customValues,
-  setCustomValue
+  setCustomValue,
+  dynamicCategories
 }: {
   category: string;
   title: string;
@@ -293,6 +296,7 @@ const FilterButtons = ({
   isGenerating: boolean;
   customValues: Record<string, string>;
   setCustomValue: (category: string, value: string) => void;
+  dynamicCategories: Record<string, string[]>;
 }) => {
   const isOtherSelected = selectedFilters.includes("Other");
   
@@ -325,7 +329,14 @@ const FilterButtons = ({
             onChange={(e) => setCustomValue(category, e.target.value)}
             disabled={isGenerating}
             className="text-sm"
+            list={`${category}-suggestions`}
           />
+          {/* Add datalist for suggestions from dynamic categories */}
+          <datalist id={`${category}-suggestions`}>
+            {dynamicCategories[category]?.map((suggestion, idx) => (
+              <option key={idx} value={suggestion} />
+            ))}
+          </datalist>
         </div>
       )}
     </div>
@@ -429,6 +440,7 @@ const InspireForm = ({
                 isGenerating={isGenerating}
                 customValues={filters.customValues}
                 setCustomValue={setCustomValue}
+                dynamicCategories={filters.dynamicCategories}
               />
             ))}
           </div>
@@ -497,7 +509,8 @@ export function InspireContainer() {
     occasion: [],
     courseCategory: [],
     tasteProfile: [],
-    customValues: {}
+    customValues: {},
+    dynamicCategories: {}
   });
   const [language, setLanguage] = useState<string>(preferences.language || 'en');
   const [useIngredients, setUseIngredients] = useState<boolean>(false);
@@ -522,6 +535,39 @@ export function InspireContainer() {
   useEffect(() => {
     setLanguage(preferences.language || 'en');
   }, [preferences.language]);
+
+  // Function to update filter categories with new values
+  const updateFilterCategories = (category: string, newValue: string) => {
+    // Skip if the value is already in the options or is empty
+    if (!newValue || 
+        FILTER_CATEGORIES[category as keyof typeof FILTER_CATEGORIES].options.includes(newValue)) {
+      return false;
+    }
+    
+    // Add the new value to the options
+    FILTER_CATEGORIES = {
+      ...FILTER_CATEGORIES,
+      [category]: {
+        ...FILTER_CATEGORIES[category as keyof typeof FILTER_CATEGORIES],
+        options: [
+          ...FILTER_CATEGORIES[category as keyof typeof FILTER_CATEGORIES].options.filter(opt => opt !== "Other"),
+          newValue,
+          "Other" // Keep "Other" at the end
+        ]
+      }
+    };
+    
+    // Also update the dynamic categories for suggestions
+    setFilters(prev => ({
+      ...prev,
+      dynamicCategories: {
+        ...prev.dynamicCategories,
+        [category]: [...(prev.dynamicCategories[category] || []), newValue]
+      }
+    }));
+    
+    return true;
+  };
 
   // Filter management functions
   const toggleFilter = (category: string, option: string) => {
@@ -684,6 +730,35 @@ export function InspireContainer() {
         }
       });
       
+      // Process each category value and update filter options if needed
+      const categoryMapping: Record<string, string> = {
+        'meal_type': 'mealType',
+        'dietary_restrictions': 'dietaryRestrictions',
+        'difficulty_level': 'difficultyLevel',
+        'cuisine_type': 'cuisineType',
+        'cooking_method': 'cookingMethod',
+        'occasion': 'occasion',
+        'course_category': 'courseCategory',
+        'taste_profile': 'tasteProfile'
+      };
+      
+      // Process each category and check for new values
+      Object.entries(recipeData.categories).forEach(([field, value]) => {
+        const frontendCategory = categoryMapping[field];
+        if (!frontendCategory) return;
+        
+        // Handle both single values and arrays
+        if (Array.isArray(value)) {
+          value.forEach(val => {
+            if (val && typeof val === 'string') {
+              updateFilterCategories(frontendCategory, val);
+            }
+          });
+        } else if (value && typeof value === 'string') {
+          updateFilterCategories(frontendCategory, value);
+        }
+      });
+      
       // Set default values for any missing categories
       if (!recipeData.categories.meal_type) recipeData.categories.meal_type = filters.mealType?.[0] || "Main Dish";
       if (!recipeData.categories.dietary_restrictions) recipeData.categories.dietary_restrictions = filters.dietaryRestrictions?.[0] || "Regular";
@@ -746,9 +821,17 @@ export function InspireContainer() {
           "Balanced"
       };
       
-      // Handle additional dietary restrictions if selected by user
-      if (filters.dietaryRestrictions?.length > 1) {
-        formattedCategories.secondary_dietary_restrictions = filters.dietaryRestrictions.slice(1);
+      // Handle multiple values for categories that support arrays
+      if (Array.isArray(recipeData.categories?.dietary_restrictions)) {
+        formattedCategories.dietary_restrictions = recipeData.categories.dietary_restrictions;
+      }
+      
+      if (Array.isArray(recipeData.categories?.cooking_method)) {
+        formattedCategories.cooking_method = recipeData.categories.cooking_method;
+      }
+      
+      if (Array.isArray(recipeData.categories?.taste_profile)) {
+        formattedCategories.taste_profile = recipeData.categories.taste_profile;
       }
 
       // Log the recipe structure before saving
@@ -839,7 +922,8 @@ export function InspireContainer() {
       occasion: [],
       courseCategory: [],
       tasteProfile: [],
-      customValues: {}
+      customValues: {},
+      dynamicCategories: {}
     });
     setUseIngredients(false);
     

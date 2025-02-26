@@ -1,28 +1,43 @@
 export const FILTER_CATEGORIES = {
   mealType: {
     title: "Meal Type",
-    options: ["Breakfast", "Brunch", "Lunch", "Dinner", "Snacks", "Dessert", "Appetizer"],
+    options: ["Breakfast", "Brunch", "Lunch", "Dinner", "Snacks", "Dessert", "Appetizer", "Soup", "Side Dish"],
     badgeClass: "bg-blue-100 text-blue-800"
   },
   dietaryRestrictions: {
     title: "Dietary Restrictions",
-    options: ["Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Keto", "Paleo", "Halal", "Kosher"],
+    options: ["Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Keto", "Paleo", "Halal", "Kosher", "Nut-free", "Low-Sodium", "None"],
     badgeClass: "bg-green-100 text-green-800"
   },
   difficultyLevel: {
     title: "Difficulty Level",
-    options: ["Easy", "Medium", "Hard"],
+    options: ["Easy", "Medium", "Hard", "Expert"],
     badgeClass: "bg-yellow-100 text-yellow-800"
   },
   cuisineType: {
     title: "Cuisine Type",
-    options: ["Italian", "Asian", "Mexican", "Mediterranean", "American", "Indian", "Chinese", "Thai", "Middle Eastern", "Japanese", "French", "Other"],
+    options: ["Italian", "Mexican", "Chinese", "Japanese", "Thai", "French", "Middle Eastern", "Indian", "American", "Mediterranean", "Caribbean", "Greek", "Spanish", "Other"],
     badgeClass: "bg-purple-100 text-purple-800"
   },
   cookingMethod: {
     title: "Cooking Method",
-    options: ["Oven-baked", "Stovetop", "Air Fryer", "Slow Cooker", "Instant Pot", "Grill", "Sous-vide", "Microwave", "Other"],
+    options: ["Baking", "Frying", "Grilling", "Roasting", "Steaming", "Boiling", "Slow Cooking", "Sous Vide", "Other"],
     badgeClass: "bg-red-100 text-red-800"
+  },
+  occasion: {
+    title: "Occasion",
+    options: ["Everyday", "Party", "Holiday", "Birthday"],
+    badgeClass: "bg-pink-100 text-pink-800"
+  },
+  courseCategory: {
+    title: "Course Category",
+    options: ["Soup", "Salad", "Main Course", "Side Dish", "Dessert", "Beverage"],
+    badgeClass: "bg-indigo-100 text-indigo-800"
+  },
+  tasteProfile: {
+    title: "Taste Profile",
+    options: ["Sweet", "Savory", "Spicy", "Sour", "Salty", "Bitter", "Umami", "Tangy", "Mild"],
+    badgeClass: "bg-orange-100 text-orange-800"
   }
 };
 
@@ -43,7 +58,10 @@ export const DEFAULT_RECIPE_FORM_DATA = {
     dietary_restrictions: "",
     difficulty_level: "",
     cuisine_type: "",
-    cooking_method: ""
+    cooking_method: "",
+    occasion: "",
+    course_category: "",
+    taste_profile: ""
   }
 };
 

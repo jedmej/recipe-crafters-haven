@@ -6,6 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Define the recipe data interface
 interface RecipeData {
   title: string;
   description: string;
@@ -18,24 +19,15 @@ interface RecipeData {
   portion_description: string;
   categories: {
     meal_type: string;
-    dietary_restrictions: string[];
+    dietary_restrictions: string[] | string;
     difficulty_level: string;
     cuisine_type: string;
-    cooking_method: string[];
+    cooking_method: string[] | string;
     occasion?: string;
     course_category?: string;
-    taste_profile?: string[];
+    taste_profile?: string[] | string;
   };
 }
-
-const SUPPORTED_LANGUAGES = {
-  'en': 'English',
-  'pl': 'Polish',
-  'es': 'Spanish',
-  'fr': 'French',
-  'de': 'German',
-  'it': 'Italian'
-};
 
 // Define the category options that match the frontend
 const CATEGORY_OPTIONS = {
@@ -62,6 +54,16 @@ const CATEGORY_OPTIONS = {
   taste_profile: ["Sweet", "Savory", "Spicy", "Sour", "Salty", "Bitter", "Umami", "Tangy", "Mild"]
 };
 
+const SUPPORTED_LANGUAGES = {
+  'en': 'English',
+  'pl': 'Polish',
+  'es': 'Spanish',
+  'fr': 'French',
+  'de': 'German',
+  'it': 'Italian'
+};
+
+// Function to validate and clean recipe data
 function validateAndCleanRecipeData(data: any): RecipeData {
   // Helper function to ensure number fields
   const ensureNumber = (value: any, defaultValue: number): number => {
@@ -96,11 +98,17 @@ function validateAndCleanRecipeData(data: any): RecipeData {
     suggested_portions: ensureNumber(data.suggested_portions, 1),
     portion_description: ensureString(data.portion_description, 'serving'),
     categories: {
-      meal_type: ensureString(data.categories?.meal_type, 'other'),
-      dietary_restrictions: ensureArray(data.categories?.dietary_restrictions, ['none']),
-      difficulty_level: ensureString(data.categories?.difficulty_level, 'intermediate'),
-      cuisine_type: ensureString(data.categories?.cuisine_type, 'other'),
-      cooking_method: ensureArray(data.categories?.cooking_method, ['other'])
+      meal_type: ensureString(data.categories?.meal_type, 'Main Dish'),
+      dietary_restrictions: data.categories?.dietary_restrictions ? 
+        (Array.isArray(data.categories.dietary_restrictions) ? 
+          data.categories.dietary_restrictions : [data.categories.dietary_restrictions]) : 
+        ['Regular'],
+      difficulty_level: ensureString(data.categories?.difficulty_level, 'Medium'),
+      cuisine_type: ensureString(data.categories?.cuisine_type, 'International'),
+      cooking_method: data.categories?.cooking_method ? 
+        (Array.isArray(data.categories.cooking_method) ? 
+          data.categories.cooking_method : [data.categories.cooking_method]) : 
+        ['Various']
     }
   };
 
@@ -114,7 +122,8 @@ function validateAndCleanRecipeData(data: any): RecipeData {
   }
   
   if (data.categories?.taste_profile) {
-    cleanedData.categories.taste_profile = ensureArray(data.categories.taste_profile, ['Balanced']);
+    cleanedData.categories.taste_profile = Array.isArray(data.categories.taste_profile) ? 
+      data.categories.taste_profile : [data.categories.taste_profile];
   }
 
   return cleanedData;
@@ -126,27 +135,36 @@ serve(async (req) => {
   }
 
   try {
-    const { query, language = 'en' } = await req.json();
+    const { 
+      ingredients = [], 
+      targetLanguage = 'en',
+      cookingTime = 30,
+      filters = [],
+      categoryFilters = {},
+      measurementSystem = 'metric',
+      useIngredients = false,
+      generateAllCategories = true
+    } = await req.json();
     
-    if (!query || typeof query !== 'string') {
-      throw new Error('Invalid query provided');
-    }
-
-    if (!SUPPORTED_LANGUAGES[language]) {
-      throw new Error('Unsupported language');
-    }
+    console.log('Generating recipe with parameters:', {
+      ingredientsCount: ingredients.length,
+      targetLanguage,
+      cookingTime,
+      filtersCount: filters.length,
+      categoryFilters,
+      measurementSystem,
+      useIngredients,
+      generateAllCategories
+    });
 
     const apiKey = Deno.env.get('GOOGLE_GEMINI_KEY');
     if (!apiKey) {
-      throw new Error('AI service configuration error: Missing API key');
+      throw new Error('AI service is not properly configured');
     }
 
-    // Initialize the Gemini client with proper configuration
     const genAI = new GoogleGenerativeAI(apiKey);
-    
-    // Configure the model with safety settings and generation config
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+    const model = genAI.getGenerativeModel({ 
+      model: 'gemini-2.0-flash',
       safetySettings: [
         {
           category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -170,22 +188,59 @@ serve(async (req) => {
         topK: 40,
         topP: 0.95,
         maxOutputTokens: 1024,
-      },
+      }
     });
 
-    const prompt = `You are a helpful cooking assistant. Please create a recipe in ${SUPPORTED_LANGUAGES[language]} language based on the user's request: "${query}"
+    const languageName = SUPPORTED_LANGUAGES[targetLanguage] || 'English';
+    
+    // Build the prompt based on the input parameters
+    let promptBase = `You are a creative recipe generator. Create a delicious recipe in ${languageName} language`;
+    
+    // Add ingredient constraints if needed
+    if (useIngredients && ingredients.length > 0) {
+      promptBase += ` using these ingredients: ${ingredients.join(', ')}`;
+    }
+    
+    // Add cooking time constraint
+    promptBase += `. The recipe should take about ${cookingTime} minutes to prepare and cook.`;
+    
+    // Add category filters
+    if (filters.length > 0) {
+      promptBase += ` The recipe should match these criteria: ${filters.join(', ')}.`;
+    }
+    
+    // Add specific category filters
+    const specificFilters = [];
+    if (categoryFilters.meal_type) specificFilters.push(`Meal type: ${categoryFilters.meal_type}`);
+    if (categoryFilters.dietary_restrictions) specificFilters.push(`Dietary restrictions: ${categoryFilters.dietary_restrictions}`);
+    if (categoryFilters.difficulty_level) specificFilters.push(`Difficulty level: ${categoryFilters.difficulty_level}`);
+    if (categoryFilters.cuisine_type) specificFilters.push(`Cuisine type: ${categoryFilters.cuisine_type}`);
+    if (categoryFilters.cooking_method) specificFilters.push(`Cooking method: ${categoryFilters.cooking_method}`);
+    if (categoryFilters.occasion) specificFilters.push(`Occasion: ${categoryFilters.occasion}`);
+    if (categoryFilters.course_category) specificFilters.push(`Course category: ${categoryFilters.course_category}`);
+    if (categoryFilters.taste_profile) specificFilters.push(`Taste profile: ${categoryFilters.taste_profile}`);
+    
+    if (specificFilters.length > 0) {
+      promptBase += ` Specifically, it should match: ${specificFilters.join('; ')}.`;
+    }
+    
+    // Add measurement system preference
+    promptBase += ` Use ${measurementSystem} measurements.`;
+    
+    // Complete the prompt with the JSON structure request
+    const prompt = `${promptBase}
 
     Return ONLY a JSON object with this exact structure, and no other text:
     {
-      "title": "Recipe title in ${SUPPORTED_LANGUAGES[language]}",
-      "description": "Brief description in ${SUPPORTED_LANGUAGES[language]}",
-      "ingredients": ["List of ingredients with quantities in ${SUPPORTED_LANGUAGES[language]}"],
-      "instructions": ["Step by step instructions in ${SUPPORTED_LANGUAGES[language]}"],
+      "title": "Recipe title in ${languageName}",
+      "description": "Brief description in ${languageName}",
+      "ingredients": ["List of ingredients with quantities in ${languageName}"],
+      "instructions": ["Step by step instructions in ${languageName}"],
       "prep_time": number (in minutes),
       "cook_time": number (in minutes),
       "estimated_calories": number (per serving),
       "suggested_portions": number,
-      "portion_description": "Portion size description in ${SUPPORTED_LANGUAGES[language]}",
+      "portion_description": "Portion size description in ${languageName}",
       "categories": {
         "meal_type": "One of: ${CATEGORY_OPTIONS.meal_type.join(', ')}",
         "dietary_restrictions": ["Array of applicable options: ${CATEGORY_OPTIONS.dietary_restrictions.join(', ')}"],
@@ -201,7 +256,7 @@ serve(async (req) => {
     Important:
     1. Return ONLY the JSON object, no other text or explanations
     2. All numbers must be integers
-    3. All text must be in ${SUPPORTED_LANGUAGES[language]}
+    3. All text must be in ${languageName}
     4. Follow the exact structure shown above
     5. Make sure all fields are present and properly formatted
     6. ALL category fields must be filled with appropriate values
@@ -209,13 +264,14 @@ serve(async (req) => {
     8. Try to use the exact category values provided in the lists above. If none match exactly, you can suggest a new appropriate value
     9. For portion suggestions, analyze the dish type and provide realistic portions:
        - Single-serve items (toast, sandwich): typically 1-2 portions
-       - Family meals (casseroles, lasagna): typically 6-8 portions
+       - Family meals (casseroles, lasagna): typically 4-6 portions
        - Baked goods (cookies, muffins): typically 12-24 portions
        - Pizza: typically 6-8 slices
     10. The portion_description should clearly describe what a portion means (e.g., "slices" for pizza, "cookies" for cookie recipes, "servings" for casseroles)`;
-
+    
+    console.log('Sending prompt to Gemini...');
+    
     try {
-      console.log('Sending request to Gemini...');
       const result = await model.generateContent(prompt);
       
       if (!result.response) {
@@ -223,11 +279,12 @@ serve(async (req) => {
       }
 
       const text = result.response.text();
-      console.log('Raw response text:', text);
+      console.log('Received response from Gemini');
 
       // Extract JSON from the response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
+        console.error('Raw response:', text);
         throw new Error('No valid JSON found in response');
       }
 
@@ -243,22 +300,18 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({
           success: true,
-          data: recipeData,
-          defaultServingSize: recipeData.suggested_portions,
+          data: recipeData
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-
-    } catch (error) {
-      console.error('Gemini API error:', error);
+    } catch (aiError) {
+      console.error('Gemini API error:', aiError);
       
       // Check if it's a rate limit or overload error
-      if (error.message?.includes('503') || error.message?.includes('overloaded')) {
+      if (aiError.message?.includes('503') || aiError.message?.includes('overloaded')) {
         return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'The AI service is currently busy. Please try again in a few moments.',
-            retryable: true
+          JSON.stringify({ 
+            error: 'The AI service is currently busy. Please try again in a few moments.' 
           }),
           { 
             status: 503,
@@ -267,30 +320,19 @@ serve(async (req) => {
         );
       }
 
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: error.message,
-          details: error instanceof Error ? error.stack : 'Unknown error'
-        }),
-        { 
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+      throw aiError;
     }
   } catch (error) {
-    console.error('Edge function error:', error);
+    console.error('Error in ai-recipe-generate function:', error);
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         success: false,
-        error: error.message,
-        details: error instanceof Error ? error.stack : 'Unknown error'
+        error: error.message 
       }),
       { 
-        status: 500,
+        status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
-});
+}); 

@@ -6,20 +6,6 @@ import { Loader2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useImageGeneration } from '@/features/recipes/hooks/useImageGeneration';
 
-// Update interface to match the actual API response structure from the documentation
-interface RecraftResponse {
-  data: {
-    images: Array<{
-      url: string;
-      content_type?: string;
-      file_name?: string;
-      file_size?: number;
-      file_data?: string;
-    }>;
-  };
-  requestId: string;
-}
-
 interface ImageGeneratorProps {
   prompt?: string;
   onImageGenerated?: (imageUrl: string) => void;
@@ -33,7 +19,6 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
 }) => {
   const [promptText, setPromptText] = useState('');
   const [generatedImage, setGeneratedImage] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [hasGenerated, setHasGenerated] = useState(false);
   const generationStartedRef = useRef(false);
   const { toast } = useToast();
@@ -55,7 +40,6 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
     }
 
     generationStartedRef.current = true;
-    setError('');
     setGeneratedImage('');
 
     const imageUrl = await generateImage(promptToUse);
@@ -122,12 +106,6 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
           </Button>
         </div>
 
-        {error && (
-          <div className="p-4 bg-red-50 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
-
         {generatedImage && (
           <div className="mt-6">
             <img
@@ -137,7 +115,6 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
               crossOrigin="anonymous"
               onError={(e) => {
                 console.error('Image loading error:', e);
-                setError('Failed to load generated image');
                 setGeneratedImage('');
               }}
             />

@@ -44,6 +44,7 @@ interface FilterState {
   dietaryRestrictions: string[];
   difficultyLevel: string[];
   cuisineType: string[];
+  customValues: Record<string, string>;
 }
 
 // Constants for language codes and categories
@@ -68,22 +69,22 @@ const LANGUAGE_NAMES = {
 const FILTER_CATEGORIES = {
   mealType: {
     title: "Meal Type",
-    options: ["Breakfast", "Brunch", "Lunch", "Dinner", "Snacks", "Dessert", "Appetizer"],
+    options: ["Breakfast", "Brunch", "Lunch", "Dinner", "Snacks", "Dessert", "Appetizer", "Other"],
     badgeClass: "bg-blue-100 text-blue-800"
   },
   dietaryRestrictions: {
     title: "Dietary Restrictions",
-    options: ["Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Keto", "Paleo", "Halal", "Kosher"],
+    options: ["Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Keto", "Paleo", "Halal", "Kosher", "Other"],
     badgeClass: "bg-green-100 text-green-800"
   },
   difficultyLevel: {
     title: "Difficulty Level",
-    options: ["Easy", "Medium", "Hard"],
+    options: ["Easy", "Medium", "Hard", "Other"],
     badgeClass: "bg-yellow-100 text-yellow-800"
   },
   cuisineType: {
     title: "Cuisine Type",
-    options: ["Italian", "Mexican", "Asian", "French", "Middle Eastern", "Indian", "American", "Mediterranean"],
+    options: ["Italian", "Mexican", "Asian", "French", "Middle Eastern", "Indian", "American", "Mediterranean", "Other"],
     badgeClass: "bg-purple-100 text-purple-800"
   }
 };
@@ -174,7 +175,9 @@ const FilterButtons = ({
   options, 
   selectedFilters, 
   toggleFilter, 
-  isGenerating 
+  isGenerating,
+  customValues,
+  setCustomValue
 }: {
   category: string;
   title: string;
@@ -182,28 +185,46 @@ const FilterButtons = ({
   selectedFilters: string[];
   toggleFilter: (category: string, option: string) => void;
   isGenerating: boolean;
-}) => (
-  <div className="space-y-2">
-    <Label className="text-sm font-medium">{title}</Label>
-    <div className="flex flex-wrap gap-2">
-      {options.map((option) => (
-        <button
-          key={option}
-          type="button"
-          onClick={() => toggleFilter(category, option)}
-          className={`px-3 py-1 rounded-full text-sm ${
-            selectedFilters.includes(option)
-              ? "bg-primary text-primary-foreground"
-              : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-          }`}
-          disabled={isGenerating}
-        >
-          {option}
-        </button>
-      ))}
+  customValues: Record<string, string>;
+  setCustomValue: (category: string, value: string) => void;
+}) => {
+  const isOtherSelected = selectedFilters.includes("Other");
+  
+  return (
+    <div className="space-y-2">
+      <Label className="text-sm font-medium">{title}</Label>
+      <div className="flex flex-wrap gap-2">
+        {options.map((option) => (
+          <button
+            key={option}
+            type="button"
+            onClick={() => toggleFilter(category, option)}
+            className={`px-3 py-1 rounded-full text-sm ${
+              selectedFilters.includes(option)
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            }`}
+            disabled={isGenerating}
+          >
+            {option}
+          </button>
+        ))}
+      </div>
+      
+      {isOtherSelected && (
+        <div className="mt-2">
+          <Input
+            placeholder={`Enter custom ${title.toLowerCase()}`}
+            value={customValues[category] || ''}
+            onChange={(e) => setCustomValue(category, e.target.value)}
+            disabled={isGenerating}
+            className="text-sm"
+          />
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 // Component for the inspire form
 const InspireForm = ({ 
@@ -215,6 +236,7 @@ const InspireForm = ({
   setCookingTime,
   filters,
   toggleFilter,
+  setCustomValue,
   language,
   setLanguage,
   isGenerating,
@@ -228,6 +250,7 @@ const InspireForm = ({
   setCookingTime: (time: number) => void;
   filters: FilterState;
   toggleFilter: (category: string, option: string) => void;
+  setCustomValue: (category: string, value: string) => void;
   language: string;
   setLanguage: (lang: string) => void;
   isGenerating: boolean;
@@ -298,6 +321,8 @@ const InspireForm = ({
                 selectedFilters={filters[category as keyof FilterState]}
                 toggleFilter={toggleFilter}
                 isGenerating={isGenerating}
+                customValues={filters.customValues}
+                setCustomValue={setCustomValue}
               />
             ))}
           </div>
@@ -361,7 +386,8 @@ export function InspireContainer() {
     mealType: [],
     dietaryRestrictions: [],
     difficultyLevel: [],
-    cuisineType: []
+    cuisineType: [],
+    customValues: {}
   });
   const [language, setLanguage] = useState<string>(preferences.language || 'en');
   const [useIngredients, setUseIngredients] = useState<boolean>(false);
@@ -391,22 +417,77 @@ export function InspireContainer() {
   const toggleFilter = (category: string, option: string) => {
     setFilters(prev => {
       const currentCategoryFilters = prev[category as keyof FilterState] || [];
-      const updatedCategoryFilters = currentCategoryFilters.includes(option)
-        ? currentCategoryFilters.filter(item => item !== option)
-        : [...currentCategoryFilters, option];
       
-      return {
-        ...prev,
-        [category]: updatedCategoryFilters
-      } as FilterState;
+      // If this is the "Other" option
+      if (option === "Other") {
+        // If Other is already selected, deselect it
+        if (currentCategoryFilters.includes("Other")) {
+          const updatedFilters = currentCategoryFilters.filter(item => item !== "Other");
+          const updatedCustomValues = { ...prev.customValues };
+          delete updatedCustomValues[category];
+          
+          return {
+            ...prev,
+            [category]: updatedFilters,
+            customValues: updatedCustomValues
+          } as FilterState;
+        } 
+        // Otherwise select it, replacing any other selection in this category
+        else {
+          return {
+            ...prev,
+            [category]: ["Other"]
+          } as FilterState;
+        }
+      }
+      // If this is a custom value for an "Other" option
+      else if (currentCategoryFilters.includes("Other") && option !== "Other") {
+        return {
+          ...prev,
+          customValues: {
+            ...prev.customValues,
+            [category]: option
+          }
+        } as FilterState;
+      }
+      // Regular option toggle behavior
+      else {
+        const updatedCategoryFilters = currentCategoryFilters.includes(option)
+          ? currentCategoryFilters.filter(item => item !== option)
+          : [option]; // Replace existing selection with new one
+        
+        return {
+          ...prev,
+          [category]: updatedCategoryFilters
+        } as FilterState;
+      }
     });
+  };
+
+  // Function to set a custom value for a category
+  const setCustomValue = (category: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      customValues: {
+        ...prev.customValues,
+        [category]: value
+      }
+    }));
   };
 
   // Compound active filters for API call
   const activeFilters = useMemo(() => {
-    return Object.entries(filters)
+    const standardFilters = Object.entries(filters)
+      .filter(([key]) => key !== 'customValues')
       .flatMap(([category, options]) => options)
+      .filter(option => option !== 'Other');
+    
+    // Add custom values if they exist
+    const customFilters = Object.entries(filters.customValues)
+      .map(([_, value]) => value)
       .filter(Boolean);
+    
+    return [...standardFilters, ...customFilters];
   }, [filters]);
 
   // Recipe generation mutation
@@ -427,10 +508,18 @@ export function InspireContainer() {
 
       // Transform filters into categories object with all required fields
       const categoryFilters: CategoryFilters = {
-        meal_type: filters.mealType?.[0] || null,
-        dietary_restrictions: filters.dietaryRestrictions?.[0] || null,
-        difficulty_level: filters.difficultyLevel?.[0] || null,
-        cuisine_type: filters.cuisineType?.[0] || null,
+        meal_type: filters.mealType?.[0] === "Other" 
+          ? filters.customValues.mealType || null 
+          : filters.mealType?.[0] || null,
+        dietary_restrictions: filters.dietaryRestrictions?.[0] === "Other" 
+          ? filters.customValues.dietaryRestrictions || null 
+          : filters.dietaryRestrictions?.[0] || null,
+        difficulty_level: filters.difficultyLevel?.[0] === "Other" 
+          ? filters.customValues.difficultyLevel || null 
+          : filters.difficultyLevel?.[0] || null,
+        cuisine_type: filters.cuisineType?.[0] === "Other" 
+          ? filters.customValues.cuisineType || null 
+          : filters.cuisineType?.[0] || null,
         cooking_method: null // Add this field even if we don't have UI for it yet
       };
 
@@ -515,10 +604,18 @@ export function InspireContainer() {
       
       // Use the displayCategories to ensure all category fields are populated
       const formattedCategories = {
-        meal_type: recipeData.categories?.meal_type || filters.mealType?.[0] || "Main Dish",
-        dietary_restrictions: recipeData.categories?.dietary_restrictions || filters.dietaryRestrictions?.[0] || "Regular",
-        difficulty_level: recipeData.categories?.difficulty_level || filters.difficultyLevel?.[0] || "Medium",
-        cuisine_type: recipeData.categories?.cuisine_type || filters.cuisineType?.[0] || "International",
+        meal_type: recipeData.categories?.meal_type || 
+          (filters.mealType?.[0] === "Other" ? filters.customValues.mealType : filters.mealType?.[0]) || 
+          "Main Dish",
+        dietary_restrictions: recipeData.categories?.dietary_restrictions || 
+          (filters.dietaryRestrictions?.[0] === "Other" ? filters.customValues.dietaryRestrictions : filters.dietaryRestrictions?.[0]) || 
+          "Regular",
+        difficulty_level: recipeData.categories?.difficulty_level || 
+          (filters.difficultyLevel?.[0] === "Other" ? filters.customValues.difficultyLevel : filters.difficultyLevel?.[0]) || 
+          "Medium",
+        cuisine_type: recipeData.categories?.cuisine_type || 
+          (filters.cuisineType?.[0] === "Other" ? filters.customValues.cuisineType : filters.cuisineType?.[0]) || 
+          "International",
         cooking_method: recipeData.categories?.cooking_method || "Various"
       };
       
@@ -610,7 +707,8 @@ export function InspireContainer() {
       mealType: [],
       dietaryRestrictions: [],
       difficultyLevel: [],
-      cuisineType: []
+      cuisineType: [],
+      customValues: {}
     });
     setUseIngredients(false);
     
@@ -681,6 +779,7 @@ export function InspireContainer() {
             setCookingTime={setCookingTime}
             filters={filters}
             toggleFilter={toggleFilter}
+            setCustomValue={setCustomValue}
             language={language}
             setLanguage={setLanguage}
             isGenerating={isGenerating}

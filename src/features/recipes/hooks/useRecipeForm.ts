@@ -95,6 +95,17 @@ export function useRecipeForm({
         ...formData,
         ingredients: formData.ingredients.filter(i => i.trim() !== ""),
         instructions: formData.instructions.filter(i => i.trim() !== ""),
+        categories: {
+          meal_type: formData.categories?.meal_type || 'Other',
+          dietary_restrictions: Array.isArray(formData.categories?.dietary_restrictions)
+            ? formData.categories.dietary_restrictions
+            : [formData.categories?.dietary_restrictions || 'None'],
+          difficulty_level: formData.categories?.difficulty_level || 'Medium',
+          cuisine_type: formData.categories?.cuisine_type || 'Other',
+          cooking_method: Array.isArray(formData.categories?.cooking_method)
+            ? formData.categories.cooking_method
+            : [formData.categories?.cooking_method || 'Other']
+        },
         user_id: user.id
       };
 
@@ -139,6 +150,17 @@ export function useRecipeForm({
         ...formData,
         ingredients: formData.ingredients.filter(i => i.trim() !== ""),
         instructions: formData.instructions.filter(i => i.trim() !== ""),
+        categories: {
+          meal_type: formData.categories?.meal_type || 'Other',
+          dietary_restrictions: Array.isArray(formData.categories?.dietary_restrictions)
+            ? formData.categories.dietary_restrictions
+            : [formData.categories?.dietary_restrictions || 'None'],
+          difficulty_level: formData.categories?.difficulty_level || 'Medium',
+          cuisine_type: formData.categories?.cuisine_type || 'Other',
+          cooking_method: Array.isArray(formData.categories?.cooking_method)
+            ? formData.categories.cooking_method
+            : [formData.categories?.cooking_method || 'Other']
+        }
       };
 
       const { data, error } = await supabase
@@ -185,6 +207,17 @@ export function useRecipeForm({
         ...formData,
         ingredients: formData.ingredients.filter(i => i.trim() !== ""),
         instructions: formData.instructions.filter(i => i.trim() !== ""),
+        categories: {
+          meal_type: formData.categories?.meal_type || 'Other',
+          dietary_restrictions: Array.isArray(formData.categories?.dietary_restrictions)
+            ? formData.categories.dietary_restrictions
+            : [formData.categories?.dietary_restrictions || 'None'],
+          difficulty_level: formData.categories?.difficulty_level || 'Medium',
+          cuisine_type: formData.categories?.cuisine_type || 'Other',
+          cooking_method: Array.isArray(formData.categories?.cooking_method)
+            ? formData.categories.cooking_method
+            : [formData.categories?.cooking_method || 'Other']
+        },
         user_id: user.id
       };
 

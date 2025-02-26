@@ -17,6 +17,13 @@ interface AIRecipeResponse {
   prep_time?: number;
   estimated_calories?: number;
   portion_description?: string;
+  categories?: {
+    meal_type: string;
+    dietary_restrictions: string[];
+    difficulty_level: string;
+    cuisine_type: string;
+    cooking_method: string[];
+  };
 }
 
 export function useAISearch() {
@@ -27,6 +34,7 @@ export function useAISearch() {
   const [suggestedRecipe, setSuggestedRecipe] = useState<RecipeData | null>(null);
   const [chosenPortions, setChosenPortions] = useState<number>(0);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
   const recipeToGenerateImage = useRef<string | null>(null);
 
   const searchRecipe = useMutation({
@@ -74,6 +82,17 @@ export function useAISearch() {
         prep_time: apiResponse.prep_time ?? null,
         estimated_calories: apiResponse.estimated_calories ?? null,
         portion_description: apiResponse.portion_description ?? `Serves ${apiResponse.suggested_portions}`,
+        categories: {
+          meal_type: apiResponse.categories?.meal_type || 'Other',
+          dietary_restrictions: Array.isArray(apiResponse.categories?.dietary_restrictions) 
+            ? apiResponse.categories.dietary_restrictions 
+            : [apiResponse.categories?.dietary_restrictions || 'None'],
+          difficulty_level: apiResponse.categories?.difficulty_level || 'Medium',
+          cuisine_type: apiResponse.categories?.cuisine_type || 'Other',
+          cooking_method: Array.isArray(apiResponse.categories?.cooking_method)
+            ? apiResponse.categories.cooking_method
+            : [apiResponse.categories?.cooking_method || 'Other']
+        }
       };
 
       return recipe;
@@ -164,6 +183,7 @@ export function useAISearch() {
     suggestedRecipe,
     chosenPortions,
     isGeneratingImage,
+    isRegenerating,
     recipeToGenerateImage,
     searchRecipe,
     saveRecipe,
@@ -171,6 +191,7 @@ export function useAISearch() {
     setSuggestedRecipe,
     setChosenPortions,
     setIsGeneratingImage,
+    setIsRegenerating,
     handleImageGenerated
   };
 } 

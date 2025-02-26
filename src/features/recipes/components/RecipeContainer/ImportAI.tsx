@@ -29,11 +29,13 @@ export function ImportAIContainer() {
     isSearching,
     suggestedRecipe,
     chosenPortions,
+    isRegenerating,
     searchRecipe,
     saveRecipe,
     setIsSearching,
     setSuggestedRecipe,
     setChosenPortions,
+    setIsRegenerating,
   } = useAISearch();
   
   // URL validation
@@ -82,6 +84,18 @@ export function ImportAIContainer() {
     }
   };
   
+  const handleRegenerate = async () => {
+    if (!recipeUrl) return;
+    setIsRegenerating(true);
+    try {
+      await handleImport({ preventDefault: () => {} } as React.FormEvent);
+    } catch (error) {
+      console.error('Regenerate error:', error);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
   return (
     <PageLayout>
       <Button
@@ -126,7 +140,7 @@ export function ImportAIContainer() {
               <label className="text-sm font-medium">Import Language</label>
               <Select 
                 value={language} 
-                onValueChange={(value) => setLanguage(value)}
+                onValueChange={setLanguage}
                 disabled={isSearching}
               >
                 <SelectTrigger>
@@ -168,13 +182,14 @@ export function ImportAIContainer() {
           chosenPortions={chosenPortions}
           onPortionsChange={setChosenPortions}
           measurementSystem={measurementSystem}
-          onMeasurementSystemChange={() => setMeasurementSystem(prev => 
-            prev === 'metric' ? 'imperial' : 'metric'
-          )}
+          onMeasurementSystemChange={() => setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric')}
           onSave={() => saveRecipe.mutate()}
           isSaving={saveRecipe.isPending}
+          onRegenerate={handleRegenerate}
+          isRegenerating={isRegenerating}
+          onImageUpdate={(imageUrl) => setSuggestedRecipe(prev => prev ? { ...prev, imageUrl } : null)}
         />
       )}
     </PageLayout>
   );
-} 
+}

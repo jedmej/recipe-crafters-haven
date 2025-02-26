@@ -3,9 +3,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Clock, Flame, Loader2, Plus, Tags } from "lucide-react";
-import { RecipeData } from "@/types/recipe";
+import { Clock, Flame, Loader2, Plus, Tags, RefreshCw } from "lucide-react";
 import { Tag } from "@/components/ui/tag";
+import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
+import { RecipeData } from "@/types/recipe";
 
 interface RecipeDisplayProps {
   recipe: RecipeData;
@@ -16,6 +17,9 @@ interface RecipeDisplayProps {
   isSaving: boolean;
   measurementSystem: 'metric' | 'imperial';
   onMeasurementSystemChange: () => void;
+  onRegenerate?: () => void;
+  isRegenerating?: boolean;
+  onImageUpdate?: (imageUrl: string) => void;
 }
 
 export function RecipeDisplay({
@@ -27,6 +31,9 @@ export function RecipeDisplay({
   isSaving,
   measurementSystem,
   onMeasurementSystemChange,
+  onRegenerate,
+  isRegenerating,
+  onImageUpdate,
 }: RecipeDisplayProps) {
   return (
     <div className="space-y-6 animate-fade-in">
@@ -36,6 +43,32 @@ export function RecipeDisplay({
           <h1 className="text-3xl font-bold mb-4">{recipe.title}</h1>
           {recipe.description && (
             <p className="text-muted-foreground leading-relaxed">{recipe.description}</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Recipe Image Section */}
+      <Card className="overflow-hidden">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-semibold mb-4">Recipe Image</h3>
+          {recipe.imageUrl ? (
+            <div className="relative w-full max-w-2xl mx-auto">
+              <img
+                src={recipe.imageUrl}
+                alt={recipe.title}
+                className="w-full rounded-lg shadow-md"
+              />
+            </div>
+          ) : (
+            <div className="w-full max-w-2xl mx-auto p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+              <ImageUploadOrGenerate
+                onImageSelected={(imageUrl) => onImageUpdate?.(imageUrl)}
+                title={recipe.title}
+                disabled={isSaving}
+                toggleMode={false}
+                hasExistingImage={false}
+              />
+            </div>
           )}
         </CardContent>
       </Card>
@@ -64,7 +97,7 @@ export function RecipeDisplay({
                   <Tag variant="dietary">
                     {Array.isArray(recipe.categories.dietary_restrictions) 
                       ? recipe.categories.dietary_restrictions.join(', ') 
-                      : recipe.categories.dietary_restrictions || "none"}
+                      : recipe.categories.dietary_restrictions[0] || 'None'}
                   </Tag>
                 </div>
               )}
@@ -98,7 +131,7 @@ export function RecipeDisplay({
                   <Tag variant="cooking">
                     {Array.isArray(recipe.categories.cooking_method) 
                       ? recipe.categories.cooking_method.join(', ') 
-                      : recipe.categories.cooking_method}
+                      : recipe.categories.cooking_method[0] || 'Other'}
                   </Tag>
                 </div>
               )}
@@ -166,19 +199,6 @@ export function RecipeDisplay({
         </CardContent>
       </Card>
 
-      {/* Image Card */}
-      {recipe.imageUrl && (
-        <Card className="overflow-hidden">
-          <CardContent className="p-6">
-            <img
-              src={recipe.imageUrl}
-              alt={recipe.title}
-              className="w-full h-[400px] object-cover rounded-lg"
-            />
-          </CardContent>
-        </Card>
-      )}
-
       {/* Recipe Content Container */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Ingredients Card */}
@@ -214,9 +234,6 @@ export function RecipeDisplay({
                     </Label>
                   </div>
                 </div>
-              </div>
-              <div className="text-sm text-muted-foreground">
-                (Suggested: {recipe.suggested_portions})
               </div>
             </div>
             <ul className="space-y-2 mb-4">
@@ -268,6 +285,24 @@ export function RecipeDisplay({
       {/* Decorative sphere accents */}
       <div className="sphere-accent opacity-10 top-[20%] left-[-150px]" />
       <div className="sphere-accent opacity-10 bottom-[10%] right-[-150px]" />
+      
+      {/* Action Buttons */}
+      <div className="mt-6 flex justify-end gap-4">
+        {onRegenerate && (
+          <Button
+            variant="outline"
+            onClick={onRegenerate}
+            disabled={isRegenerating}
+          >
+            {isRegenerating ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="mr-2 h-4 w-4" />
+            )}
+            New Recipe
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

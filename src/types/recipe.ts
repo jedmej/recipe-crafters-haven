@@ -17,10 +17,10 @@ export interface RecipeData {
   portion_description: string;
   categories?: {
     meal_type: string;
-    dietary_restrictions: string;
+    dietary_restrictions: string[];
     difficulty_level: string;
     cuisine_type: string;
-    cooking_method: string;
+    cooking_method: string[];
   };
 }
 

@@ -374,34 +374,20 @@ const IngredientsSection = ({
   <Card className="overflow-hidden">
     <CardContent className="p-6">
       <div className="flex flex-col space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Ingredients</h3>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Input
-                type="number"
-                min="1"
-                value={chosenPortions}
-                onChange={(e) => onPortionsChange(Number(e.target.value))}
-                className="w-20"
-              />
-              <span className="text-sm text-muted-foreground">
-                {recipe.portion_description}
-                {recipe.suggested_portions && (
-                  <span className="ml-1">(Suggested: {recipe.suggested_portions} {recipe.portion_description})</span>
-                )}
-              </span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="measurement-system"
-                checked={measurementSystem === 'metric'}
-                onCheckedChange={onMeasurementSystemChange}
-              />
-              <Label htmlFor="measurement-system">
-                {measurementSystem === 'imperial' ? 'Imperial' : 'Metric'}
-              </Label>
-            </div>
+        <h3 className="text-lg font-semibold">Ingredients</h3>
+        <div className="flex items-center justify-end">
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              min="1"
+              value={chosenPortions}
+              onChange={(e) => onPortionsChange(Number(e.target.value))}
+              className="w-16"
+            />
+            <span className="text-sm text-muted-foreground">
+              {recipe.portion_description}
+              {recipe.suggested_portions && ` (Suggested: ${recipe.suggested_portions})`}
+            </span>
           </div>
         </div>
         <ul className="space-y-2">

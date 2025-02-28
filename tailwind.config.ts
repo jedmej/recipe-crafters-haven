@@ -21,6 +21,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ["var(--font-archivo)", ...fontFamily.sans],
+				heading: ["var(--font-judson)", ...fontFamily.serif],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',

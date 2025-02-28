@@ -14,16 +14,16 @@ export function RecipeCount({
   onClearFilters 
 }: RecipeCountProps) {
   return (
-    <div className="flex items-center justify-center bg-white shadow-sm rounded-2xl px-6 py-4">
-      <div className="flex items-center gap-2">
-        <span className="text-2xl font-semibold text-gray-900">
+    <div className="flex items-center justify-center rounded-2xl">
+      <div className="flex items-center justify-center gap-2 text-center">
+        <span className="text-[16px] font-bold text-[#FA8922] font-archivo">
           {filteredCount}
         </span>
-        <span className="text-lg text-gray-500">
+        <span className="text-[16px] font-archivo text-[#222222]">
           {filteredCount !== totalCount ? (
             <>
               filtered from{" "}
-              <span className="text-lg font-semibold text-gray-900">
+              <span className="text-[16px] font-bold text-[#FA8922] font-archivo">
                 {totalCount}
               </span>{" "}
               total recipes
@@ -36,7 +36,7 @@ export function RecipeCount({
       {hasActiveFilters && (
         <Button
           variant="ghost"
-          className="text-base font-medium text-gray-500 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 h-auto"
+          className="text-[16px] font-archivo font-medium text-[#222222] hover:text-[#FA8922] hover:bg-transparent px-4 py-2 h-auto ml-4"
           onClick={onClearFilters}
         >
           Clear all filters

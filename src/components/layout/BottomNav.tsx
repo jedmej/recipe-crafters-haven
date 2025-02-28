@@ -33,7 +33,7 @@ export function BottomNav() {
   ]
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-50">
       <div className="bg-background/80 backdrop-blur-lg border-t pb-6">
         <div className="flex items-center justify-around h-16 px-4 max-w-screen-xl mx-auto">
           <Link

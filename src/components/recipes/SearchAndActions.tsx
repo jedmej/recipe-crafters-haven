@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
-import { Search, Filter, Trash, X } from "lucide-react";
+import { Search, Trash, X } from "lucide-react";
+import { Sliders, Checks } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 import { ActionButton } from "./ActionButton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -29,63 +30,71 @@ export function SearchAndActions({
   activeFilterCount
 }: SearchAndActionsProps) {
   return (
-    <div className="flex flex-col sm:flex-row gap-3">
-      {/* Search Bar */}
-      <div className="relative flex-1">
-        <Input
-          type="search"
-          placeholder="Search recipes..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-5 pr-12 h-12 sm:h-14 text-base sm:text-lg bg-white border-none shadow-sm rounded-2xl"
-        />
-        <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+    <div className="flex flex-col gap-4">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <h1 className="text-[32px] font-bold font-judson text-[#222222]">My recipes</h1>
+        
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsFiltersVisible(!isFiltersVisible)}
+            className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            <Sliders 
+              size={20} 
+              weight="regular" 
+              className={isFiltersVisible ? "text-[#FA8922]" : "text-[#222222]"}
+            />
+          </button>
+
+          <button
+            onClick={toggleSelectionMode}
+            className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors"
+          >
+            {isSelectionMode ? (
+              <X className="h-5 w-5 text-[#FA8922]" />
+            ) : (
+              <Checks size={20} weight="regular" className="text-[#222222]" />
+            )}
+          </button>
+
+          {isSelectionMode && selectedRecipes.length > 0 && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
+                  <Trash className="h-5 w-5 text-[#FA8922]" />
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the selected recipes.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteSelected}>Delete</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+        </div>
       </div>
-      
-      {/* Action Buttons */}
-      <div className="flex gap-3">
-        <ActionButton
-          label="Filters"
-          icon={Filter}
-          onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-          active={isFiltersVisible}
-          badgeCount={activeFilterCount}
-        />
 
-        <ActionButton
-          label={isSelectionMode ? "Cancel Selection" : "Select Multiple"}
-          icon={isSelectionMode ? X : Filter}
-          onClick={toggleSelectionMode}
-          active={isSelectionMode}
-        />
-
-        {isSelectionMode && selectedRecipes.length > 0 && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button 
-                variant="destructive" 
-                className="h-12 sm:h-14 px-4 sm:px-6 rounded-2xl shadow-sm"
-              >
-                <div className="flex items-center gap-2">
-                  <Trash className="h-5 w-5" />
-                  <span>Delete ({selectedRecipes.length})</span>
-                </div>
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the selected recipes.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteSelected}>Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+      {/* Search Bar */}
+      <div className="relative w-full">
+        <div className="relative flex items-center w-full h-12 bg-white rounded-full shadow-sm">
+          <Search className="absolute left-4 h-5 w-5 text-[#222222] opacity-30" />
+          <Input
+            type="search"
+            placeholder="Search"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full h-full pl-12 pr-4 border-none rounded-full text-sm font-archivo placeholder:text-[#222222] placeholder:opacity-30 focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+        </div>
       </div>
     </div>
   );

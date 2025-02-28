@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
-import { NewRecipeActions } from "@/components/recipes/NewRecipeActions";
 import { SearchAndActions } from "@/components/recipes/SearchAndActions";
 import { FilterPanel } from "@/components/recipes/FilterPanel";
 import { RecipeCount } from "@/components/recipes/RecipeCount";
@@ -9,10 +8,64 @@ import { EmptyState } from "@/components/recipes/EmptyState";
 import { useRecipes } from "@/hooks/use-recipes";
 import { useRecipeFilters } from "@/hooks/use-recipe-filters";
 import { useRecipeSelection } from "@/hooks/use-recipe-selection";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function RecipesPage() {
   const navigate = useNavigate();
   const { data: recipes, isLoading } = useRecipes();
+  const [profile, setProfile] = useState<{
+    full_name: string | null;
+    username: string | null;
+    avatar_url: string | null;
+  } | null>(null);
+  const [user, setUser] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchUserAndProfile = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        setUser(user);
+
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('full_name, username, avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (error) throw error;
+        setProfile(profile);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+      }
+    };
+
+    fetchUserAndProfile();
+  }, []);
+
+  const getDisplayName = () => {
+    if (profile?.username) {
+      return profile.username;
+    } else if (profile?.full_name) {
+      return profile.full_name.split(' ')[0];
+    } else if (user?.email) {
+      return user.email.split('@')[0];
+    }
+    return "there";
+  };
+
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name[0].toUpperCase();
+    } else if (profile?.username) {
+      return profile.username[0].toUpperCase();
+    } else if (user?.email) {
+      return user.email[0].toUpperCase();
+    }
+    return "U";
+  };
   
   const { 
     searchTerm, setSearchTerm,
@@ -60,28 +113,21 @@ export default function RecipesPage() {
   const hasRecipes = recipesToDisplay.length > 0;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <style>
-        {`
-          @keyframes gentleShake {
-            0% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(-0.5deg) scale(1.005); }
-            75% { transform: rotate(0.5deg) scale(1.005); }
-            85% { transform: rotate(0.2deg) scale(1.002); }
-            95% { transform: rotate(-0.1deg) scale(1.001); }
-            100% { transform: rotate(0deg) scale(1); }
-          }
-        `}
-      </style>
-      <div className="max-w-7xl mx-auto">
-        {/* New Recipe Section */}
-        <NewRecipeActions />
-
+    <div className="max-w-7xl mx-auto min-h-screen p-4 md:p-6 lg:p-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-[48px] font-bold text-[#222222]">Hello, {getDisplayName()}</h1>
+        <button 
+          onClick={() => navigate('/profile')}
+          className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
+        >
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={profile?.avatar_url || undefined} />
+            <AvatarFallback>{getInitials()}</AvatarFallback>
+          </Avatar>
+        </button>
+      </div>
+      <div className="bg-[#F5F5F5] rounded-[48px] p-8 shadow-sm">
         <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-8">
-            My Recipes
-          </h1>
-
           {/* Search and Controls Section */}
           <div className="flex flex-col gap-6">
             <SearchAndActions 

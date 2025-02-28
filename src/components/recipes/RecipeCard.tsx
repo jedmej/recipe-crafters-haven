@@ -103,10 +103,10 @@ export function RecipeCard({ recipe, isSelected, isSelectionMode, onClick }: Rec
           )}
         </div>
         <div className="absolute inset-x-0 bottom-0 p-4">
-          <h3 className="font-semibold text-lg sm:text-xl line-clamp-2 text-white">
+          <h3 className="font-normal text-[21px] font-['Judson'] line-clamp-2 text-white">
             {recipe.title}
           </h3>
-          {recipe.description && (
+          {false && recipe.description && (
             <p className="mt-2 text-sm line-clamp-2 text-white/80">
               {recipe.description}
             </p>

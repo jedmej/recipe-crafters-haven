@@ -84,7 +84,7 @@ const Navigation = () => {
   return (
     <>
       {/* Mobile Profile Icon */}
-      <div className="md:hidden fixed top-4 right-4 z-50">
+      <div className="fixed top-4 right-4 z-50">
         <Link 
           to="/profile"
           className={cn(
@@ -108,14 +108,14 @@ const Navigation = () => {
       </div>
 
       {/* Desktop Navigation */}
-      <nav className="nav-modern fixed w-full z-50 bg-background/80 backdrop-blur-md border-b hidden md:block">
+      <nav className="nav-modern fixed w-full z-50 bg-background/80 backdrop-blur-md border-b">
         <div className="max-w-screen-xl mx-auto px-6">
           <div className="flex h-20 items-center justify-between">
             <div className="flex items-center gap-8">
               <Link to="/" className="text-xl font-bold text-gradient hover:opacity-90 transition-opacity">
                 Recipe Crafters Haven
               </Link>
-              <div className="flex gap-6">
+              <div className="hidden md:flex gap-6">
                 {links.map((link) => (
                   <Link
                     key={link.href}
@@ -127,7 +127,6 @@ const Navigation = () => {
                         : "text-muted-foreground hover:text-primary"
                     )}
                   >
-                    {link.icon}
                     {link.label}
                     <span className={cn(
                       "h-0.5 bg-primary transition-all duration-200",
@@ -140,7 +139,7 @@ const Navigation = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="hidden md:flex items-center gap-4">
               <Link 
                 to="/profile"
                 className={cn(

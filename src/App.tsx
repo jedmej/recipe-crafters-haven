@@ -3,7 +3,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthGuard } from "@/components/auth/AuthGuard";
-import Navigation from "@/components/layout/Navigation";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { SphereBackgroundGroup } from "@/components/ui/sphere-background";
 import { SupabaseProvider } from '@/lib/supabase/supabase-provider';
@@ -27,8 +26,7 @@ import ProfilePage from "./pages/profile";
 const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => (
   <AuthGuard>
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-white relative overflow-hidden">
-      <Navigation />
-      <main className="flex-1 pt-4 md:pt-20 pb-20 md:pb-4 px-4 md:px-6 relative">
+      <main className="flex-1 pt-4 pb-20 md:pb-4 px-4 md:px-6 relative">
         <div className="max-w-screen-xl mx-auto">
           {children}
         </div>

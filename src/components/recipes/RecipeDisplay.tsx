@@ -49,7 +49,7 @@ const ActionButtons = ({
   onSave, 
   isSaving 
 }: Pick<RecipeDisplayProps, 'recipe' | 'onEditOrGenerate' | 'onSave' | 'isSaving'>) => (
-  <Card className="overflow-hidden">
+  <Card className="overflow-hidden rounded-[48px]">
     <CardContent className="p-6">
       <div className="flex justify-end gap-4">
         <Button 
@@ -97,7 +97,7 @@ const ActionButtons = ({
 );
 
 const TitleDescription = ({ recipe }: { recipe: RecipeData }) => (
-  <Card className="overflow-hidden">
+  <Card className="overflow-hidden rounded-[48px]">
     <CardContent className="p-6">
       <div className="space-y-6">
         <div>
@@ -122,7 +122,7 @@ const RecipeImage = ({
   isSaving: boolean; 
   isUpdatingImage: boolean;
 }) => (
-  <Card className="overflow-hidden">
+  <Card className="overflow-hidden rounded-[48px]">
     <CardContent className="p-6">
       <h3 className="text-lg font-semibold mb-4">Recipe Image</h3>
       {!recipe.imageUrl ? (
@@ -198,7 +198,7 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
   if (!categories) return null;
   
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden rounded-[48px]">
       <CardContent className="p-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.meal_type && (
@@ -311,7 +311,7 @@ const TimeNutrition = ({
   recipe: RecipeData; 
   chosenPortions: number;
 }) => (
-  <Card className="overflow-hidden">
+  <Card className="overflow-hidden rounded-[48px] border-0 bg-[#F2F2F2]">
     <CardContent className="p-6">
       <h3 className="text-lg font-semibold mb-2">Time & Nutrition</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -371,7 +371,7 @@ const IngredientsSection = ({
   'onAddToGroceryList' | 
   'isAddingToGroceryList'
 >) => (
-  <Card className="overflow-hidden">
+  <Card className="overflow-hidden rounded-[48px] border-0 bg-[#E4E7DF]">
     <CardContent className="p-6">
       <div className="flex flex-col space-y-4">
         <h3 className="text-lg font-semibold">Ingredients</h3>
@@ -421,7 +421,7 @@ const IngredientsSection = ({
 );
 
 const InstructionsSection = ({ instructions }: { instructions: string[] }) => (
-  <Card className="overflow-hidden">
+  <Card className="overflow-hidden rounded-[48px] border-0 bg-[#BFCFBC]">
     <CardContent className="p-6">
       <h3 className="text-lg font-semibold mb-2">Instructions</h3>
       <ol className="space-y-4">

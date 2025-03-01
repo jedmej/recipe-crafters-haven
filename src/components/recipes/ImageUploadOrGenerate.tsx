@@ -18,9 +18,11 @@ interface ImageUploadOrGenerateProps {
   disabled?: boolean;
   toggleMode?: boolean;
   hasExistingImage?: boolean;
-  initialImage?: string;
+  initialImage?: string | null;
   imageType?: 'recipe' | 'avatar';
   customPrompt?: string;
+  className?: string;
+  imageStyle?: string;
 }
 
 export function ImageUploadOrGenerate({ 
@@ -31,7 +33,9 @@ export function ImageUploadOrGenerate({
   hasExistingImage = false,
   initialImage,
   imageType = 'recipe',
-  customPrompt
+  customPrompt,
+  className,
+  imageStyle
 }: ImageUploadOrGenerateProps) {
   // State management
   const [isUploading, setIsUploading] = useState(false);
@@ -256,11 +260,11 @@ export function ImageUploadOrGenerate({
     if (!previewUrl) return null;
     
     return (
-      <div className="relative w-full max-w-2xl mx-auto rounded-lg overflow-hidden shadow-lg">
+      <div className={`relative ${className || 'w-full max-w-2xl mx-auto rounded-lg overflow-hidden shadow-lg'}`}>
         <img
           src={previewUrl}
           alt="Preview"
-          className="w-full rounded-lg"
+          className={imageStyle || 'w-full rounded-lg'}
           onLoad={() => setIsImageLoading(false)}
         />
         <div className="absolute top-2 right-2 flex gap-2">
@@ -419,7 +423,7 @@ export function ImageUploadOrGenerate({
 
   // Main render
   return (
-    <div className="space-y-4">
+    <div className={className || 'space-y-4'}>
       {toggleMode && !previewUrl ? (
         renderToggleMode()
       ) : (
@@ -427,8 +431,12 @@ export function ImageUploadOrGenerate({
           {renderImagePreview()}
           {renderLoadingState() || (
             <>
-              {renderImageControls()}
-              {renderUrlInput()}
+              {(!previewUrl || isEditMode) && (
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white/80 backdrop-blur-sm rounded-lg">
+                  {renderImageControls()}
+                  {renderUrlInput()}
+                </div>
+              )}
             </>
           )}
         </>

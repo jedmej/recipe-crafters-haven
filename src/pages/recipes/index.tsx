@@ -113,7 +113,7 @@ export default function RecipesPage() {
   const hasRecipes = recipesToDisplay.length > 0;
 
   return (
-    <div className="max-w-7xl mx-auto min-h-screen p-4 md:p-6 lg:p-8">
+    <div className="max-w-7xl mx-auto min-h-screen px-0 py-4 md:p-6 lg:p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-[48px] font-bold text-[#222222]">Hello, {getDisplayName()}</h1>
         <button 
@@ -126,7 +126,7 @@ export default function RecipesPage() {
           </Avatar>
         </button>
       </div>
-      <div className="bg-[#F5F5F5] rounded-[48px] p-8 shadow-sm">
+      <div className="bg-[#F5F5F5] rounded-t-[48px] md:rounded-[48px] p-6 shadow-sm -mx-4 md:mx-8 lg:mx-0">
         <div className="mb-12">
           {/* Search and Controls Section */}
           <div className="flex flex-col gap-6">

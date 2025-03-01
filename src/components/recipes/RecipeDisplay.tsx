@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Clock, Flame, Loader2, Plus, Tags, RefreshCw, Trash2, Save, Edit, Wand2 } from "lucide-react";
+import { Clock, Flame, Plus, Tags } from "lucide-react";
+import { PencilSimple, Trash, FloppyDisk, SpinnerGap, CaretLeft } from "@phosphor-icons/react";
 import { Tag } from "@/components/ui/tag";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeData } from "@/types/recipe";
@@ -25,6 +26,7 @@ interface RecipeDisplayProps {
   onEditOrGenerate: () => void;
   onRegenerate?: () => void;
   isRegenerating?: boolean;
+  onBack: () => void;
 }
 
 interface CategoryItemProps {
@@ -47,53 +49,43 @@ const ActionButtons = ({
   recipe, 
   onEditOrGenerate, 
   onSave, 
-  isSaving 
-}: Pick<RecipeDisplayProps, 'recipe' | 'onEditOrGenerate' | 'onSave' | 'isSaving'>) => (
-  <Card className="overflow-hidden rounded-[48px]">
-    <CardContent className="p-6">
-      <div className="flex justify-end gap-4">
-        <Button 
-          onClick={onEditOrGenerate}
-          variant="outline"
-          className="gap-2"
-        >
-          {recipe.id ? (
-            <>
-              <Edit className="h-4 w-4" />
-              Edit Recipe
-            </>
+  isSaving,
+  onBack
+}: Pick<RecipeDisplayProps, 'recipe' | 'onEditOrGenerate' | 'onSave' | 'isSaving' | 'onBack'>) => (
+  <>
+    <button
+      onClick={onBack}
+      className="absolute top-4 left-4 h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors z-30"
+      aria-label="Go Back"
+    >
+      <CaretLeft weight="bold" className="h-5 w-5 text-gray-700" />
+    </button>
+    <div className="absolute top-4 right-4 flex gap-2 z-30">
+      <button
+        onClick={onEditOrGenerate}
+        className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors"
+        aria-label={recipe.id ? "Edit Recipe" : "Generate New"}
+      >
+        <PencilSimple weight="bold" className="h-5 w-5 text-gray-700" />
+      </button>
+      <button
+        onClick={onSave}
+        disabled={isSaving}
+        className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+        aria-label={recipe.id ? "Delete Recipe" : "Save Recipe"}
+      >
+        {isSaving ? (
+          <SpinnerGap className="h-5 w-5 text-gray-700 animate-spin" />
+        ) : (
+          recipe.id ? (
+            <Trash className="h-5 w-5 text-gray-700" />
           ) : (
-            <>
-              <Wand2 className="h-4 w-4" />
-              Generate New
-            </>
-          )}
-        </Button>
-        <Button 
-          onClick={onSave}
-          variant={recipe.id ? "destructive" : "outline"}
-          className="gap-2"
-          disabled={isSaving}
-        >
-          {isSaving ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              {recipe.id ? 'Deleting Recipe...' : 'Saving Recipe...'}
-            </>
-          ) : (
-            <>
-              {recipe.id ? (
-                <Trash2 className="h-4 w-4" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              {recipe.id ? 'Delete Recipe' : 'Save Recipe'}
-            </>
-          )}
-        </Button>
-      </div>
-    </CardContent>
-  </Card>
+            <FloppyDisk className="h-5 w-5 text-gray-700" />
+          )
+        )}
+      </button>
+    </div>
+  </>
 );
 
 const TitleDescription = ({ recipe }: { recipe: RecipeData }) => (
@@ -122,34 +114,26 @@ const RecipeImage = ({
   isSaving: boolean; 
   isUpdatingImage: boolean;
 }) => (
-  <Card className="overflow-hidden rounded-[48px]">
-    <CardContent className="p-6">
-      <h3 className="text-lg font-semibold mb-4">Recipe Image</h3>
-      {!recipe.imageUrl ? (
-        <div className="w-full max-w-2xl mx-auto p-8 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-          <ImageUploadOrGenerate
-            onImageSelected={handleImageUpdate}
-            title={recipe.title}
-            disabled={isSaving || isUpdatingImage}
-            toggleMode={false}
-            hasExistingImage={false}
-            initialImage={null}
-          />
-        </div>
-      ) : (
-        <div className="w-full max-w-3xl mx-auto">
-          <ImageUploadOrGenerate
-            onImageSelected={handleImageUpdate}
-            title={recipe.title}
-            disabled={isSaving || isUpdatingImage}
-            toggleMode={false}
-            hasExistingImage={true}
-            initialImage={recipe.imageUrl}
-          />
-        </div>
-      )}
-    </CardContent>
-  </Card>
+  <div className="absolute top-0 left-0 right-0 z-10">
+    <div className="relative w-full h-[50vh]">
+      <ImageUploadOrGenerate
+        onImageSelected={handleImageUpdate}
+        title={recipe.title}
+        disabled={isSaving || isUpdatingImage}
+        toggleMode={false}
+        hasExistingImage={!!recipe.imageUrl}
+        initialImage={recipe.imageUrl || null}
+        className="w-full h-full"
+        imageStyle="w-full h-full object-cover"
+      />
+      <div className="absolute inset-x-0 bottom-0 h-[30vh] bg-gradient-to-b from-transparent via-white/50 to-white" />
+      <div className="absolute inset-x-0 bottom-0 p-8">
+        <h1 className="text-4xl sm:text-5xl font-serif font-medium text-gray-900 max-w-4xl mx-auto">
+          {recipe.title}
+        </h1>
+      </div>
+    </div>
+  </div>
 );
 
 const CategoryItem = ({ icon, label, value, variant }: CategoryItemProps) => {
@@ -407,7 +391,7 @@ const IngredientsSection = ({
               className="w-full gap-2"
             >
               {isAddingToGroceryList ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <SpinnerGap className="h-4 w-4 animate-spin" />
               ) : (
                 <Plus className="h-4 w-4" />
               )}
@@ -453,6 +437,7 @@ export function RecipeDisplay({
   onEditOrGenerate,
   onRegenerate,
   isRegenerating,
+  onBack,
 }: RecipeDisplayProps) {
   const { toast } = useToast();
   const [isUpdatingImage, setIsUpdatingImage] = useState(false);
@@ -488,49 +473,55 @@ export function RecipeDisplay({
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      <ActionButtons 
-        recipe={recipe} 
-        onEditOrGenerate={onEditOrGenerate} 
-        onSave={onSave} 
-        isSaving={isSaving} 
-      />
-      
-      <TitleDescription recipe={recipe} />
-      
+    <div className="animate-fade-in min-h-screen -mx-3 sm:-mx-6 lg:-mx-8">
       <RecipeImage 
         recipe={recipe} 
         handleImageUpdate={handleImageUpdate} 
         isSaving={isSaving} 
         isUpdatingImage={isUpdatingImage} 
       />
-      
-      <RecipeCategories categories={recipe.categories} />
-      
-      <TimeNutrition 
-        scaledRecipe={scaledRecipe} 
+      <ActionButtons 
         recipe={recipe} 
-        chosenPortions={chosenPortions} 
+        onEditOrGenerate={onEditOrGenerate} 
+        onSave={onSave} 
+        isSaving={isSaving}
+        onBack={onBack}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <IngredientsSection 
-          scaledRecipe={scaledRecipe}
-          recipe={recipe}
-          chosenPortions={chosenPortions}
-          onPortionsChange={onPortionsChange}
-          measurementSystem={measurementSystem}
-          onMeasurementSystemChange={onMeasurementSystemChange}
-          onAddToGroceryList={onAddToGroceryList}
-          isAddingToGroceryList={isAddingToGroceryList}
-        />
+      <main className="relative z-20 mt-[45vh] max-w-[1200px] mx-auto space-y-6">
+        {recipe.description && (
+          <p className="text-lg text-gray-700 max-w-4xl">
+            {recipe.description}
+          </p>
+        )}
         
-        <InstructionsSection instructions={scaledRecipe.instructions} />
-      </div>
+        <RecipeCategories categories={recipe.categories} />
+        
+        <TimeNutrition 
+          scaledRecipe={scaledRecipe} 
+          recipe={recipe} 
+          chosenPortions={chosenPortions} 
+        />
 
-      {/* Decorative sphere accents */}
-      <div className="sphere-accent opacity-10 top-[20%] left-[-150px]" />
-      <div className="sphere-accent opacity-10 bottom-[10%] right-[-150px]" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <IngredientsSection 
+            scaledRecipe={scaledRecipe}
+            recipe={recipe}
+            chosenPortions={chosenPortions}
+            onPortionsChange={onPortionsChange}
+            measurementSystem={measurementSystem}
+            onMeasurementSystemChange={onMeasurementSystemChange}
+            onAddToGroceryList={onAddToGroceryList}
+            isAddingToGroceryList={isAddingToGroceryList}
+          />
+          
+          <InstructionsSection instructions={scaledRecipe.instructions} />
+        </div>
+
+        {/* Decorative sphere accents */}
+        <div className="sphere-accent opacity-10 top-[20%] left-[-150px]" />
+        <div className="sphere-accent opacity-10 bottom-[10%] right-[-150px]" />
+      </main>
     </div>
   );
 }

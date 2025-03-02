@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Plus, Tags } from "lucide-react";
-import { PencilSimple, Trash, FloppyDisk, SpinnerGap, CaretLeft, Alarm, Oven, Fire } from "@phosphor-icons/react";
+import { PencilSimple, Trash, FloppyDisk, SpinnerGap, CaretLeft, Alarm, Oven, Fire, Basket } from "@phosphor-icons/react";
 import { Tag } from "@/components/ui/tag";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeData } from "@/types/recipe";
@@ -115,7 +115,7 @@ const RecipeImage = ({
   isUpdatingImage: boolean;
 }) => (
   <div className="absolute top-0 left-0 right-0 z-10">
-    <div className="relative w-full h-[50vh]">
+    <div className="relative w-full h-[60vh]">
       <ImageUploadOrGenerate
         onImageSelected={handleImageUpdate}
         title={recipe.title}
@@ -126,7 +126,7 @@ const RecipeImage = ({
         className="w-full h-full"
         imageStyle="w-full h-full object-cover"
       />
-      <div className="absolute inset-x-0 bottom-0 h-[30vh] bg-gradient-to-b from-transparent via-white/50 to-white" />
+      <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-b from-transparent via-white/70 to-white" />
       <div className="absolute inset-x-0 bottom-0 p-8">
         <h1 className="text-4xl sm:text-5xl font-serif font-medium text-gray-900 max-w-4xl mx-auto">
           {recipe.title}
@@ -184,28 +184,19 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
   return (
     <Card className="overflow-hidden rounded-[48px]">
       <CardContent className="p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="flex flex-wrap gap-4">
           {categories.meal_type && (
             <CategoryItem 
-              icon={<Tags className="h-4 w-4" />}
+              icon={null}
               label="Meal Type"
               value={categories.meal_type}
               variant="meal"
             />
           )}
           
-          {categories.dietary_restrictions && (
-            <CategoryItem 
-              icon={<Tags className="h-4 w-4" />}
-              label="Dietary Restrictions"
-              value={categories.dietary_restrictions}
-              variant="dietary"
-            />
-          )}
-          
           {categories.difficulty_level && (
             <CategoryItem 
-              icon={<Tags className="h-4 w-4" />}
+              icon={null}
               label="Difficulty Level"
               value={categories.difficulty_level}
               variant="difficulty"
@@ -214,7 +205,7 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
           
           {categories.cuisine_type && (
             <CategoryItem 
-              icon={<Tags className="h-4 w-4" />}
+              icon={null}
               label="Cuisine Type"
               value={categories.cuisine_type}
               variant="cuisine"
@@ -223,7 +214,7 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
           
           {categories.cooking_method && (
             <CategoryItem 
-              icon={<Tags className="h-4 w-4" />}
+              icon={null}
               label="Cooking Method"
               value={categories.cooking_method}
               variant="cooking"
@@ -232,7 +223,7 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
           
           {categories.occasion && (
             <CategoryItem 
-              icon={<Tags className="h-4 w-4" />}
+              icon={null}
               label="Occasion"
               value={categories.occasion}
               variant="occasion"
@@ -241,7 +232,7 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
           
           {categories.course_category && (
             <CategoryItem 
-              icon={<Tags className="h-4 w-4" />}
+              icon={null}
               label="Course Category"
               value={categories.course_category}
               variant="course"
@@ -250,10 +241,19 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
           
           {categories.taste_profile && (
             <CategoryItem 
-              icon={<Tags className="h-4 w-4" />}
+              icon={null}
               label="Taste Profile"
               value={categories.taste_profile}
               variant="taste"
+            />
+          )}
+
+          {categories.dietary_restrictions && (
+            <CategoryItem 
+              icon={null}
+              label="Dietary Restrictions"
+              value={categories.dietary_restrictions}
+              variant="dietary"
             />
           )}
         </div>
@@ -360,7 +360,7 @@ const IngredientsSection = ({
     <CardContent className="p-6">
       <div className="flex flex-col space-y-4">
         <h2 className="text-2xl font-heading">Ingredients</h2>
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-start">
           <div className="flex items-center gap-2">
             <Input
               type="number"
@@ -389,12 +389,12 @@ const IngredientsSection = ({
               variant="outline"
               onClick={onAddToGroceryList}
               disabled={isAddingToGroceryList}
-              className="w-full gap-2"
+              className="w-full gap-2 h-12 rounded-[500px] bg-gray-100 hover:bg-gray-200"
             >
               {isAddingToGroceryList ? (
                 <SpinnerGap className="h-4 w-4 animate-spin" />
               ) : (
-                <Plus className="h-4 w-4" />
+                <Basket className="h-4 w-4" weight="duotone" />
               )}
               Add to Grocery List
             </Button>
@@ -489,7 +489,7 @@ export function RecipeDisplay({
         onBack={onBack}
       />
 
-      <main className="relative z-20 mt-[45vh] max-w-[1200px] mx-auto space-y-8">
+      <main className="relative z-20 mt-[55vh] max-w-[1200px] mx-auto space-y-8">
         {recipe.description && (
           <p className="text-lg text-gray-700 max-w-4xl">
             {recipe.description}

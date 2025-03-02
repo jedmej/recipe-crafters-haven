@@ -3,8 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Clock, Flame, Plus, Tags } from "lucide-react";
-import { PencilSimple, Trash, FloppyDisk, SpinnerGap, CaretLeft } from "@phosphor-icons/react";
+import { Plus, Tags } from "lucide-react";
+import { PencilSimple, Trash, FloppyDisk, SpinnerGap, CaretLeft, Alarm, Oven, Fire } from "@phosphor-icons/react";
 import { Tag } from "@/components/ui/tag";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeData } from "@/types/recipe";
@@ -270,9 +270,11 @@ const TimeNutritionItem = ({
   showOriginal,
   unit = ''
 }: TimeNutritionItemProps) => (
-  <div className="glass-panel p-4 flex items-center gap-3 w-full">
-    {icon}
-    <div>
+  <div className="glass-panel p-4 flex flex-col items-center text-center w-full">
+    <div className="mb-2">
+      {icon}
+    </div>
+    <div className="flex flex-col items-center">
       <div className="font-medium text-foreground">{label}</div>
       <div className="text-sm">
         {value} {unit}
@@ -297,11 +299,10 @@ const TimeNutrition = ({
 }) => (
   <Card className="overflow-hidden rounded-[48px] border-0 bg-[#F2F2F2]">
     <CardContent className="p-6">
-      <h3 className="text-lg font-semibold mb-2">Time & Nutrition</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="flex flex-col sm:flex-row justify-between gap-4">
         {scaledRecipe?.prep_time && (
           <TimeNutritionItem
-            icon={<Clock className="h-5 w-5 text-primary" />}
+            icon={<Alarm className="h-6 w-6 text-primary" weight="duotone" />}
             label="Prep Time"
             value={scaledRecipe.prep_time}
             originalValue={recipe.prep_time}
@@ -312,7 +313,7 @@ const TimeNutrition = ({
         
         {scaledRecipe?.cook_time && (
           <TimeNutritionItem
-            icon={<Clock className="h-5 w-5 text-primary" />}
+            icon={<Oven className="h-6 w-6 text-primary" weight="duotone" />}
             label="Cook Time"
             value={scaledRecipe.cook_time}
             originalValue={recipe.cook_time}
@@ -323,7 +324,7 @@ const TimeNutrition = ({
         
         {scaledRecipe?.estimated_calories && (
           <TimeNutritionItem
-            icon={<Flame className="h-5 w-5 text-primary" />}
+            icon={<Fire className="h-6 w-6 text-primary" weight="duotone" />}
             label="Calories"
             value={scaledRecipe.estimated_calories}
             originalValue={recipe.estimated_calories}
@@ -358,7 +359,7 @@ const IngredientsSection = ({
   <Card className="overflow-hidden rounded-[48px] border-0 bg-[#E4E7DF]">
     <CardContent className="p-6">
       <div className="flex flex-col space-y-4">
-        <h3 className="text-lg font-semibold">Ingredients</h3>
+        <h2 className="text-2xl font-heading">Ingredients</h2>
         <div className="flex items-center justify-end">
           <div className="flex items-center gap-2">
             <Input
@@ -407,7 +408,7 @@ const IngredientsSection = ({
 const InstructionsSection = ({ instructions }: { instructions: string[] }) => (
   <Card className="overflow-hidden rounded-[48px] border-0 bg-[#BFCFBC]">
     <CardContent className="p-6">
-      <h3 className="text-lg font-semibold mb-2">Instructions</h3>
+      <h2 className="text-2xl font-heading mb-2">Instructions</h2>
       <ol className="space-y-4">
         {instructions.map((instruction, index) => (
           <li key={index} className="flex gap-4">
@@ -488,7 +489,7 @@ export function RecipeDisplay({
         onBack={onBack}
       />
 
-      <main className="relative z-20 mt-[45vh] max-w-[1200px] mx-auto space-y-6">
+      <main className="relative z-20 mt-[45vh] max-w-[1200px] mx-auto space-y-8">
         {recipe.description && (
           <p className="text-lg text-gray-700 max-w-4xl">
             {recipe.description}
@@ -503,7 +504,7 @@ export function RecipeDisplay({
           chosenPortions={chosenPortions} 
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <IngredientsSection 
             scaledRecipe={scaledRecipe}
             recipe={recipe}

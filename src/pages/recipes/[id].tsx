@@ -149,6 +149,7 @@ export default function RecipeDetailRoute() {
             });
           }
         }}
+        onBack={() => navigate('/recipes')}
       />
     </div>
   );

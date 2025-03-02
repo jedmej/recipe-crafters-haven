@@ -23,6 +23,7 @@ interface ImageUploadOrGenerateProps {
   customPrompt?: string;
   className?: string;
   imageStyle?: string;
+  hideControls?: boolean;
 }
 
 export function ImageUploadOrGenerate({ 
@@ -35,7 +36,8 @@ export function ImageUploadOrGenerate({
   imageType = 'recipe',
   customPrompt,
   className,
-  imageStyle
+  imageStyle,
+  hideControls = false
 }: ImageUploadOrGenerateProps) {
   // State management
   const [isUploading, setIsUploading] = useState(false);
@@ -267,26 +269,28 @@ export function ImageUploadOrGenerate({
           className={imageStyle || 'w-full rounded-lg'}
           onLoad={() => setIsImageLoading(false)}
         />
-        <div className="absolute top-2 right-2 flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsEditMode(!isEditMode)}
-            type="button"
-            className="bg-white/80 backdrop-blur-sm hover:bg-white"
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRemoveImage}
-            type="button"
-            className="bg-white/80 backdrop-blur-sm hover:bg-white"
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
-        </div>
+        {!hideControls && (
+          <div className="absolute top-2 right-2 flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsEditMode(!isEditMode)}
+              type="button"
+              className="bg-white/80 backdrop-blur-sm hover:bg-white"
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRemoveImage}
+              type="button"
+              className="bg-white/80 backdrop-blur-sm hover:bg-white"
+            >
+              <Trash className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
     );
   };

@@ -3,6 +3,7 @@ import { useRecipeDetail } from '@/features/recipes/hooks/useRecipeDetail';
 import { useRecipeActions } from '@/features/recipes/hooks/useRecipeActions';
 import { RecipeDisplay } from '@/components/recipes/RecipeDisplay';
 import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
 // Special routes that should not be treated as recipe IDs
 const SPECIAL_ROUTES = ['inspire', 'ai-search', 'import-ai', 'import', 'edit', 'new', 'generate-image'];
@@ -58,6 +59,10 @@ function scaleIngredient(ingredient: string, scaleFactor: number): string {
 export default function RecipeDetailRoute() {
   const { id } = useParams();
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   
   // If it's a special route, don't try to load a recipe
   if (id && SPECIAL_ROUTES.includes(id)) {

@@ -54,8 +54,11 @@ const ActionButtons = ({
 }: Pick<RecipeDisplayProps, 'recipe' | 'onEditOrGenerate' | 'onSave' | 'isSaving' | 'onBack'>) => (
   <>
     <button
-      onClick={onBack}
-      className="absolute top-4 left-4 h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors z-30"
+      onClick={() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        onBack();
+      }}
+      className="fixed top-4 left-4 h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors z-50 shadow-sm"
       aria-label="Go Back"
     >
       <CaretLeft weight="bold" className="h-5 w-5 text-gray-700" />
@@ -125,6 +128,7 @@ const RecipeImage = ({
         initialImage={recipe.imageUrl || null}
         className="w-full h-full"
         imageStyle="w-full h-full object-cover"
+        hideControls={true}
       />
       <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-b from-transparent via-white/70 to-white" />
       <div className="absolute inset-x-0 bottom-0 p-8">

@@ -292,7 +292,7 @@ export const RecipeForm = ({
           onImageSelected={(imageUrl) => updateFormField("image_url", imageUrl)}
           title={formData.title}
           disabled={isSubmitting}
-          currentImage={formData.image_url}
+          initialImage={formData.image_url}
         />
       </div>
 

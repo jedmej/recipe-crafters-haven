@@ -4,12 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Plus, Tags } from "lucide-react";
-import { PencilSimple, Trash, FloppyDisk, SpinnerGap, CaretLeft, Alarm, Oven, Fire, Basket } from "@phosphor-icons/react";
+import { PencilSimple, Trash, FloppyDisk, SpinnerGap, CaretLeft, Alarm, Oven, Fire, Basket, Sparkle, Link, UploadSimple, Heart } from "@phosphor-icons/react";
 import { Tag } from "@/components/ui/tag";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeData } from "@/types/recipe";
 import { useToast } from "@/hooks/use-toast";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration";
+import { useFavorites } from "@/hooks/use-favorites";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface RecipeDisplayProps {
   recipe: RecipeData;
@@ -51,45 +54,172 @@ const ActionButtons = ({
   onSave, 
   isSaving,
   onBack
-}: Pick<RecipeDisplayProps, 'recipe' | 'onEditOrGenerate' | 'onSave' | 'isSaving' | 'onBack'>) => (
-  <>
-    <button
-      onClick={() => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        onBack();
-      }}
-      className="fixed top-4 left-4 h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors z-50 shadow-sm"
-      aria-label="Go Back"
-    >
-      <CaretLeft weight="bold" className="h-5 w-5 text-gray-700" />
-    </button>
-    <div className="absolute top-4 right-4 flex gap-2 z-30">
+}: Pick<RecipeDisplayProps, 'recipe' | 'onEditOrGenerate' | 'onSave' | 'isSaving' | 'onBack'>) => {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const [isToggling, setIsToggling] = useState(false);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
+  const isFavorited = recipe.id ? isFavorite(recipe.id) : false;
+  
+  // Debug logging
+  console.log('Recipe in ActionButtons:', recipe);
+  console.log('Recipe ID:', recipe.id);
+  console.log('Is favorited:', isFavorited);
+
+  // Heart animation variants
+  const heartVariants = {
+    initial: { scale: 1 },
+    animate: { 
+      scale: [1, 1.5, 1],
+      transition: { 
+        duration: 0.5,
+        times: [0, 0.3, 1],
+        ease: "easeInOut" 
+      }
+    }
+  };
+
+  // Pulse animation variants
+  const pulseVariants = {
+    initial: { 
+      scale: 0.8,
+      opacity: 0.7,
+    },
+    animate: { 
+      scale: 1.8,
+      opacity: 0,
+      transition: { 
+        duration: 0.8,
+        ease: "easeOut" 
+      }
+    }
+  };
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!recipe.id || isToggling) return; // Prevent if no recipe id or already toggling
+    
+    setIsToggling(true);
+    setShowHeartAnimation(true);
+    
+    try {
+      await toggleFavorite.mutateAsync(recipe.id);
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    } finally {
+      setIsToggling(false);
+      // Reset animation state after a delay
+      setTimeout(() => setShowHeartAnimation(false), 1000);
+    }
+  };
+
+  return (
+    <>
       <button
-        onClick={onEditOrGenerate}
-        className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors"
-        aria-label={recipe.id ? "Edit Recipe" : "Generate New"}
+        onClick={() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          onBack();
+        }}
+        className="fixed top-4 left-4 h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors z-50 shadow-sm"
+        aria-label="Go Back"
       >
-        <PencilSimple weight="bold" className="h-5 w-5 text-gray-700" />
+        <CaretLeft weight="duotone" className="h-5 w-5 text-gray-700" />
       </button>
-      <button
-        onClick={onSave}
-        disabled={isSaving}
-        className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-        aria-label={recipe.id ? "Delete Recipe" : "Save Recipe"}
-      >
-        {isSaving ? (
-          <SpinnerGap className="h-5 w-5 text-gray-700 animate-spin" />
-        ) : (
-          recipe.id ? (
-            <Trash className="h-5 w-5 text-gray-700" />
+      <div className="absolute top-4 right-4 flex gap-2 z-30">
+        <motion.button
+          onClick={handleFavoriteClick}
+          disabled={!recipe.id || isToggling}
+          className="relative h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+          aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          initial={false}
+        >
+          <motion.div
+            variants={heartVariants}
+            initial="initial"
+            animate={showHeartAnimation ? "animate" : "initial"}
+          >
+            <Heart 
+              weight={isFavorited ? "duotone" : "regular"} 
+              className={`h-5 w-5 ${isFavorited ? 'text-red-500' : 'text-gray-700'}`} 
+            />
+          </motion.div>
+          
+          {/* Pulse effect when favoriting */}
+          <AnimatePresence>
+            {showHeartAnimation && isFavorited && (
+              <motion.div 
+                className="absolute inset-0 rounded-full bg-red-500"
+                variants={pulseVariants}
+                initial="initial"
+                animate="animate"
+                exit={{ opacity: 0 }}
+              />
+            )}
+          </AnimatePresence>
+          
+          {/* Floating hearts animation when favoriting */}
+          <AnimatePresence>
+            {showHeartAnimation && isFavorited && (
+              <>
+                {[...Array(3)].map((_, i) => (
+                  <motion.div 
+                    key={i}
+                    className="absolute left-1/2 top-1/2 z-20"
+                    initial={{ 
+                      x: 0, 
+                      y: 0, 
+                      scale: 0.5, 
+                      opacity: 0.9 
+                    }}
+                    animate={{ 
+                      x: Math.random() * 40 - 20, 
+                      y: -30 - Math.random() * 20,
+                      scale: 0,
+                      opacity: 0
+                    }}
+                    transition={{ 
+                      duration: 1 + Math.random() * 0.5,
+                      delay: i * 0.1,
+                      ease: "easeOut" 
+                    }}
+                    exit={{ opacity: 0 }}
+                  >
+                    <Heart weight="fill" className="text-red-500 w-4 h-4" />
+                  </motion.div>
+                ))}
+              </>
+            )}
+          </AnimatePresence>
+        </motion.button>
+        <button
+          onClick={onEditOrGenerate}
+          className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors"
+          aria-label={recipe.id ? "Edit Recipe" : "Generate New"}
+        >
+          <PencilSimple weight="duotone" className="h-5 w-5 text-gray-700" />
+        </button>
+        <button
+          onClick={onSave}
+          disabled={isSaving}
+          className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+          aria-label={recipe.id ? "Delete Recipe" : "Save Recipe"}
+        >
+          {isSaving ? (
+            <SpinnerGap className="h-5 w-5 text-gray-700 animate-spin" />
           ) : (
-            <FloppyDisk className="h-5 w-5 text-gray-700" />
-          )
-        )}
-      </button>
-    </div>
-  </>
-);
+            recipe.id ? (
+              <Trash weight="duotone" className="h-5 w-5 text-gray-700" />
+            ) : (
+              <FloppyDisk weight="duotone" className="h-5 w-5 text-gray-700" />
+            )
+          )}
+        </button>
+      </div>
+    </>
+  );
+};
 
 const TitleDescription = ({ recipe }: { recipe: RecipeData }) => (
   <Card className="overflow-hidden rounded-[48px]">
@@ -116,29 +246,180 @@ const RecipeImage = ({
   handleImageUpdate: (imageUrl: string) => Promise<void>; 
   isSaving: boolean; 
   isUpdatingImage: boolean;
-}) => (
-  <div className="absolute top-0 left-0 right-0 z-10">
-    <div className="relative w-full h-[60vh]">
-      <ImageUploadOrGenerate
-        onImageSelected={handleImageUpdate}
-        title={recipe.title}
-        disabled={isSaving || isUpdatingImage}
-        toggleMode={false}
-        hasExistingImage={!!recipe.imageUrl}
-        initialImage={recipe.imageUrl || null}
-        className="w-full h-full"
-        imageStyle="w-full h-full object-cover"
-        hideControls={true}
-      />
-      <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-b from-transparent via-white/70 to-white" />
-      <div className="absolute inset-x-0 bottom-0 p-8">
-        <h1 className="text-4xl sm:text-5xl font-serif font-medium text-gray-900 max-w-4xl mx-auto">
-          {recipe.title}
-        </h1>
-      </div>
+}) => {
+  // Check if there's an image URL
+  const hasImage = !!recipe.imageUrl;
+  const [showImageControls, setShowImageControls] = useState(false);
+
+  // Create refs for the file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [urlInput, setUrlInput] = useState("");
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const { generateImage, isLoading: isGeneratingImage } = useImageGeneration();
+  const { toast } = useToast();
+
+  const handleGenerateImage = async () => {
+    try {
+      const imagePrompt = `professional food photography: ${recipe.title.trim()}, appetizing presentation, elegant plating, soft natural lighting, shallow depth of field, bokeh effect, clean background, no text overlay, minimalist style, high resolution, food magazine quality, centered composition, vibrant colors, crisp details, no text, no words, no writing, no labels, no watermarks`;
+      
+      const imageUrl = await generateImage(imagePrompt, 'recipe');
+      if (imageUrl) {
+        await handleImageUpdate(imageUrl);
+      }
+    } catch (error) {
+      console.error('Error generating image:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to generate image. Please try again.",
+      });
+    }
+  };
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Create a FileReader to read the file
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const imageUrl = e.target?.result as string;
+      if (imageUrl) {
+        await handleImageUpdate(imageUrl);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleUrlSubmit = async () => {
+    if (!urlInput.trim()) return;
+
+    try {
+      // Basic URL validation
+      new URL(urlInput);
+      
+      // Create a new Image object to check if the URL loads successfully
+      const img = new Image();
+      
+      img.onload = async () => {
+        await handleImageUpdate(urlInput);
+        setUrlInput("");
+        setShowUrlInput(false);
+      };
+      
+      img.onerror = () => {
+        toast({
+          variant: "destructive",
+          title: "Invalid image",
+          description: "The URL provided does not point to a valid image."
+        });
+      };
+      
+      img.src = urlInput;
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Invalid URL",
+        description: "Please enter a valid URL."
+      });
+    }
+  };
+
+  return (
+    <div className="absolute top-0 left-0 right-0 z-10">
+      {hasImage ? (
+        // With image - existing implementation
+        <div className="relative w-full h-[60vh]">
+          <ImageUploadOrGenerate
+            onImageSelected={handleImageUpdate}
+            title={recipe.title}
+            disabled={isSaving || isUpdatingImage}
+            toggleMode={false}
+            hasExistingImage={!!recipe.imageUrl}
+            initialImage={recipe.imageUrl || null}
+            className="w-full h-full"
+            imageStyle="w-full h-full object-cover"
+            hideControls={true}
+          />
+          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-b from-transparent via-white/70 to-white" />
+          <div className="absolute inset-x-0 bottom-0 p-8">
+            <h1 className="text-4xl sm:text-5xl font-serif font-medium text-gray-900 max-w-[800px] mx-auto">
+              {recipe.title}
+            </h1>
+          </div>
+        </div>
+      ) : (
+        // No image - Figma design implementation with reduced height (30vh)
+        <div className="relative w-full h-[30vh] bg-[#E4E7DF] flex flex-col justify-center items-center">
+          <div className="flex gap-4">
+            <button 
+              className="flex items-center gap-1 px-4 h-12 bg-[#F5F5F5] rounded-full text-sm"
+              onClick={handleGenerateImage}
+              disabled={isSaving || isUpdatingImage || isGeneratingImage}
+            >
+              {isGeneratingImage ? (
+                <SpinnerGap className="h-5 w-5 animate-spin" />
+              ) : (
+                <Sparkle className="h-5 w-5" weight="duotone" />
+              )}
+              <span>Generate image</span>
+            </button>
+            
+            <button 
+              className="flex items-center gap-1 px-4 h-12 bg-[#F5F5F5] rounded-full text-sm"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isSaving || isUpdatingImage}
+            >
+              <UploadSimple className="h-5 w-5" weight="duotone" />
+              <span>Upload</span>
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileUpload}
+              accept="image/*"
+              className="hidden"
+            />
+            
+            <button 
+              className="flex items-center gap-1 px-4 h-12 bg-[#F5F5F5] rounded-full text-sm"
+              onClick={() => setShowUrlInput(!showUrlInput)}
+              disabled={isSaving || isUpdatingImage}
+            >
+              <Link className="h-5 w-5" weight="duotone" />
+              <span>URL</span>
+            </button>
+          </div>
+          
+          {showUrlInput && (
+            <div className="absolute top-[calc(50%+32px)] left-1/2 transform -translate-x-1/2 flex gap-2 w-80">
+              <input
+                type="text"
+                value={urlInput}
+                onChange={(e) => setUrlInput(e.target.value)}
+                placeholder="Enter image URL"
+                className="flex-1 px-3 py-2 border rounded-md"
+              />
+              <button
+                onClick={handleUrlSubmit}
+                disabled={!urlInput.trim()}
+                className="px-3 py-2 bg-gray-200 rounded-md"
+              >
+                Add
+              </button>
+            </div>
+          )}
+          
+          <div className="absolute inset-x-0 bottom-0 w-full bg-gradient-to-b from-transparent to-white p-6">
+            <h1 className="text-4xl sm:text-5xl font-serif font-medium text-gray-900 max-w-[800px] mx-auto">
+              {recipe.title}
+            </h1>
+          </div>
+        </div>
+      )}
     </div>
-  </div>
-);
+  );
+};
 
 const CategoryItem = ({ icon, label, value, variant }: CategoryItemProps) => {
   // Helper function to normalize a single category value
@@ -186,83 +467,81 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
   if (!categories) return null;
   
   return (
-    <Card className="overflow-hidden rounded-[48px]">
-      <CardContent className="p-6">
-        <div className="flex flex-wrap gap-4">
-          {categories.meal_type && (
-            <CategoryItem 
-              icon={null}
-              label="Meal Type"
-              value={categories.meal_type}
-              variant="meal"
-            />
-          )}
-          
-          {categories.difficulty_level && (
-            <CategoryItem 
-              icon={null}
-              label="Difficulty Level"
-              value={categories.difficulty_level}
-              variant="difficulty"
-            />
-          )}
-          
-          {categories.cuisine_type && (
-            <CategoryItem 
-              icon={null}
-              label="Cuisine Type"
-              value={categories.cuisine_type}
-              variant="cuisine"
-            />
-          )}
-          
-          {categories.cooking_method && (
-            <CategoryItem 
-              icon={null}
-              label="Cooking Method"
-              value={categories.cooking_method}
-              variant="cooking"
-            />
-          )}
-          
-          {categories.occasion && (
-            <CategoryItem 
-              icon={null}
-              label="Occasion"
-              value={categories.occasion}
-              variant="occasion"
-            />
-          )}
-          
-          {categories.course_category && (
-            <CategoryItem 
-              icon={null}
-              label="Course Category"
-              value={categories.course_category}
-              variant="course"
-            />
-          )}
-          
-          {categories.taste_profile && (
-            <CategoryItem 
-              icon={null}
-              label="Taste Profile"
-              value={categories.taste_profile}
-              variant="taste"
-            />
-          )}
+    <div className="overflow-hidden">
+      <div className="flex flex-wrap gap-4">
+        {categories.meal_type && (
+          <CategoryItem 
+            icon={null}
+            label="Meal Type"
+            value={categories.meal_type}
+            variant="meal"
+          />
+        )}
+        
+        {categories.difficulty_level && (
+          <CategoryItem 
+            icon={null}
+            label="Difficulty Level"
+            value={categories.difficulty_level}
+            variant="difficulty"
+          />
+        )}
+        
+        {categories.cuisine_type && (
+          <CategoryItem 
+            icon={null}
+            label="Cuisine Type"
+            value={categories.cuisine_type}
+            variant="cuisine"
+          />
+        )}
+        
+        {categories.cooking_method && (
+          <CategoryItem 
+            icon={null}
+            label="Cooking Method"
+            value={categories.cooking_method}
+            variant="cooking"
+          />
+        )}
+        
+        {categories.occasion && (
+          <CategoryItem 
+            icon={null}
+            label="Occasion"
+            value={categories.occasion}
+            variant="occasion"
+          />
+        )}
+        
+        {categories.course_category && (
+          <CategoryItem 
+            icon={null}
+            label="Course Category"
+            value={categories.course_category}
+            variant="course"
+          />
+        )}
+        
+        {categories.taste_profile && (
+          <CategoryItem 
+            icon={null}
+            label="Taste Profile"
+            value={categories.taste_profile}
+            variant="taste"
+          />
+        )}
 
-          {categories.dietary_restrictions && (
-            <CategoryItem 
-              icon={null}
-              label="Dietary Restrictions"
-              value={categories.dietary_restrictions}
-              variant="dietary"
-            />
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        {categories.dietary_restrictions && (
+          <CategoryItem 
+            icon={null}
+            label="Dietary Restrictions"
+            value={categories.dietary_restrictions}
+            variant="dietary"
+          />
+        )}
+      </div>
+    </div>
   );
 };
 
@@ -477,6 +756,10 @@ export function RecipeDisplay({
     }
   };
 
+  // Check if there's an image to determine the margin-top for the main content
+  const hasImage = !!recipe.imageUrl;
+  const mainMarginTop = hasImage ? "mt-[55vh]" : "mt-[25vh]";
+
   return (
     <div className="animate-fade-in min-h-screen -mx-3 sm:-mx-6 lg:-mx-8">
       <RecipeImage 
@@ -493,9 +776,9 @@ export function RecipeDisplay({
         onBack={onBack}
       />
 
-      <main className="relative z-20 mt-[55vh] max-w-[1200px] mx-auto space-y-8">
+      <main className={`relative z-20 ${mainMarginTop} max-w-[800px] mx-auto space-y-8`}>
         {recipe.description && (
-          <p className="text-lg text-gray-700 max-w-4xl">
+          <p className="text-lg text-gray-700 w-full">
             {recipe.description}
           </p>
         )}

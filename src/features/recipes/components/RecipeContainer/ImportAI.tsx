@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +14,15 @@ import { RecipeDisplay } from "@/components/recipes/RecipeDisplay";
 
 export function ImportAIContainer() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { preferences } = useUserPreferences();
   
+  // Get URL parameter from query string if it exists
+  const queryParams = new URLSearchParams(location.search);
+  const urlFromQuery = queryParams.get('url');
+  
   // State for the URL input and language selection
-  const [recipeUrl, setRecipeUrl] = useState("");
+  const [recipeUrl, setRecipeUrl] = useState(urlFromQuery || "");
   const [language, setLanguage] = useState(preferences.language || "en");
   const [error, setError] = useState<string | null>(null);
   const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'imperial'>(
@@ -37,6 +42,18 @@ export function ImportAIContainer() {
     setChosenPortions,
     setIsRegenerating,
   } = useAISearch();
+  
+  // Auto-import if URL is provided in query params
+  useEffect(() => {
+    if (urlFromQuery && !suggestedRecipe && !isSearching) {
+      // Set a small timeout to ensure component is fully mounted
+      const timer = setTimeout(() => {
+        handleImport({ preventDefault: () => {} } as React.FormEvent);
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [urlFromQuery, suggestedRecipe, isSearching]);
   
   // URL validation
   const validateUrl = (url: string): boolean => {

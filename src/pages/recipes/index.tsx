@@ -101,6 +101,32 @@ export default function RecipesPage() {
     }
   };
 
+  // Function to check if a string is a URL
+  const isValidUrl = (string: string) => {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  };
+
+  const handleGenerateRecipe = () => {
+    if (searchTerm) {
+      if (isValidUrl(searchTerm)) {
+        // If it's a URL, navigate to the import-ai page with the URL as a query parameter
+        navigate(`/recipes/import-ai?url=${encodeURIComponent(searchTerm)}`);
+      } else {
+        // Otherwise, navigate to the inspire page with the search term as a query parameter
+        navigate(`/recipes/inspire?query=${encodeURIComponent(searchTerm)}`);
+      }
+    }
+  };
+
+  const handleClearSearch = () => {
+    setSearchTerm('');
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -111,6 +137,7 @@ export default function RecipesPage() {
 
   const recipesToDisplay = filteredRecipes || [];
   const hasRecipes = recipesToDisplay.length > 0;
+  const isUrl = searchTerm ? isValidUrl(searchTerm) : false;
 
   return (
     <div className="max-w-7xl mx-auto min-h-screen px-0 py-4 md:p-6 lg:p-8">
@@ -188,7 +215,12 @@ export default function RecipesPage() {
             ))}
           </div>
         ) : (
-          <EmptyState />
+          <EmptyState 
+            searchTerm={searchTerm}
+            onGenerateRecipe={handleGenerateRecipe}
+            onClearSearch={handleClearSearch}
+            generateButtonText={isUrl ? "Import with AI" : "Generate Recipe Now"}
+          />
         )}
       </div>
     </div>

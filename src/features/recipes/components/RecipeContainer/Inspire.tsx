@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, Loader2, Save, RefreshCw, Clock, Timer, Flame, ArrowLeft, Tags, ListPlus, Search } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   Select,
   SelectContent,
@@ -493,9 +493,14 @@ export function InspireContainer() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { preferences } = useUserPreferences();
+  const location = useLocation();
+  
+  // Get query parameter from URL if it exists
+  const queryParams = new URLSearchParams(location.search);
+  const queryFromUrl = queryParams.get('query');
   
   // Search state
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(queryFromUrl || '');
   
   // Recipe inspiration form state
   const [ingredients, setIngredients] = useState<string>("");
@@ -535,6 +540,21 @@ export function InspireContainer() {
   useEffect(() => {
     setLanguage(preferences.language || 'en');
   }, [preferences.language]);
+  
+  // Auto-trigger search if query parameter is present
+  useEffect(() => {
+    if (queryFromUrl && !generatedRecipe && !isGenerating) {
+      // Set a small timeout to ensure component is fully mounted
+      const timer = setTimeout(() => {
+        setIsGenerating(true);
+        setGeneratedRecipe(null);
+        setRecipeImage(null);
+        generateRecipe.mutate({ query: queryFromUrl, mode: 'search' });
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [queryFromUrl]);
 
   // Function to update filter categories with new values
   const updateFilterCategories = (category: string, newValue: string) => {

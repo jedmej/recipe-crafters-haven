@@ -213,7 +213,7 @@ const SearchSection = ({
   isGenerating: boolean;
   handleSearch: (e: React.FormEvent) => void;
 }) => (
-  <Card className="mb-8">
+  <Card className="overflow-hidden rounded-[48px] mb-8">
     <CardContent className="p-6">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Find Your Perfect Recipe</h1>
       
@@ -373,7 +373,7 @@ const InspireForm = ({
   isGenerating: boolean;
   handleGenerateRecipe: (e: React.FormEvent) => void;
 }) => (
-  <Card className="mb-8">
+  <Card className="overflow-hidden rounded-[48px] mb-8">
     <CardContent className="p-6">
       <h1 className="text-3xl font-bold mb-6">Get Inspired with AI</h1>
       

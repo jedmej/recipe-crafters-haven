@@ -38,7 +38,7 @@ export default function RecipeDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+      <div className="flex items-center justify-center p-8">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
@@ -46,7 +46,7 @@ export default function RecipeDetailPage() {
 
   if (error || !recipe) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] gap-4">
+      <div className="flex flex-col items-center justify-center p-8 gap-4">
         <p className="text-lg text-red-500">Error loading recipe</p>
         <Button asChild>
           <Link to="/recipes">
@@ -59,7 +59,7 @@ export default function RecipeDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
+    <div className="bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         <Button
           variant="ghost"
@@ -217,7 +217,7 @@ export default function RecipeDetailPage() {
           </div>
 
           <div className="lg:col-span-6">
-            <Card className="h-full">
+            <Card>
               <CardContent className="p-6 lg:p-8">
                 <h3 className="text-2xl font-semibold mb-6">Ingredients</h3>
                 <RecipeIngredients
@@ -235,7 +235,7 @@ export default function RecipeDetailPage() {
           </div>
 
           <div className="lg:col-span-6">
-            <Card className="h-full">
+            <Card>
               <CardContent className="p-6 lg:p-8">
                 <h3 className="text-2xl font-semibold mb-6">Instructions</h3>
                 <div className="space-y-4">

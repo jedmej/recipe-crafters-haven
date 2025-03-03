@@ -124,89 +124,91 @@ export function ImportAIContainer() {
         Back to Recipes
       </Button>
       
-      <Card className="mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Bot className="mr-2 h-5 w-5" />
-            Import Recipe with AI
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-          
-          <form onSubmit={handleImport} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Recipe URL</label>
-              <Input
-                placeholder="https://example.com/your-recipe"
-                value={recipeUrl}
-                onChange={(e) => setRecipeUrl(e.target.value)}
-                disabled={isSearching}
-              />
-              <p className="text-sm text-muted-foreground">
-                Enter the URL of any recipe you'd like to import
-              </p>
-            </div>
+      <div className="space-y-6">
+        <Card className="overflow-hidden rounded-[48px] mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Bot className="mr-2 h-5 w-5" />
+              Import Recipe with AI
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
             
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Import Language</label>
-              <Select 
-                value={language} 
-                onValueChange={setLanguage}
-                disabled={isSearching}
+            <form onSubmit={handleImport} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Recipe URL</label>
+                <Input
+                  placeholder="https://example.com/your-recipe"
+                  value={recipeUrl}
+                  onChange={(e) => setRecipeUrl(e.target.value)}
+                  disabled={isSearching}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Enter the URL of any recipe you'd like to import
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Import Language</label>
+                <Select 
+                  value={language} 
+                  onValueChange={setLanguage}
+                  disabled={isSearching}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
+                      <SelectItem key={code} value={code}>{name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  The AI will translate the recipe to this language
+                </p>
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full"
+                disabled={isSearching || !recipeUrl.trim()}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select language" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
-                    <SelectItem key={code} value={code}>{name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                The AI will translate the recipe to this language
-              </p>
-            </div>
-            
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={isSearching || !recipeUrl.trim()}
-            >
-              {isSearching ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Importing Recipe...
-                </>
-              ) : (
-                'Import Recipe'
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-      
-      {suggestedRecipe && (
-        <RecipeDisplay
-          recipe={suggestedRecipe}
-          scaledRecipe={suggestedRecipe}
-          chosenPortions={chosenPortions}
-          onPortionsChange={setChosenPortions}
-          measurementSystem={measurementSystem}
-          onMeasurementSystemChange={() => setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric')}
-          onSave={() => saveRecipe.mutate()}
-          isSaving={saveRecipe.isPending}
-          onRegenerate={handleRegenerate}
-          isRegenerating={isRegenerating}
-          onImageUpdate={(imageUrl) => setSuggestedRecipe(prev => prev ? { ...prev, imageUrl } : null)}
-        />
-      )}
+                {isSearching ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Importing Recipe...
+                  </>
+                ) : (
+                  'Import Recipe'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+        
+        {suggestedRecipe && (
+          <RecipeDisplay
+            recipe={suggestedRecipe}
+            scaledRecipe={suggestedRecipe}
+            chosenPortions={chosenPortions}
+            onPortionsChange={setChosenPortions}
+            measurementSystem={measurementSystem}
+            onMeasurementSystemChange={() => setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric')}
+            onSave={() => saveRecipe.mutate()}
+            isSaving={saveRecipe.isPending}
+            onRegenerate={handleRegenerate}
+            isRegenerating={isRegenerating}
+            onImageUpdate={(imageUrl) => setSuggestedRecipe(prev => prev ? { ...prev, imageUrl } : null)}
+          />
+        )}
+      </div>
     </PageLayout>
   );
 }

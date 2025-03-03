@@ -48,7 +48,7 @@ export function FilterPanel({
   setCaloriesRange,
 }: FilterPanelProps) {
   return (
-    <div className="bg-white shadow-sm rounded-2xl p-6 space-y-6 animate-in slide-in-from-top-2 duration-200">
+    <div className="bg-white shadow-sm rounded-2xl p-6 space-y-6">
       {/* Time Range Slider */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">

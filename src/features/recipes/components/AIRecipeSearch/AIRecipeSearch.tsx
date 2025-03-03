@@ -78,7 +78,7 @@ export function AIRecipeSearch() {
 
   return (
     <div className="space-y-6">
-      <Card className="overflow-hidden">
+      <Card className="overflow-hidden rounded-[48px]">
         <CardContent className="p-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">AI Recipe Search</h1>
           

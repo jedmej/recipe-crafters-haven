@@ -122,7 +122,7 @@ export function ImportRecipeContainer() {
       </Button>
 
       <div className="space-y-6">
-        <Card>
+        <Card className="overflow-hidden rounded-[48px]">
           <CardHeader>
             <CardTitle className="flex items-center">
               <Bot className="mr-2 h-5 w-5" /> 
@@ -182,7 +182,7 @@ export function ImportRecipeContainer() {
         
         {/* Only show the form if we have recipe data */}
         {formData.title && (
-          <Card>
+          <Card className="overflow-hidden rounded-[48px]">
             <CardHeader>
               <CardTitle>Review and Save Recipe</CardTitle>
             </CardHeader>

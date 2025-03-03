@@ -29,7 +29,7 @@ export function CreateRecipeContainer() {
         Back to Recipes
       </Button>
 
-      <Card>
+      <Card className="overflow-hidden rounded-[48px]">
         <CardHeader>
           <CardTitle>Create New Recipe</CardTitle>
         </CardHeader>

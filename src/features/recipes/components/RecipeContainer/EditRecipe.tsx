@@ -90,7 +90,7 @@ export function EditRecipeContainer() {
         Back to Recipe
       </Button>
 
-      <Card>
+      <Card className="overflow-hidden rounded-[48px]">
         <CardContent className="p-6">
           <RecipeForm 
             formData={formData}

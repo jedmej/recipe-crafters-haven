@@ -5,7 +5,7 @@ import { Database } from "@/integrations/supabase/types";
 import { useFavorites } from "@/hooks/use-favorites";
 import { Heart } from "@phosphor-icons/react";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
 
@@ -20,6 +20,7 @@ export function RecipeCard({ recipe, isSelected, isSelectionMode, onClick }: Rec
   const { isFavorite, toggleFavorite } = useFavorites();
   const isFavorited = isFavorite(recipe.id);
   const [isToggling, setIsToggling] = useState(false);
+  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
 
   const handleFavoriteClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -27,12 +28,45 @@ export function RecipeCard({ recipe, isSelected, isSelectionMode, onClick }: Rec
     if (isToggling) return; // Prevent multiple clicks
     
     setIsToggling(true);
+    setShowHeartAnimation(true);
+    
     try {
       await toggleFavorite.mutateAsync(recipe.id);
     } catch (error) {
       console.error("Error toggling favorite:", error);
     } finally {
       setIsToggling(false);
+      // Reset animation state after a delay
+      setTimeout(() => setShowHeartAnimation(false), 1000);
+    }
+  };
+
+  // Heart animation variants
+  const heartVariants = {
+    initial: { scale: 1 },
+    animate: { 
+      scale: [1, 1.5, 1],
+      transition: { 
+        duration: 0.5,
+        times: [0, 0.3, 1],
+        ease: "easeInOut" 
+      }
+    }
+  };
+
+  // Pulse animation variants
+  const pulseVariants = {
+    initial: { 
+      scale: 0.8,
+      opacity: 0.7,
+    },
+    animate: { 
+      scale: 1.8,
+      opacity: 0,
+      transition: { 
+        duration: 0.8,
+        ease: "easeOut" 
+      }
     }
   };
 
@@ -111,28 +145,83 @@ export function RecipeCard({ recipe, isSelected, isSelectionMode, onClick }: Rec
                 </div>
               )}
               {!isSelectionMode && (
-                <motion.button
-                  onClick={handleFavoriteClick}
-                  disabled={isToggling}
-                  className={`
-                    absolute top-3 left-3 
-                    bg-white/30 backdrop-blur-md 
-                    p-1.5 rounded-full 
-                    flex items-center justify-center 
-                    shadow-lg border border-white/30 
-                    z-10 transition-all duration-200 
-                    ${isToggling ? 'opacity-70' : 'hover:scale-110'}
-                  `}
-                  aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  initial={false}
-                >
-                  <Heart 
-                    weight={isFavorited ? "duotone" : "regular"} 
-                    className={`w-5 h-5 ${isFavorited ? 'text-red-500' : 'text-white'}`} 
-                  />
-                </motion.button>
+                <div className="absolute top-3 left-3 z-10">
+                  <motion.button
+                    onClick={handleFavoriteClick}
+                    disabled={isToggling}
+                    className={`
+                      relative
+                      bg-white/30 backdrop-blur-md 
+                      p-1.5 rounded-full 
+                      flex items-center justify-center 
+                      shadow-lg border border-white/30 
+                      transition-all duration-200 
+                      ${isToggling ? 'opacity-70' : 'hover:scale-110'}
+                    `}
+                    aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    initial={false}
+                  >
+                    <motion.div
+                      variants={heartVariants}
+                      initial="initial"
+                      animate={showHeartAnimation ? "animate" : "initial"}
+                    >
+                      <Heart 
+                        weight={isFavorited ? "duotone" : "regular"} 
+                        className={`w-5 h-5 ${isFavorited ? 'text-red-500' : 'text-white'}`} 
+                      />
+                    </motion.div>
+                    
+                    {/* Pulse effect when favoriting */}
+                    <AnimatePresence>
+                      {showHeartAnimation && isFavorited && (
+                        <motion.div 
+                          className="absolute inset-0 rounded-full bg-red-500"
+                          variants={pulseVariants}
+                          initial="initial"
+                          animate="animate"
+                          exit={{ opacity: 0 }}
+                        />
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                  
+                  {/* Floating hearts animation when favoriting */}
+                  <AnimatePresence>
+                    {showHeartAnimation && isFavorited && (
+                      <>
+                        {[...Array(3)].map((_, i) => (
+                          <motion.div 
+                            key={i}
+                            className="absolute left-1/2 top-1/2 z-20"
+                            initial={{ 
+                              x: 0, 
+                              y: 0, 
+                              scale: 0.5, 
+                              opacity: 0.9 
+                            }}
+                            animate={{ 
+                              x: Math.random() * 40 - 20, 
+                              y: -30 - Math.random() * 20,
+                              scale: 0,
+                              opacity: 0
+                            }}
+                            transition={{ 
+                              duration: 1 + Math.random() * 0.5,
+                              delay: i * 0.1,
+                              ease: "easeOut" 
+                            }}
+                            exit={{ opacity: 0 }}
+                          >
+                            <Heart weight="fill" className="text-red-500 w-4 h-4" />
+                          </motion.div>
+                        ))}
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
               )}
               {recipe.cook_time && (
                 <motion.div 

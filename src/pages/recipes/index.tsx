@@ -12,6 +12,7 @@ import { useFavorites } from "@/hooks/use-favorites";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function RecipesPage() {
   const navigate = useNavigate();
@@ -192,27 +193,40 @@ export default function RecipesPage() {
             />
 
             {/* Filter Tags Panel */}
-            {isFiltersVisible && (
-              <FilterPanel
-                mealTypeFilters={mealTypeFilters}
-                dietaryFilters={dietaryFilters}
-                difficultyFilters={difficultyFilters}
-                cuisineFilters={cuisineFilters}
-                cookingMethodFilters={cookingMethodFilters}
-                cookTimeRange={cookTimeRange}
-                caloriesRange={caloriesRange}
-                formatTime={formatTime}
-                formatCalories={formatCalories}
-                toggleFilter={toggleFilter}
-                setMealTypeFilters={setMealTypeFilters}
-                setDietaryFilters={setDietaryFilters}
-                setDifficultyFilters={setDifficultyFilters}
-                setCuisineFilters={setCuisineFilters}
-                setCookingMethodFilters={setCookingMethodFilters}
-                setCookTimeRange={setCookTimeRange}
-                setCaloriesRange={setCaloriesRange}
-              />
-            )}
+            <AnimatePresence>
+              {isFiltersVisible && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0, scale: 0.98, transformOrigin: "top", overflow: "hidden" }}
+                  animate={{ opacity: 1, height: "auto", scale: 1, overflow: "visible" }}
+                  exit={{ opacity: 0, height: 0, scale: 0.98, overflow: "hidden" }}
+                  transition={{ 
+                    duration: 0.25, 
+                    ease: [0.4, 0, 0.2, 1],
+                    scale: { duration: 0.2 }
+                  }}
+                >
+                  <FilterPanel
+                    mealTypeFilters={mealTypeFilters}
+                    dietaryFilters={dietaryFilters}
+                    difficultyFilters={difficultyFilters}
+                    cuisineFilters={cuisineFilters}
+                    cookingMethodFilters={cookingMethodFilters}
+                    cookTimeRange={cookTimeRange}
+                    caloriesRange={caloriesRange}
+                    formatTime={formatTime}
+                    formatCalories={formatCalories}
+                    toggleFilter={toggleFilter}
+                    setMealTypeFilters={setMealTypeFilters}
+                    setDietaryFilters={setDietaryFilters}
+                    setDifficultyFilters={setDifficultyFilters}
+                    setCuisineFilters={setCuisineFilters}
+                    setCookingMethodFilters={setCookingMethodFilters}
+                    setCookTimeRange={setCookTimeRange}
+                    setCaloriesRange={setCaloriesRange}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
 

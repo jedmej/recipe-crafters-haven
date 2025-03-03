@@ -8,13 +8,15 @@ import { EmptyState } from "@/components/recipes/EmptyState";
 import { useRecipes } from "@/hooks/use-recipes";
 import { useRecipeFilters } from "@/hooks/use-recipe-filters";
 import { useRecipeSelection } from "@/hooks/use-recipe-selection";
+import { useFavorites } from "@/hooks/use-favorites";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 export default function RecipesPage() {
   const navigate = useNavigate();
   const { data: recipes, isLoading } = useRecipes();
+  const { favorites } = useFavorites();
   const [profile, setProfile] = useState<{
     full_name: string | null;
     username: string | null;
@@ -85,6 +87,18 @@ export default function RecipesPage() {
     formatCalories
   } = useRecipeFilters({ recipes });
 
+  // Sort recipes to prioritize favorites
+  const sortedRecipes = useMemo(() => {
+    return [...filteredRecipes].sort((a, b) => {
+      const aIsFavorite = favorites.includes(a.id);
+      const bIsFavorite = favorites.includes(b.id);
+      
+      if (aIsFavorite && !bIsFavorite) return -1;
+      if (!aIsFavorite && bIsFavorite) return 1;
+      return 0;
+    });
+  }, [filteredRecipes, favorites]);
+
   const {
     selectedRecipes,
     isSelectionMode,
@@ -135,7 +149,7 @@ export default function RecipesPage() {
     );
   }
 
-  const recipesToDisplay = filteredRecipes || [];
+  const recipesToDisplay = sortedRecipes || [];
   const hasRecipes = recipesToDisplay.length > 0;
   const isUrl = searchTerm ? isValidUrl(searchTerm) : false;
 

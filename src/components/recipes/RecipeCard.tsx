@@ -2,6 +2,10 @@ import { Clock } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Database } from "@/integrations/supabase/types";
+import { useFavorites } from "@/hooks/use-favorites";
+import { Heart } from "@phosphor-icons/react";
+import { useState } from "react";
+import { motion } from "framer-motion";
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
 
@@ -13,14 +17,37 @@ interface RecipeCardProps {
 }
 
 export function RecipeCard({ recipe, isSelected, isSelectionMode, onClick }: RecipeCardProps) {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const isFavorited = isFavorite(recipe.id);
+  const [isToggling, setIsToggling] = useState(false);
+
+  const handleFavoriteClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (isToggling) return; // Prevent multiple clicks
+    
+    setIsToggling(true);
+    try {
+      await toggleFavorite.mutateAsync(recipe.id);
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
   return (
-    <div className="relative group">
+    <motion.div 
+      className="relative group"
+      layout
+      layoutId={`recipe-${recipe.id}`}
+    >
       <Card 
         style={{
           borderRadius: '24px',
           overflow: 'hidden',
           position: 'relative',
-          transition: 'all 2500ms cubic-bezier(0.19, 1, 0.22, 1)',
+          transition: 'all 300ms cubic-bezier(0.19, 1, 0.22, 1)',
           transform: `scale(${isSelected ? '0.98' : '1'})`,
           transformOrigin: 'center'
         }}
@@ -33,27 +60,31 @@ export function RecipeCard({ recipe, isSelected, isSelectionMode, onClick }: Rec
           transform-gpu
           ${isSelected 
             ? 'ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/5' 
-            : 'hover:scale-[1.02] transition-all duration-2500'
+            : 'hover:scale-[1.02] transition-all duration-300'
           }
           group
         `}
         onClick={(e) => onClick(recipe.id, e)}
       >
-        <div className="absolute inset-0 rounded-[24px] overflow-hidden">
+        <motion.div 
+          className="absolute inset-0 rounded-[24px] overflow-hidden"
+          layoutId={`recipe-image-${recipe.id}`}
+        >
           {recipe.image_url ? (
             <>
-              <img
+              <motion.img
                 src={recipe.image_url}
                 alt={recipe.title}
                 className={`
                   absolute inset-0 w-full h-full object-cover
-                  transition-all duration-2500
+                  transition-all duration-300
                   group-hover:scale-[1.04]
                   ${isSelected ? 'brightness-95' : ''}
                 `}
                 style={{
                   transitionTimingFunction: 'cubic-bezier(0.19, 1, 0.22, 1)'
                 }}
+                layoutId={`recipe-image-content-${recipe.id}`}
               />
               {isSelectionMode && (
                 <div className="absolute top-3 left-3 bg-white/30 backdrop-blur-md p-1.5 rounded-full flex items-center justify-center shadow-lg border border-white/30 z-10 transition-opacity duration-200">
@@ -79,13 +110,43 @@ export function RecipeCard({ recipe, isSelected, isSelectionMode, onClick }: Rec
                   </div>
                 </div>
               )}
+              {!isSelectionMode && (
+                <motion.button
+                  onClick={handleFavoriteClick}
+                  disabled={isToggling}
+                  className={`
+                    absolute top-3 left-3 
+                    bg-white/30 backdrop-blur-md 
+                    p-1.5 rounded-full 
+                    flex items-center justify-center 
+                    shadow-lg border border-white/30 
+                    z-10 transition-all duration-200 
+                    ${isToggling ? 'opacity-70' : 'hover:scale-110'}
+                  `}
+                  aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  initial={false}
+                >
+                  <Heart 
+                    weight={isFavorited ? "duotone" : "regular"} 
+                    className={`w-5 h-5 ${isFavorited ? 'text-red-500' : 'text-white'}`} 
+                  />
+                </motion.button>
+              )}
               {recipe.cook_time && (
-                <div className="absolute top-3 right-3 bg-white/30 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg border border-white/30 z-10">
+                <motion.div 
+                  className="absolute top-3 right-3 bg-white/30 backdrop-blur-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg border border-white/30 z-10"
+                  layoutId={`recipe-time-${recipe.id}`}
+                >
                   <Clock className="w-4 h-4 text-white" />
                   <span className="text-sm font-medium text-white drop-shadow-sm">{recipe.cook_time} min</span>
-                </div>
+                </motion.div>
               )}
-              <div className="absolute inset-x-0 bottom-0 h-[50%]">
+              <motion.div 
+                className="absolute inset-x-0 bottom-0 h-[50%]"
+                layoutId={`recipe-gradient-${recipe.id}`}
+              >
                 <div 
                   className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
                 />
@@ -96,23 +157,29 @@ export function RecipeCard({ recipe, isSelected, isSelectionMode, onClick }: Rec
                     WebkitMaskImage: 'linear-gradient(to top, black 60%, transparent)'
                   }}
                 />
-              </div>
+              </motion.div>
             </>
           ) : (
             <div className="absolute inset-0 bg-gray-100" />
           )}
-        </div>
-        <div className="absolute inset-x-0 bottom-0 p-4">
-          <h3 className="font-normal text-[21px] font-['Judson'] line-clamp-2 text-white">
+        </motion.div>
+        <motion.div 
+          className="absolute inset-x-0 bottom-0 p-4"
+          layoutId={`recipe-title-${recipe.id}`}
+        >
+          <motion.h3 
+            className="font-normal text-[21px] font-['Judson'] line-clamp-2 text-white"
+            layoutId={`recipe-title-text-${recipe.id}`}
+          >
             {recipe.title}
-          </h3>
+          </motion.h3>
           {false && recipe.description && (
             <p className="mt-2 text-sm line-clamp-2 text-white/80">
               {recipe.description}
             </p>
           )}
-        </div>
+        </motion.div>
       </Card>
-    </div>
+    </motion.div>
   );
 } 

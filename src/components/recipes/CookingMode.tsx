@@ -233,102 +233,102 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
       onTouchEnd={handleTouchEnd}
     >
       {/* Header with recipe title and back button */}
-      <div className="p-16 flex justify-between items-center">
+      <div className="p-4 sm:p-8 md:p-12 lg:p-16 flex justify-between items-center">
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={onClose}
-          className="h-12 w-12 rounded-full bg-white hover:bg-white/90"
+          className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-white hover:bg-white/90"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4 sm:h-5 sm:w-5" />
         </Button>
         
-        <h2 className="text-2xl font-serif">
+        <h2 className="text-lg sm:text-xl md:text-2xl font-serif break-words text-center mx-4 flex-1">
           {recipe.title}
         </h2>
         
         {/* Empty div to balance the layout */}
-        <div className="w-12"></div>
+        <div className="w-10 sm:w-12"></div>
       </div>
       
       {/* Active timer badge - moved under recipe title */}
       {timer && timer.isActive && !isOnTimerStep && (
-        <div className="w-full flex justify-center -mt-8 mb-4">
+        <div className="w-full flex justify-center -mt-4 sm:-mt-6 md:-mt-8 mb-2 sm:mb-4">
           <div 
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-base bg-[#FA8922] text-white cursor-pointer hover:bg-[#FA8922]/90 shadow-sm transition-all duration-300 ease-in-out"
+            className="flex items-center gap-2 px-3 py-1 sm:px-4 sm:py-2 rounded-full text-sm sm:text-base bg-[#FA8922] text-white cursor-pointer hover:bg-[#FA8922]/90 shadow-sm transition-all duration-300 ease-in-out"
             onClick={goToTimerStep}
           >
-            <Clock className="h-5 w-5 text-white" />
+            <Clock className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             <span className="font-medium">{formatTime(timer.remaining)}</span>
           </div>
         </div>
       )}
       
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-between px-16 py-12">
+      <div className="flex-1 flex flex-col items-center justify-between px-4 sm:px-8 md:px-12 lg:px-16 py-6 sm:py-8 md:py-10 lg:py-12 overflow-y-auto">
         {/* Step counter pill */}
-        <div className="flex flex-col items-center gap-[48px]">
-          <div className="bg-[#F5F5F5]/50 px-4 py-2 rounded-full">
-            <p className="text-base font-semibold">
+        <div className="flex flex-col items-center gap-4 sm:gap-6 md:gap-8 lg:gap-[48px] w-full">
+          <div className="bg-[#F5F5F5]/50 px-3 py-1 sm:px-4 sm:py-2 rounded-full">
+            <p className="text-sm sm:text-base font-semibold">
               Step {currentStep + 1} of {recipe.instructions.length}
             </p>
           </div>
           
           {/* Instruction text */}
-          <div className="text-5xl font-serif leading-tight text-center max-w-3xl">
+          <div className="text-4xl sm:text-5xl md:text-6xl lg:text-5xl xl:text-5xl font-serif leading-tight text-center max-w-3xl">
             {currentInstruction}
           </div>
           
           {/* Timer section - moved above preview next step */}
           {(timeInSeconds || customTimerDuration) && (!timer || isOnTimerStep) && (
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center mt-4 sm:mt-6 md:mt-8">
               {isOnTimerStep && timer ? (
                 <div className="text-center">
-                  <div className="text-5xl font-archivo mb-4">
+                  <div className="text-3xl sm:text-4xl md:text-5xl font-archivo mb-2 sm:mb-4">
                     {formatTime(timer.remaining)}
                   </div>
-                  <div className="flex gap-4">
+                  <div className="flex gap-2 sm:gap-4">
                     <Button 
                       onClick={toggleTimer}
-                      className="bg-[#FA8922] hover:bg-[#FA8922]/90 text-white px-6 rounded-full transition-all duration-300 ease-in-out"
+                      className="bg-[#FA8922] hover:bg-[#FA8922]/90 text-white px-4 sm:px-6 py-1 sm:py-2 text-sm sm:text-base rounded-full transition-all duration-300 ease-in-out"
                     >
                       {timer.isActive ? 'Pause' : 'Resume'}
                     </Button>
                     <Button 
                       onClick={() => setTimer(null)}
-                      className="bg-white border border-gray-300 hover:bg-gray-100 text-black px-6 rounded-full transition-all duration-300 ease-in-out"
+                      className="bg-white border border-gray-300 hover:bg-gray-100 text-black px-4 sm:px-6 py-1 sm:py-2 text-sm sm:text-base rounded-full transition-all duration-300 ease-in-out"
                     >
                       Cancel
                     </Button>
                   </div>
                 </div>
               ) : (
-                <div className="flex flex-col items-center gap-4">
-                  <div className="flex items-center gap-2">
+                <div className="flex flex-col items-center gap-2 sm:gap-4">
+                  <div className="flex flex-wrap justify-center items-center gap-3 sm:gap-4">
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => adjustTimerDuration(-30)}
-                      className="h-10 w-10 rounded-full bg-[#F5F5F5] hover:bg-[#F5F5F5]/80"
+                      className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-[#F5F5F5] hover:bg-[#F5F5F5]/80 shadow-sm"
                     >
-                      <Minus className="h-4 w-4" />
+                      <Minus className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7" />
                     </Button>
                     
                     <Button 
                       onClick={() => startTimer(displayTimerDuration || 60)}
-                      className="flex gap-2 bg-[#FA8922] hover:bg-[#FA8922]/90 text-white px-6 rounded-full transition-all duration-300 ease-in-out"
+                      className="flex gap-2 sm:gap-3 bg-[#FA8922] hover:bg-[#FA8922]/90 text-white px-5 sm:px-7 md:px-8 h-12 sm:h-14 md:h-16 text-base sm:text-lg md:text-xl rounded-full transition-all duration-300 ease-in-out shadow-sm"
                     >
-                      <Timer className="h-5 w-5" />
-                      Set Timer ({formatTime(displayTimerDuration || 60)})
+                      <Timer className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7" />
+                      <span className="whitespace-nowrap font-medium">Set Timer ({formatTime(displayTimerDuration || 60)})</span>
                     </Button>
                     
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => adjustTimerDuration(30)}
-                      className="h-10 w-10 rounded-full bg-[#F5F5F5] hover:bg-[#F5F5F5]/80"
+                      className="h-12 w-12 sm:h-14 sm:w-14 md:h-16 md:w-16 rounded-full bg-[#F5F5F5] hover:bg-[#F5F5F5]/80 shadow-sm"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7" />
                     </Button>
                   </div>
                   
@@ -351,77 +351,126 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
         </div>
         
         {/* Bottom spacing - empty div to maintain layout */}
-        <div className="w-full h-[48px]"></div>
+        <div className="w-full h-[24px] sm:h-[36px] md:h-[48px]"></div>
       </div>
       
-      {/* Corner navigation buttons that look like they're going off screen */}
-      <div className="absolute left-0 bottom-0">
+      {/* Corner navigation buttons that look like they're going off screen - hidden on small screens */}
+      <div className="hidden md:block absolute left-0 bottom-0">
         <Button 
           variant="outline" 
           onClick={goToPrevStep}
           disabled={currentStep === 0}
-          className="w-[500px] h-[500px] bg-[#F5F5F5] hover:bg-[#F5F5F5]/90 border-none rounded-full flex flex-col items-center justify-center gap-4 text-3xl -translate-x-[30%] translate-y-[30%] transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg group disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
+          className="w-[300px] h-[300px] lg:w-[400px] lg:h-[400px] xl:w-[500px] xl:h-[500px] bg-[#F5F5F5] hover:bg-[#F5F5F5]/90 border-none rounded-full flex flex-col items-center justify-center gap-2 sm:gap-4 text-xl sm:text-2xl md:text-3xl -translate-x-[30%] translate-y-[30%] transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg group disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
         >
           <div className="translate-x-[30%] -translate-y-[30%] flex flex-col items-center transition-all duration-300 ease-in-out group-hover:translate-y-[-32%]">
-            <ChevronLeft className="h-20 w-20 transition-transform duration-300 ease-in-out group-hover:scale-110" />
+            <ChevronLeft className="h-10 w-10 md:h-14 md:w-14 lg:h-16 lg:w-16 xl:h-20 xl:w-20 transition-transform duration-300 ease-in-out group-hover:scale-110" />
             <span className="font-bold transition-all duration-300 ease-in-out group-hover:scale-110">Previous</span>
           </div>
         </Button>
       </div>
       
+      {/* Mobile navigation buttons - visible only on small screens */}
+      <div className="md:hidden">
+        {/* Left (Previous) button */}
+        <div className="absolute left-0 bottom-0 z-10">
+          <Button 
+            variant="outline" 
+            onClick={goToPrevStep}
+            disabled={currentStep === 0}
+            className="w-[270px] h-[270px] bg-[#F5F5F5] hover:bg-[#F5F5F5]/90 border-none rounded-full flex items-center justify-center -translate-x-[30%] translate-y-[30%] transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
+          >
+            <div className="translate-x-[30%] -translate-y-[30%]">
+              <ChevronLeft className="h-16 w-16" />
+            </div>
+          </Button>
+        </div>
+        
+        {/* Center (Preview) button */}
+        {nextInstruction && (
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-[180px] z-30">
+            <Button
+              variant="ghost"
+              onClick={toggleNextPreview}
+              className="bg-white hover:bg-white/90 text-[#333333] rounded-full w-24 h-24 shadow-sm flex items-center justify-center font-archivo border border-gray-100"
+            >
+              <Eye className="h-10 w-10 text-[#FA8922]" />
+            </Button>
+          </div>
+        )}
+        
+        {/* Right (Next) button */}
+        <div className="absolute right-0 bottom-0 z-10">
+          <Button 
+            variant="outline" 
+            onClick={goToNextStep}
+            disabled={currentStep === recipe.instructions.length - 1}
+            className="w-[270px] h-[270px] bg-[#F5F5F5] hover:bg-[#F5F5F5]/90 border-none rounded-full flex items-center justify-center translate-x-[30%] translate-y-[30%] transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
+          >
+            <div className="-translate-x-[30%] -translate-y-[30%]">
+              <ChevronRight className="h-16 w-16" />
+            </div>
+          </Button>
+        </div>
+      </div>
+      
       {/* Preview next step button positioned in the center bottom */}
       {nextInstruction && (
-        <div className={`absolute bottom-[80px] left-1/2 -translate-x-1/2 ${showNextPreview ? 'translate-y-0' : 'translate-y-0'} transition-all duration-500 ease-in-out z-20`}>
+        <div className={`absolute ${showNextPreview ? 'bottom-[220px] md:bottom-[120px]' : 'bottom-[80px] md:bottom-[120px]'} left-1/2 -translate-x-1/2 transition-all duration-500 ease-in-out z-30 ${showNextPreview ? 'w-[90%] sm:w-auto' : ''}`}>
           {showNextPreview ? (
             <div 
-              className="bg-white p-7 rounded-[32px] shadow-lg max-w-md w-[350px] transform origin-bottom transition-all duration-500 ease-in-out animate-scale-in border border-gray-100"
+              className="bg-white p-4 sm:p-5 md:p-7 rounded-[16px] sm:rounded-[24px] md:rounded-[32px] shadow-lg max-w-md w-full sm:w-[350px] transform origin-bottom transition-all duration-500 ease-in-out animate-scale-in border border-gray-100 relative"
               style={{ transformOrigin: 'center bottom' }}
             >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="font-archivo font-semibold text-lg text-[#333333]">Next Step</h3>
+              <div className="flex justify-between items-center mb-2 sm:mb-4">
+                <h3 className="font-archivo font-semibold text-base sm:text-lg text-[#333333]">Next Step</h3>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={toggleNextPreview}
-                  className="h-8 w-8 rounded-full p-0 hover:bg-[#F5F5F5] transition-colors duration-200"
+                  className="h-6 w-6 sm:h-8 sm:w-8 rounded-full p-0 hover:bg-[#F5F5F5] transition-colors duration-200"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </div>
-              <p className="text-base font-archivo leading-relaxed text-[#333333]">{nextInstruction}</p>
+              <p className="text-sm sm:text-base font-archivo leading-relaxed text-[#333333]">{nextInstruction}</p>
               
               {/* Show timer info for next step if applicable */}
               {extractTimeFromInstruction(nextInstruction) && (
-                <div className="mt-4 flex items-center gap-2 bg-[#F5F5F5] p-3 rounded-xl text-[#333333]">
-                  <Timer className="h-4 w-4 text-[#FA8922]" />
-                  <span className="font-archivo text-sm">
+                <div className="mt-3 sm:mt-4 flex items-center gap-2 bg-[#F5F5F5] p-2 sm:p-3 rounded-xl text-[#333333]">
+                  <Timer className="h-3 w-3 sm:h-4 sm:w-4 text-[#FA8922]" />
+                  <span className="font-archivo text-xs sm:text-sm">
                     Contains timer: <span className="font-semibold">{formatTime(extractTimeFromInstruction(nextInstruction)!)}</span>
                   </span>
                 </div>
               )}
+              
+              {/* Add a visual indicator pointing to the button */}
+              <div className="md:hidden w-4 h-4 bg-white rotate-45 absolute -bottom-2 left-1/2 -translate-x-1/2 border-r border-b border-gray-100"></div>
             </div>
           ) : (
-            <Button
-              variant="ghost"
-              onClick={toggleNextPreview}
-              className="bg-white hover:bg-white/90 text-[#333333] rounded-full px-6 py-3 h-auto shadow-md transform transition-all duration-500 ease-in-out animate-scale-in flex items-center font-archivo border border-gray-100"
-            >
-              <Eye className="h-5 w-5 mr-2 text-[#FA8922]" />
-              Preview next step
-            </Button>
+            <div className="hidden md:block">
+              <Button
+                variant="ghost"
+                onClick={toggleNextPreview}
+                className="bg-white hover:bg-white/90 text-[#333333] rounded-full px-4 sm:px-6 py-2 sm:py-3 h-auto shadow-md transform transition-all duration-500 ease-in-out animate-scale-in flex items-center font-archivo border border-gray-100"
+              >
+                <Eye className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-[#FA8922]" />
+                Preview next step
+              </Button>
+            </div>
           )}
         </div>
       )}
       
-      <div className="absolute right-0 bottom-0">
+      <div className="hidden md:block absolute right-0 bottom-0">
         <Button 
           variant="outline" 
           onClick={goToNextStep}
           disabled={currentStep === recipe.instructions.length - 1}
-          className="w-[500px] h-[500px] bg-[#F5F5F5] hover:bg-[#F5F5F5]/90 border-none rounded-full flex flex-col items-center justify-center gap-4 text-3xl translate-x-[30%] translate-y-[30%] transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg group disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
+          className="w-[300px] h-[300px] lg:w-[400px] lg:h-[400px] xl:w-[500px] xl:h-[500px] bg-[#F5F5F5] hover:bg-[#F5F5F5]/90 border-none rounded-full flex flex-col items-center justify-center gap-2 sm:gap-4 text-xl sm:text-2xl md:text-3xl translate-x-[30%] translate-y-[30%] transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg group disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
         >
           <div className="-translate-x-[30%] -translate-y-[30%] flex flex-col items-center transition-all duration-300 ease-in-out group-hover:translate-y-[-32%]">
-            <ChevronRight className="h-20 w-20 transition-transform duration-300 ease-in-out group-hover:scale-110" />
+            <ChevronRight className="h-10 w-10 md:h-14 md:w-14 lg:h-16 lg:w-16 xl:h-20 xl:w-20 transition-transform duration-300 ease-in-out group-hover:scale-110" />
             <span className="font-bold transition-all duration-300 ease-in-out group-hover:scale-110">Next</span>
           </div>
         </Button>

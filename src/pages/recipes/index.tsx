@@ -5,6 +5,7 @@ import { SearchAndActions } from "@/components/recipes/SearchAndActions";
 import { FilterPanel } from "@/components/recipes/FilterPanel";
 import { RecipeCount } from "@/components/recipes/RecipeCount";
 import { EmptyState } from "@/components/recipes/EmptyState";
+import { RecipeGenerationCard } from "@/components/recipes/RecipeGenerationCard";
 import { useRecipes } from "@/hooks/use-recipes";
 import { useRecipeFilters } from "@/hooks/use-recipe-filters";
 import { useRecipeSelection } from "@/hooks/use-recipe-selection";
@@ -241,6 +242,13 @@ export default function RecipesPage() {
                 onClick={handleCardClick}
               />
             ))}
+            {/* Always show the recipe generation card at the end of the list */}
+            <RecipeGenerationCard 
+              searchTerm={searchTerm}
+              onGenerateRecipe={handleGenerateRecipe}
+              generateButtonText={isUrl ? "Import with AI" : "Generate Recipe Now"}
+              isUrl={isUrl}
+            />
           </div>
         ) : (
           <EmptyState 

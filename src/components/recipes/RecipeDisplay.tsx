@@ -8,6 +8,8 @@ import { memo, useCallback, useState, useRef } from "react";
 import { useFavorites } from "@/hooks/use-favorites";
 import { useToast } from "@/hooks/use-toast";
 import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration";
+import { CookingMode } from "./CookingMode";
+import { ChefHat } from "lucide-react";
 
 interface RecipeDisplayProps {
   recipe: RecipeData;
@@ -79,12 +81,12 @@ const ActionButtons = memo(({
     <>
       <button
         onClick={handleBackClick}
-        className="fixed top-4 left-4 h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors z-50 shadow-sm"
+        className="fixed top-4 left-4 h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors z-[60] shadow-sm"
         aria-label="Go Back"
       >
         <CaretLeft weight="duotone" className="h-5 w-5 text-gray-700" />
       </button>
-      <div className="absolute top-4 right-4 flex gap-2 z-30">
+      <div className="absolute top-4 right-4 flex gap-2 z-[60]">
         <button
           onClick={handleFavoriteClick}
           disabled={!recipe.id || isToggling}
@@ -574,7 +576,10 @@ const IngredientsSection = memo(({
   </Card>
 ));
 
-const InstructionsSection = memo(({ instructions }: { instructions: string[] }) => (
+const InstructionsSection = memo(({ instructions, onStartCooking }: { 
+  instructions: string[]; 
+  onStartCooking: () => void;
+}) => (
   <Card className="overflow-hidden rounded-[48px] border-0 bg-[#BFCFBC]">
     <CardContent className="p-6">
       <h2 className="text-2xl font-heading mb-2">Instructions</h2>
@@ -588,6 +593,15 @@ const InstructionsSection = memo(({ instructions }: { instructions: string[] }) 
           </li>
         ))}
       </ol>
+      <div className="mt-6">
+        <Button 
+          onClick={onStartCooking}
+          className="w-full gap-2 h-12 rounded-[500px] bg-primary hover:bg-primary/90 text-white"
+        >
+          <ChefHat className="h-4 w-4" />
+          Start Cooking
+        </Button>
+      </div>
     </CardContent>
   </Card>
 ));
@@ -611,6 +625,7 @@ export function RecipeDisplay({
 }: RecipeDisplayProps) {
   const { toast } = useToast();
   const [isUpdatingImage, setIsUpdatingImage] = useState(false);
+  const [showCookingMode, setShowCookingMode] = useState(false);
 
   const handleImageUpdate = useCallback(async (imageUrl: string) => {
     if (!onImageUpdate) return;
@@ -648,6 +663,13 @@ export function RecipeDisplay({
 
   return (
     <div className="min-h-screen -mx-3 sm:-mx-6 lg:-mx-8">
+      {showCookingMode && (
+        <CookingMode 
+          recipe={scaledRecipe} 
+          onClose={() => setShowCookingMode(false)} 
+        />
+      )}
+      
       <RecipeImage 
         recipe={recipe} 
         handleImageUpdate={handleImageUpdate} 
@@ -689,7 +711,10 @@ export function RecipeDisplay({
             isAddingToGroceryList={isAddingToGroceryList}
           />
           
-          <InstructionsSection instructions={scaledRecipe.instructions} />
+          <InstructionsSection 
+            instructions={scaledRecipe.instructions} 
+            onStartCooking={() => setShowCookingMode(true)}
+          />
         </div>
       </main>
     </div>

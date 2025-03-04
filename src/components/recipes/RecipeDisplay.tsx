@@ -1,18 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Plus, Tags } from "lucide-react";
-import { PencilSimple, Trash, FloppyDisk, SpinnerGap, CaretLeft, Alarm, Oven, Fire, Basket, Sparkle, Link, UploadSimple, Heart } from "@phosphor-icons/react";
+import { PencilSimple, FloppyDisk, SpinnerGap, CaretLeft, Alarm, Oven, Fire, Basket, Heart, Trash, Sparkle, UploadSimple, Link } from "@phosphor-icons/react";
 import { Tag } from "@/components/ui/tag";
-import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
 import { RecipeData } from "@/types/recipe";
-import { useToast } from "@/hooks/use-toast";
-import { useState, useEffect, useRef } from "react";
-import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration";
+import { memo, useCallback, useState, useRef } from "react";
 import { useFavorites } from "@/hooks/use-favorites";
-import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration";
 
 interface RecipeDisplayProps {
   recipe: RecipeData;
@@ -48,7 +43,7 @@ interface TimeNutritionItemProps {
   unit?: string;
 }
 
-const ActionButtons = ({ 
+const ActionButtons = memo(({ 
   recipe, 
   onEditOrGenerate, 
   onSave, 
@@ -57,50 +52,19 @@ const ActionButtons = ({
 }: Pick<RecipeDisplayProps, 'recipe' | 'onEditOrGenerate' | 'onSave' | 'isSaving' | 'onBack'>) => {
   const { isFavorite, toggleFavorite } = useFavorites();
   const [isToggling, setIsToggling] = useState(false);
-  const [showHeartAnimation, setShowHeartAnimation] = useState(false);
   const isFavorited = recipe.id ? isFavorite(recipe.id) : false;
-  
-  // Debug logging
-  console.log('Recipe in ActionButtons:', recipe);
-  console.log('Recipe ID:', recipe.id);
-  console.log('Is favorited:', isFavorited);
 
-  // Heart animation variants
-  const heartVariants = {
-    initial: { scale: 1 },
-    animate: { 
-      scale: [1, 1.5, 1],
-      transition: { 
-        duration: 0.5,
-        times: [0, 0.3, 1],
-        ease: "easeInOut" 
-      }
-    }
-  };
+  const handleBackClick = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    onBack();
+  }, [onBack]);
 
-  // Pulse animation variants
-  const pulseVariants = {
-    initial: { 
-      scale: 0.8,
-      opacity: 0.7,
-    },
-    animate: { 
-      scale: 1.8,
-      opacity: 0,
-      transition: { 
-        duration: 0.8,
-        ease: "easeOut" 
-      }
-    }
-  };
-
-  const handleFavoriteClick = async (e: React.MouseEvent) => {
+  const handleFavoriteClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     
     if (!recipe.id || isToggling) return; // Prevent if no recipe id or already toggling
     
     setIsToggling(true);
-    setShowHeartAnimation(true);
     
     try {
       await toggleFavorite.mutateAsync(recipe.id);
@@ -108,91 +72,30 @@ const ActionButtons = ({
       console.error("Error toggling favorite:", error);
     } finally {
       setIsToggling(false);
-      // Reset animation state after a delay
-      setTimeout(() => setShowHeartAnimation(false), 1000);
     }
-  };
+  }, [recipe.id, isToggling, toggleFavorite]);
 
   return (
     <>
       <button
-        onClick={() => {
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          onBack();
-        }}
+        onClick={handleBackClick}
         className="fixed top-4 left-4 h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors z-50 shadow-sm"
         aria-label="Go Back"
       >
         <CaretLeft weight="duotone" className="h-5 w-5 text-gray-700" />
       </button>
       <div className="absolute top-4 right-4 flex gap-2 z-30">
-        <motion.button
+        <button
           onClick={handleFavoriteClick}
           disabled={!recipe.id || isToggling}
           className="relative h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
           aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          initial={false}
         >
-          <motion.div
-            variants={heartVariants}
-            initial="initial"
-            animate={showHeartAnimation ? "animate" : "initial"}
-          >
-            <Heart 
-              weight={isFavorited ? "duotone" : "regular"} 
-              className={`h-5 w-5 ${isFavorited ? 'text-red-500' : 'text-gray-700'}`} 
-            />
-          </motion.div>
-          
-          {/* Pulse effect when favoriting */}
-          <AnimatePresence>
-            {showHeartAnimation && isFavorited && (
-              <motion.div 
-                className="absolute inset-0 rounded-full bg-red-500"
-                variants={pulseVariants}
-                initial="initial"
-                animate="animate"
-                exit={{ opacity: 0 }}
-              />
-            )}
-          </AnimatePresence>
-          
-          {/* Floating hearts animation when favoriting */}
-          <AnimatePresence>
-            {showHeartAnimation && isFavorited && (
-              <>
-                {[...Array(3)].map((_, i) => (
-                  <motion.div 
-                    key={i}
-                    className="absolute left-1/2 top-1/2 z-20"
-                    initial={{ 
-                      x: 0, 
-                      y: 0, 
-                      scale: 0.5, 
-                      opacity: 0.9 
-                    }}
-                    animate={{ 
-                      x: Math.random() * 40 - 20, 
-                      y: -30 - Math.random() * 20,
-                      scale: 0,
-                      opacity: 0
-                    }}
-                    transition={{ 
-                      duration: 1 + Math.random() * 0.5,
-                      delay: i * 0.1,
-                      ease: "easeOut" 
-                    }}
-                    exit={{ opacity: 0 }}
-                  >
-                    <Heart weight="fill" className="text-red-500 w-4 h-4" />
-                  </motion.div>
-                ))}
-              </>
-            )}
-          </AnimatePresence>
-        </motion.button>
+          <Heart 
+            weight={isFavorited ? "duotone" : "regular"} 
+            className={`h-5 w-5 ${isFavorited ? 'text-red-500' : 'text-gray-700'}`} 
+          />
+        </button>
         <button
           onClick={onEditOrGenerate}
           className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors"
@@ -200,43 +103,46 @@ const ActionButtons = ({
         >
           <PencilSimple weight="duotone" className="h-5 w-5 text-gray-700" />
         </button>
-        <button
-          onClick={onSave}
-          disabled={isSaving}
-          className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-          aria-label={recipe.id ? "Delete Recipe" : "Save Recipe"}
-        >
-          {isSaving ? (
-            <SpinnerGap className="h-5 w-5 text-gray-700 animate-spin" />
-          ) : (
-            recipe.id ? (
-              <Trash weight="duotone" className="h-5 w-5 text-gray-700" />
+        {recipe.id ? (
+          <Button
+            onClick={onSave}
+            disabled={isSaving}
+            className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+            aria-label="Delete Recipe"
+          >
+            {isSaving ? (
+              <SpinnerGap className="h-5 w-5 text-gray-700 animate-spin" />
             ) : (
-              <FloppyDisk weight="duotone" className="h-5 w-5 text-gray-700" />
-            )
-          )}
-        </button>
+              <Trash weight="duotone" className="h-5 w-5 text-gray-700" />
+            )}
+          </Button>
+        ) : (
+          <Button
+            onClick={onSave}
+            disabled={isSaving}
+            className="h-12 px-4 rounded-full bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
+            aria-label="Save Recipe"
+          >
+            {isSaving ? (
+              <>
+                <SpinnerGap weight="bold" className="h-4 w-4 animate-spin" />
+                <span>Saving...</span>
+              </>
+            ) : (
+              <>
+                <FloppyDisk weight="bold" className="h-4 w-4" />
+                <span>Save</span>
+              </>
+            )}
+          </Button>
+        )}
       </div>
     </>
   );
-};
+});
 
-const TitleDescription = ({ recipe }: { recipe: RecipeData }) => (
-  <Card className="overflow-hidden rounded-[48px]">
-    <CardContent className="p-6">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-4">{recipe.title}</h1>
-          {recipe.description && (
-            <p className="text-muted-foreground leading-relaxed">{recipe.description}</p>
-          )}
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-const RecipeImage = ({ 
+// RecipeImage component with image generation, upload, and URL functionality
+const RecipeImage = memo(({ 
   recipe, 
   handleImageUpdate, 
   isSaving, 
@@ -247,14 +153,10 @@ const RecipeImage = ({
   isSaving: boolean; 
   isUpdatingImage: boolean;
 }) => {
-  // Check if there's an image URL
   const hasImage = !!recipe.imageUrl;
-  const [showImageControls, setShowImageControls] = useState(false);
-
-  // Create refs for the file input
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [urlInput, setUrlInput] = useState("");
   const [showUrlInput, setShowUrlInput] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { generateImage, isLoading: isGeneratingImage } = useImageGeneration();
   const { toast } = useToast();
 
@@ -328,18 +230,12 @@ const RecipeImage = ({
   return (
     <div className="absolute top-0 left-0 right-0 z-10">
       {hasImage ? (
-        // With image - existing implementation
         <div className="relative w-full h-[60vh]">
-          <ImageUploadOrGenerate
-            onImageSelected={handleImageUpdate}
-            title={recipe.title}
-            disabled={isSaving || isUpdatingImage}
-            toggleMode={false}
-            hasExistingImage={!!recipe.imageUrl}
-            initialImage={recipe.imageUrl || null}
-            className="w-full h-full"
-            imageStyle="w-full h-full object-cover"
-            hideControls={true}
+          <img 
+            src={recipe.imageUrl} 
+            alt={recipe.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
           />
           <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-b from-transparent via-white/70 to-white" />
           <div className="absolute inset-x-0 bottom-0 p-8">
@@ -349,7 +245,6 @@ const RecipeImage = ({
           </div>
         </div>
       ) : (
-        // No image - Figma design implementation with reduced height (30vh)
         <div className="relative w-full h-[30vh] bg-[#E4E7DF] flex flex-col justify-center items-center">
           <div className="flex gap-4">
             <button 
@@ -419,9 +314,9 @@ const RecipeImage = ({
       )}
     </div>
   );
-};
+});
 
-const CategoryItem = ({ icon, label, value, variant }: CategoryItemProps) => {
+const CategoryItem = memo(({ icon, label, value, variant }: CategoryItemProps) => {
   // Helper function to normalize a single category value
   const normalizeValue = (val: string): string => {
     // Capitalize first letter of each word
@@ -461,10 +356,19 @@ const CategoryItem = ({ icon, label, value, variant }: CategoryItemProps) => {
       </div>
     </div>
   );
-};
+});
 
-const RecipeCategories = ({ categories }: { categories: RecipeData['categories'] }) => {
+const RecipeCategories = memo(({ categories }: { categories: RecipeData['categories'] }) => {
   if (!categories) return null;
+  
+  // Only render categories that exist to reduce unnecessary rendering
+  const hasCategories = categories.meal_type || 
+                       categories.difficulty_level || 
+                       categories.cuisine_type || 
+                       categories.cooking_method || 
+                       categories.dietary_restrictions;
+  
+  if (!hasCategories) return null;
   
   return (
     <div className="overflow-hidden">
@@ -505,33 +409,6 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
           />
         )}
         
-        {categories.occasion && (
-          <CategoryItem 
-            icon={null}
-            label="Occasion"
-            value={categories.occasion}
-            variant="occasion"
-          />
-        )}
-        
-        {categories.course_category && (
-          <CategoryItem 
-            icon={null}
-            label="Course Category"
-            value={categories.course_category}
-            variant="course"
-          />
-        )}
-        
-        {categories.taste_profile && (
-          <CategoryItem 
-            icon={null}
-            label="Taste Profile"
-            value={categories.taste_profile}
-            variant="taste"
-          />
-        )}
-
         {categories.dietary_restrictions && (
           <CategoryItem 
             icon={null}
@@ -543,9 +420,9 @@ const RecipeCategories = ({ categories }: { categories: RecipeData['categories']
       </div>
     </div>
   );
-};
+});
 
-const TimeNutritionItem = ({ 
+const TimeNutritionItem = memo(({ 
   icon, 
   label, 
   value, 
@@ -569,9 +446,9 @@ const TimeNutritionItem = ({
       </div>
     </div>
   </div>
-);
+));
 
-const TimeNutrition = ({ 
+const TimeNutrition = memo(({ 
   scaledRecipe, 
   recipe, 
   chosenPortions 
@@ -579,48 +456,57 @@ const TimeNutrition = ({
   scaledRecipe: RecipeData; 
   recipe: RecipeData; 
   chosenPortions: number;
-}) => (
-  <Card className="overflow-hidden rounded-[48px] border-0 bg-[#F2F2F2]">
-    <CardContent className="p-6">
-      <div className="flex flex-col sm:flex-row justify-between gap-4">
-        {scaledRecipe?.prep_time && (
-          <TimeNutritionItem
-            icon={<Alarm className="h-6 w-6 text-primary" weight="duotone" />}
-            label="Prep Time"
-            value={scaledRecipe.prep_time}
-            originalValue={recipe.prep_time}
-            showOriginal={chosenPortions !== recipe.suggested_portions}
-            unit="mins"
-          />
-        )}
-        
-        {scaledRecipe?.cook_time && (
-          <TimeNutritionItem
-            icon={<Oven className="h-6 w-6 text-primary" weight="duotone" />}
-            label="Cook Time"
-            value={scaledRecipe.cook_time}
-            originalValue={recipe.cook_time}
-            showOriginal={chosenPortions !== recipe.suggested_portions}
-            unit="mins"
-          />
-        )}
-        
-        {scaledRecipe?.estimated_calories && (
-          <TimeNutritionItem
-            icon={<Fire className="h-6 w-6 text-primary" weight="duotone" />}
-            label="Calories"
-            value={scaledRecipe.estimated_calories}
-            originalValue={recipe.estimated_calories}
-            showOriginal={chosenPortions !== recipe.suggested_portions}
-            unit="total"
-          />
-        )}
-      </div>
-    </CardContent>
-  </Card>
-);
+}) => {
+  // Only render if we have time or nutrition data
+  const hasTimeOrNutrition = scaledRecipe?.prep_time || 
+                            scaledRecipe?.cook_time || 
+                            scaledRecipe?.estimated_calories;
+  
+  if (!hasTimeOrNutrition) return null;
+  
+  return (
+    <Card className="overflow-hidden rounded-[48px] border-0 bg-[#F2F2F2]">
+      <CardContent className="p-6">
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
+          {scaledRecipe?.prep_time && (
+            <TimeNutritionItem
+              icon={<Alarm className="h-6 w-6 text-primary" weight="duotone" />}
+              label="Prep Time"
+              value={scaledRecipe.prep_time}
+              originalValue={recipe.prep_time}
+              showOriginal={chosenPortions !== recipe.suggested_portions}
+              unit="mins"
+            />
+          )}
+          
+          {scaledRecipe?.cook_time && (
+            <TimeNutritionItem
+              icon={<Oven className="h-6 w-6 text-primary" weight="duotone" />}
+              label="Cook Time"
+              value={scaledRecipe.cook_time}
+              originalValue={recipe.cook_time}
+              showOriginal={chosenPortions !== recipe.suggested_portions}
+              unit="mins"
+            />
+          )}
+          
+          {scaledRecipe?.estimated_calories && (
+            <TimeNutritionItem
+              icon={<Fire className="h-6 w-6 text-primary" weight="duotone" />}
+              label="Calories"
+              value={scaledRecipe.estimated_calories}
+              originalValue={recipe.estimated_calories}
+              showOriginal={chosenPortions !== recipe.suggested_portions}
+              unit="total"
+            />
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+});
 
-const IngredientsSection = ({ 
+const IngredientsSection = memo(({ 
   scaledRecipe, 
   recipe, 
   chosenPortions, 
@@ -686,9 +572,9 @@ const IngredientsSection = ({
       </div>
     </CardContent>
   </Card>
-);
+));
 
-const InstructionsSection = ({ instructions }: { instructions: string[] }) => (
+const InstructionsSection = memo(({ instructions }: { instructions: string[] }) => (
   <Card className="overflow-hidden rounded-[48px] border-0 bg-[#BFCFBC]">
     <CardContent className="p-6">
       <h2 className="text-2xl font-heading mb-2">Instructions</h2>
@@ -704,7 +590,7 @@ const InstructionsSection = ({ instructions }: { instructions: string[] }) => (
       </ol>
     </CardContent>
   </Card>
-);
+));
 
 export function RecipeDisplay({
   recipe,
@@ -726,7 +612,7 @@ export function RecipeDisplay({
   const { toast } = useToast();
   const [isUpdatingImage, setIsUpdatingImage] = useState(false);
 
-  const handleImageUpdate = async (imageUrl: string) => {
+  const handleImageUpdate = useCallback(async (imageUrl: string) => {
     if (!onImageUpdate) return;
     
     try {
@@ -754,14 +640,14 @@ export function RecipeDisplay({
     } finally {
       setIsUpdatingImage(false);
     }
-  };
+  }, [onImageUpdate, toast]);
 
   // Check if there's an image to determine the margin-top for the main content
   const hasImage = !!recipe.imageUrl;
   const mainMarginTop = hasImage ? "mt-[55vh]" : "mt-[25vh]";
 
   return (
-    <div className="animate-fade-in min-h-screen -mx-3 sm:-mx-6 lg:-mx-8">
+    <div className="min-h-screen -mx-3 sm:-mx-6 lg:-mx-8">
       <RecipeImage 
         recipe={recipe} 
         handleImageUpdate={handleImageUpdate} 
@@ -805,10 +691,6 @@ export function RecipeDisplay({
           
           <InstructionsSection instructions={scaledRecipe.instructions} />
         </div>
-
-        {/* Decorative sphere accents */}
-        <div className="sphere-accent opacity-10 top-[20%] left-[-150px]" />
-        <div className="sphere-accent opacity-10 bottom-[10%] right-[-150px]" />
       </main>
     </div>
   );

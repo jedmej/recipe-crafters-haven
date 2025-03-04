@@ -226,114 +226,77 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
   
   return (
     <div 
-      className="fixed inset-0 bg-[#BFCFBC] z-[100] flex flex-col text-white"
+      className="fixed inset-0 bg-[#E4E7DF] z-[100] flex flex-col text-black"
       ref={containerRef}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Header */}
-      <div className="p-4 flex justify-between items-center border-b border-white/20 relative">
-        {/* Close button on the left */}
+      {/* Header with recipe title and back button */}
+      <div className="p-16 flex justify-between items-center">
         <Button 
           variant="ghost" 
           size="icon" 
           onClick={onClose}
-          className="text-white hover:bg-white/10 z-10"
+          className="h-12 w-12 rounded-full bg-white hover:bg-white/90"
         >
-          <X className="h-6 w-6" />
+          <X className="h-5 w-5" />
         </Button>
         
-        {/* Centered recipe title */}
-        <h2 className="text-xl font-medium absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-center w-full max-w-[70%] truncate text-gray-900">
+        <h2 className="text-2xl font-serif">
           {recipe.title}
         </h2>
         
         {/* Empty div to balance the layout */}
-        <div className="w-10"></div>
+        <div className="w-12"></div>
       </div>
       
-      {/* Step counter and active timer indicator */}
-      <div className="p-4 flex flex-col items-center">
-        <p className="text-sm text-gray-700 mb-1">
-          Step {currentStep + 1} of {recipe.instructions.length}
-        </p>
-        
-        {/* Active timer preview */}
-        {timer && timer.isActive && (
+      {/* Active timer badge - moved under recipe title */}
+      {timer && timer.isActive && !isOnTimerStep && (
+        <div className="w-full flex justify-center -mt-8 mb-4">
           <div 
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm ${
-              isOnTimerStep ? 'bg-primary/20' : 'bg-white/20 cursor-pointer hover:bg-white/30'
-            } transition-colors`}
-            onClick={isOnTimerStep ? undefined : goToTimerStep}
+            className="flex items-center gap-2 px-4 py-2 rounded-full text-base bg-[#FA8922] text-white cursor-pointer hover:bg-[#FA8922]/90 shadow-sm transition-all duration-300 ease-in-out"
+            onClick={goToTimerStep}
           >
-            <Clock className={`h-4 w-4 ${isOnTimerStep ? 'text-primary' : 'text-gray-900'}`} />
-            <span className={isOnTimerStep ? 'text-primary' : 'text-gray-900'}>
-              {formatTime(timer.remaining)}
-            </span>
-            {!isOnTimerStep && (
-              <span className="text-gray-700 text-xs max-w-[150px] truncate">
-                ({getShortTimerText(timer.stepText)})
-              </span>
-            )}
+            <Clock className="h-5 w-5 text-white" />
+            <span className="font-medium">{formatTime(timer.remaining)}</span>
           </div>
-        )}
-      </div>
-      
-      {/* Side navigation buttons */}
-      <div className="absolute left-4 top-1/2 -translate-y-1/2 z-10">
-        {currentStep > 0 && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToPrevStep}
-            className="h-16 w-16 rounded-full bg-white/20 hover:bg-white/30 text-gray-900"
-            aria-label="Previous step"
-          >
-            <ChevronLeft className="h-8 w-8" />
-          </Button>
-        )}
-      </div>
-      
-      <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10">
-        {currentStep < recipe.instructions.length - 1 && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={goToNextStep}
-            className="h-16 w-16 rounded-full bg-white/20 hover:bg-white/30 text-gray-900"
-            aria-label="Next step"
-          >
-            <ChevronRight className="h-8 w-8" />
-          </Button>
-        )}
-      </div>
+        </div>
+      )}
       
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 overflow-auto">
-        <div className="max-w-2xl w-full">
-          <div className="text-3xl mb-8 text-center text-gray-900">
+      <div className="flex-1 flex flex-col items-center justify-between px-16 py-12">
+        {/* Step counter pill */}
+        <div className="flex flex-col items-center gap-[48px]">
+          <div className="bg-[#F5F5F5]/50 px-4 py-2 rounded-full">
+            <p className="text-base font-semibold">
+              Step {currentStep + 1} of {recipe.instructions.length}
+            </p>
+          </div>
+          
+          {/* Instruction text */}
+          <div className="text-5xl font-serif leading-tight text-center max-w-3xl">
             {currentInstruction}
           </div>
           
-          {/* Timer section - only show if we're on the timer's step or if no timer is active */}
+          {/* Timer section - moved above preview next step */}
           {(timeInSeconds || customTimerDuration) && (!timer || isOnTimerStep) && (
-            <div className="flex flex-col items-center mb-8">
+            <div className="flex flex-col items-center">
               {isOnTimerStep && timer ? (
                 <div className="text-center">
-                  <div className="text-5xl font-mono mb-4 text-gray-900">
+                  <div className="text-5xl font-archivo mb-4">
                     {formatTime(timer.remaining)}
                   </div>
                   <div className="flex gap-4">
                     <Button 
                       onClick={toggleTimer}
-                      className="bg-white/20 hover:bg-white/30 text-gray-900"
+                      className="bg-[#FA8922] hover:bg-[#FA8922]/90 text-white px-6 rounded-full transition-all duration-300 ease-in-out"
                     >
                       {timer.isActive ? 'Pause' : 'Resume'}
                     </Button>
                     <Button 
                       onClick={() => setTimer(null)}
-                      variant="destructive"
+                      className="bg-white border border-gray-300 hover:bg-gray-100 text-black px-6 rounded-full transition-all duration-300 ease-in-out"
                     >
                       Cancel
                     </Button>
@@ -346,14 +309,14 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
                       variant="outline"
                       size="icon"
                       onClick={() => adjustTimerDuration(-30)}
-                      className="h-10 w-10 rounded-full bg-white/20 hover:bg-white/30 text-gray-900"
+                      className="h-10 w-10 rounded-full bg-[#F5F5F5] hover:bg-[#F5F5F5]/80"
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
                     
                     <Button 
                       onClick={() => startTimer(displayTimerDuration || 60)}
-                      className="flex gap-2 bg-white/20 hover:bg-white/30 px-6 text-gray-900"
+                      className="flex gap-2 bg-[#FA8922] hover:bg-[#FA8922]/90 text-white px-6 rounded-full transition-all duration-300 ease-in-out"
                     >
                       <Timer className="h-5 w-5" />
                       Set Timer ({formatTime(displayTimerDuration || 60)})
@@ -363,7 +326,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
                       variant="outline"
                       size="icon"
                       onClick={() => adjustTimerDuration(30)}
-                      className="h-10 w-10 rounded-full bg-white/20 hover:bg-white/30 text-gray-900"
+                      className="h-10 w-10 rounded-full bg-[#F5F5F5] hover:bg-[#F5F5F5]/80"
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
@@ -385,83 +348,95 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
               )}
             </div>
           )}
-          
-          {/* Next step preview */}
-          {nextInstruction && (
-            <div className="mt-8">
-              <div className="flex items-center justify-center mb-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={toggleNextPreview}
-                  className="text-gray-700 hover:text-gray-900 flex items-center gap-2 text-sm"
-                >
-                  <Eye className="h-4 w-4" />
-                  {showNextPreview ? 'Hide next step' : 'Preview next step'}
-                </Button>
-              </div>
-              
-              {showNextPreview && (
-                <div className="bg-white/20 p-4 rounded-lg border border-white/30">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-white/20 text-gray-900 text-sm font-medium">
-                      {currentStep + 2}
-                    </span>
-                    <span className="text-gray-700 text-sm font-medium">Next Step</span>
-                  </div>
-                  <p className="text-gray-900 text-lg">{nextInstruction}</p>
-                  
-                  {/* Show timer info for next step if applicable */}
-                  {extractTimeFromInstruction(nextInstruction) && (
-                    <div className="mt-2 flex items-center gap-2 text-gray-700 text-sm">
-                      <Timer className="h-3 w-3" />
-                      <span>
-                        Contains timer: {formatTime(extractTimeFromInstruction(nextInstruction)!)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </div>
+        
+        {/* Bottom spacing - empty div to maintain layout */}
+        <div className="w-full h-[48px]"></div>
       </div>
       
-      {/* Bottom navigation */}
-      <div className="p-4 flex justify-between border-t border-white/20">
+      {/* Corner navigation buttons that look like they're going off screen */}
+      <div className="absolute left-0 bottom-0">
         <Button 
           variant="outline" 
           onClick={goToPrevStep}
           disabled={currentStep === 0}
-          className="flex gap-2 bg-transparent border-white/30 text-gray-900 hover:bg-white/20"
+          className="w-[500px] h-[500px] bg-[#F5F5F5] hover:bg-[#F5F5F5]/90 border-none rounded-full flex flex-col items-center justify-center gap-4 text-3xl -translate-x-[30%] translate-y-[30%] transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg group disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
         >
-          <ArrowLeft className="h-5 w-5" />
-          Previous
+          <div className="translate-x-[30%] -translate-y-[30%] flex flex-col items-center transition-all duration-300 ease-in-out group-hover:translate-y-[-32%]">
+            <ChevronLeft className="h-20 w-20 transition-transform duration-300 ease-in-out group-hover:scale-110" />
+            <span className="font-bold transition-all duration-300 ease-in-out group-hover:scale-110">Previous</span>
+          </div>
         </Button>
-        
-        <div className="flex items-center">
-          <span className="text-gray-700 text-sm px-4">
-            {currentStep + 1} / {recipe.instructions.length}
-          </span>
+      </div>
+      
+      {/* Preview next step button positioned in the center bottom */}
+      {nextInstruction && (
+        <div className={`absolute bottom-[80px] left-1/2 -translate-x-1/2 ${showNextPreview ? 'translate-y-0' : 'translate-y-0'} transition-all duration-500 ease-in-out z-20`}>
+          {showNextPreview ? (
+            <div 
+              className="bg-white p-7 rounded-[32px] shadow-lg max-w-md w-[350px] transform origin-bottom transition-all duration-500 ease-in-out animate-scale-in border border-gray-100"
+              style={{ transformOrigin: 'center bottom' }}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-archivo font-semibold text-lg text-[#333333]">Next Step</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleNextPreview}
+                  className="h-8 w-8 rounded-full p-0 hover:bg-[#F5F5F5] transition-colors duration-200"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-base font-archivo leading-relaxed text-[#333333]">{nextInstruction}</p>
+              
+              {/* Show timer info for next step if applicable */}
+              {extractTimeFromInstruction(nextInstruction) && (
+                <div className="mt-4 flex items-center gap-2 bg-[#F5F5F5] p-3 rounded-xl text-[#333333]">
+                  <Timer className="h-4 w-4 text-[#FA8922]" />
+                  <span className="font-archivo text-sm">
+                    Contains timer: <span className="font-semibold">{formatTime(extractTimeFromInstruction(nextInstruction)!)}</span>
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              onClick={toggleNextPreview}
+              className="bg-white hover:bg-white/90 text-[#333333] rounded-full px-6 py-3 h-auto shadow-md transform transition-all duration-500 ease-in-out animate-scale-in flex items-center font-archivo border border-gray-100"
+            >
+              <Eye className="h-5 w-5 mr-2 text-[#FA8922]" />
+              Preview next step
+            </Button>
+          )}
         </div>
-        
+      )}
+      
+      <div className="absolute right-0 bottom-0">
         <Button 
           variant="outline" 
           onClick={goToNextStep}
           disabled={currentStep === recipe.instructions.length - 1}
-          className="flex gap-2 bg-transparent border-white/30 text-gray-900 hover:bg-white/20"
+          className="w-[500px] h-[500px] bg-[#F5F5F5] hover:bg-[#F5F5F5]/90 border-none rounded-full flex flex-col items-center justify-center gap-4 text-3xl translate-x-[30%] translate-y-[30%] transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-lg group disabled:opacity-50 disabled:hover:scale-100 disabled:hover:shadow-none"
         >
-          Next
-          <ArrowRight className="h-5 w-5" />
+          <div className="-translate-x-[30%] -translate-y-[30%] flex flex-col items-center transition-all duration-300 ease-in-out group-hover:translate-y-[-32%]">
+            <ChevronRight className="h-20 w-20 transition-transform duration-300 ease-in-out group-hover:scale-110" />
+            <span className="font-bold transition-all duration-300 ease-in-out group-hover:scale-110">Next</span>
+          </div>
         </Button>
       </div>
       
-      {/* Keyboard shortcuts help */}
-      <div className="absolute bottom-20 left-0 right-0 flex justify-center">
-        <div className="text-xs text-gray-700 bg-white/10 px-4 py-2 rounded-full">
-          Tip: Use arrow keys or swipe to navigate {timer && timer.isActive && "• Press 'T' to jump to timer"}
-        </div>
-      </div>
+      {/* Add keyframes for the morphing animation */}
+      <style jsx global>{`
+        @keyframes scale-in {
+          from { transform: scale(0.8); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+        .animate-scale-in {
+          animation: scale-in 0.3s ease-out forwards;
+        }
+      `}</style>
     </div>
   );
 }

@@ -11,6 +11,21 @@ import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration"
 import { CookingMode } from "./CookingMode";
 import { ChefHat } from "lucide-react";
 
+/**
+ * Button Style Guide
+ * 
+ * These constants define our application's standard button styles.
+ * - PRIMARY_BUTTON_CLASSES: Used for primary actions (e.g., "Start Cooking", "Save")
+ *   Orange background (#FA8922) with white text
+ * 
+ * - SECONDARY_BUTTON_CLASSES: Used for secondary actions (e.g., "Add ingredients to grocery list")
+ *   Light gray background (#F5F5F5) with dark text and no border
+ * 
+ * Use these constants consistently across the application to maintain UI consistency.
+ */
+const PRIMARY_BUTTON_CLASSES = "gap-2 h-12 rounded-[500px] bg-[#FA8922] hover:bg-[#FA8922]/90 text-white";
+const SECONDARY_BUTTON_CLASSES = "gap-2 h-12 rounded-[500px] bg-[#F5F5F5] hover:bg-[#F5F5F5]/90 border-0 text-gray-700";
+
 interface RecipeDisplayProps {
   recipe: RecipeData;
   scaledRecipe: RecipeData;
@@ -122,7 +137,7 @@ const ActionButtons = memo(({
           <Button
             onClick={onSave}
             disabled={isSaving}
-            className="h-12 px-4 rounded-full bg-primary hover:bg-primary/90 text-white flex items-center gap-2"
+            className={PRIMARY_BUTTON_CLASSES}
             aria-label="Save Recipe"
           >
             {isSaving ? (
@@ -508,24 +523,57 @@ const TimeNutrition = memo(({
   );
 });
 
+const ActionButtonsRow = memo(({ 
+  onAddToGroceryList, 
+  isAddingToGroceryList, 
+  onStartCooking 
+}: { 
+  onAddToGroceryList?: () => void; 
+  isAddingToGroceryList?: boolean; 
+  onStartCooking: () => void;
+}) => {
+  if (!onAddToGroceryList) return null;
+  
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <Button
+        onClick={onAddToGroceryList}
+        disabled={isAddingToGroceryList}
+        className={SECONDARY_BUTTON_CLASSES}
+      >
+        {isAddingToGroceryList ? (
+          <SpinnerGap className="h-4 w-4 animate-spin" />
+        ) : (
+          <Basket className="h-4 w-4" weight="duotone" />
+        )}
+        Add ingredients to grocery list
+      </Button>
+      
+      <Button 
+        onClick={onStartCooking}
+        className={PRIMARY_BUTTON_CLASSES}
+      >
+        <ChefHat className="h-4 w-4" />
+        Start Cooking
+      </Button>
+    </div>
+  );
+});
+
 const IngredientsSection = memo(({ 
   scaledRecipe, 
   recipe, 
   chosenPortions, 
   onPortionsChange, 
   measurementSystem, 
-  onMeasurementSystemChange,
-  onAddToGroceryList,
-  isAddingToGroceryList
+  onMeasurementSystemChange
 }: Pick<RecipeDisplayProps, 
   'scaledRecipe' | 
   'recipe' | 
   'chosenPortions' | 
   'onPortionsChange' | 
   'measurementSystem' | 
-  'onMeasurementSystemChange' | 
-  'onAddToGroceryList' | 
-  'isAddingToGroceryList'
+  'onMeasurementSystemChange'
 >) => (
   <Card className="overflow-hidden rounded-[48px] border-0 bg-[#E4E7DF]">
     <CardContent className="p-6">
@@ -554,31 +602,13 @@ const IngredientsSection = memo(({
             </li>
           ))}
         </ul>
-        <div className="pt-4">
-          {onAddToGroceryList && (
-            <Button
-              variant="outline"
-              onClick={onAddToGroceryList}
-              disabled={isAddingToGroceryList}
-              className="w-full gap-2 h-12 rounded-[500px] bg-gray-100 hover:bg-gray-200"
-            >
-              {isAddingToGroceryList ? (
-                <SpinnerGap className="h-4 w-4 animate-spin" />
-              ) : (
-                <Basket className="h-4 w-4" weight="duotone" />
-              )}
-              Add to Grocery List
-            </Button>
-          )}
-        </div>
       </div>
     </CardContent>
   </Card>
 ));
 
-const InstructionsSection = memo(({ instructions, onStartCooking }: { 
+const InstructionsSection = memo(({ instructions }: { 
   instructions: string[]; 
-  onStartCooking: () => void;
 }) => (
   <Card className="overflow-hidden rounded-[48px] border-0 bg-[#BFCFBC]">
     <CardContent className="p-6">
@@ -593,15 +623,6 @@ const InstructionsSection = memo(({ instructions, onStartCooking }: {
           </li>
         ))}
       </ol>
-      <div className="mt-6">
-        <Button 
-          onClick={onStartCooking}
-          className="w-full gap-2 h-12 rounded-[500px] bg-primary hover:bg-primary/90 text-white"
-        >
-          <ChefHat className="h-4 w-4" />
-          Start Cooking
-        </Button>
-      </div>
     </CardContent>
   </Card>
 ));
@@ -691,7 +712,11 @@ export function RecipeDisplay({
           </p>
         )}
         
-        <RecipeCategories categories={recipe.categories} />
+        <ActionButtonsRow 
+          onAddToGroceryList={onAddToGroceryList}
+          isAddingToGroceryList={isAddingToGroceryList}
+          onStartCooking={() => setShowCookingMode(true)}
+        />
         
         <TimeNutrition 
           scaledRecipe={scaledRecipe} 
@@ -707,15 +732,14 @@ export function RecipeDisplay({
             onPortionsChange={onPortionsChange}
             measurementSystem={measurementSystem}
             onMeasurementSystemChange={onMeasurementSystemChange}
-            onAddToGroceryList={onAddToGroceryList}
-            isAddingToGroceryList={isAddingToGroceryList}
           />
           
           <InstructionsSection 
             instructions={scaledRecipe.instructions} 
-            onStartCooking={() => setShowCookingMode(true)}
           />
         </div>
+        
+        <RecipeCategories categories={recipe.categories} />
       </main>
     </div>
   );

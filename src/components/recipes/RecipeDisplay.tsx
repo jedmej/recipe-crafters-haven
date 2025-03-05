@@ -137,7 +137,7 @@ const ActionButtons = memo(({
           <Button
             onClick={onSave}
             disabled={isSaving}
-            className={PRIMARY_BUTTON_CLASSES}
+            className={`${PRIMARY_BUTTON_CLASSES} w-[200px]`}
             aria-label="Save Recipe"
           >
             {isSaving ? (
@@ -254,7 +254,7 @@ const RecipeImage = memo(({
             className="w-full h-full object-cover"
             loading="lazy"
           />
-          <div className="absolute inset-x-0 bottom-0 h-[40vh] bg-gradient-to-b from-transparent via-white/70 to-white" />
+          <div className="absolute inset-x-0 bottom-0 h-[25vh] bg-gradient-to-b from-transparent via-white/70 to-white" />
           <div className="absolute inset-x-0 bottom-0 p-8">
             <h1 className="text-4xl sm:text-5xl font-serif font-medium text-gray-900 max-w-[800px] mx-auto">
               {recipe.title}
@@ -447,16 +447,16 @@ const TimeNutritionItem = memo(({
   showOriginal,
   unit = ''
 }: TimeNutritionItemProps) => (
-  <div className="glass-panel p-4 flex flex-col items-center text-center w-full">
-    <div className="mb-2">
+  <div className="glass-panel flex flex-col items-center text-center w-full p-0">
+    <div className="p-0">
       {icon}
     </div>
-    <div className="flex flex-col items-center">
-      <div className="font-medium text-foreground">{label}</div>
-      <div className="text-sm">
+    <div className="flex flex-col items-center p-0">
+      <div className="font-medium text-foreground p-0">{label}</div>
+      <div className="text-sm p-0">
         {value} {unit}
         {showOriginal && originalValue && (
-          <span className="text-xs block mt-1 text-muted-foreground">
+          <span className="text-xs block mt-1 text-muted-foreground p-0">
             (Original: {originalValue} {unit})
           </span>
         )}
@@ -483,8 +483,8 @@ const TimeNutrition = memo(({
   
   return (
     <Card className="overflow-hidden rounded-[48px] border-0 bg-[#F2F2F2]">
-      <CardContent className="p-6">
-        <div className="flex flex-col sm:flex-row justify-between gap-4">
+      <CardContent className="p-0">
+        <div className="flex flex-col sm:flex-row justify-between gap-4 p-6">
           {scaledRecipe?.prep_time && (
             <TimeNutritionItem
               icon={<Alarm className="h-6 w-6 text-primary" weight="duotone" />}
@@ -705,7 +705,7 @@ export function RecipeDisplay({
         onBack={onBack}
       />
 
-      <main className={`relative z-20 ${mainMarginTop} max-w-[800px] mx-auto space-y-8`}>
+      <main className={`relative z-20 ${mainMarginTop} max-w-[800px] mx-auto space-y-8 pb-24`}>
         {recipe.description && (
           <p className="text-lg text-gray-700 w-full">
             {recipe.description}

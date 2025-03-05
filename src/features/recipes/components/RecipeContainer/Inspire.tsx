@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Loader2, Save, RefreshCw, Clock, Timer, Flame, ArrowLeft, Tags, ListPlus, Search } from "lucide-react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { Loader2, ArrowLeft, Search } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Select,
   SelectContent,
@@ -17,14 +17,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Switch } from "@/components/ui/switch";
-import ImageGenerator from "@/components/ImageGenerator";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
-import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
-import { RecipeActions } from "../RecipeDetail/RecipeActions";
-import { RecipeIngredients } from "../RecipeDetail/RecipeIngredients";
 import { PageLayout } from './PageLayout';
 import { RecipeDisplay } from "@/components/recipes/RecipeDisplay";
-import { Separator } from "@/components/ui/separator";
 import { RecipeData } from "@/types/recipe";
 
 // Types and constants
@@ -56,15 +51,6 @@ interface FilterState {
 }
 
 // Constants for language codes and categories
-const LANGUAGE_CODES = {
-  'English': 'en',
-  'Spanish': 'es',
-  'French': 'fr',
-  'Italian': 'it',
-  'German': 'de',
-  'Polish': 'pl'
-};
-
 const LANGUAGE_NAMES = {
   'en': 'English',
   'es': 'Spanish', 
@@ -530,11 +516,6 @@ export function InspireContainer() {
   const [measurementSystem, setMeasurementSystem] = useState<MeasurementSystem>(
     preferences.measurementSystem || 'metric'
   );
-  
-  // Unused state (keeping for compatibility)
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  const [showImageGenerator, setShowImageGenerator] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Update language when user preferences change
   useEffect(() => {
@@ -966,20 +947,6 @@ export function InspireContainer() {
     setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric');
   };
 
-  // Utility functions
-  const calculateCaloriesPerServing = (totalCalories: number, totalServings: number) => {
-    if (totalServings <= 0) return 0;
-    return Math.round(totalCalories / totalServings);
-  };
-
-  const addToGroceryList = () => {
-    // Implementation for adding to grocery list
-    toast({
-      title: "Added to Grocery List",
-      description: "Ingredients have been added to your shopping list.",
-    });
-  };
-
   return (
     <PageLayout>
       <Button
@@ -1050,7 +1017,10 @@ export function InspireContainer() {
               console.log("Edit functionality not implemented yet");
             }
           }}
-          isRegenerating={false}
+          onBack={() => {
+            setGeneratedRecipe(null);
+            setRecipeImage(null);
+          }}
         />
       )}
     </PageLayout>

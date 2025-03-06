@@ -1,22 +1,16 @@
+"use client"
+
 import { useState, useEffect } from "react";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { ArrowLeft, LogOut, Loader2, Upload } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, X } from "lucide-react";
-import { Label } from "@/components/ui/label";
-import { MeasurementSystem } from "@/lib/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
+import { MeasurementSystem } from "@/lib/types";
 import {
   Dialog,
   DialogContent,
@@ -53,11 +47,10 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [characterAttributes, setCharacterAttributes] = useState<CharacterAttributes>({});
-  const [customPrompt, setCustomPrompt] = useState<string | null>(null);
   const { toast } = useToast();
   const { updatePreferences } = useUserPreferences();
-  const [isSavingAvatar, setIsSavingAvatar] = useState(false);
+  const [characterAttributes, setCharacterAttributes] = useState<CharacterAttributes>({});
+  const [isGenerating, setIsGenerating] = useState(false);
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -151,16 +144,17 @@ export default function ProfilePage() {
     }
   };
 
-  const handleAvatarSelected = (url: string) => {
+  const handleAvatarSelected = (url: string | null, isGenerated = false) => {
     setAvatarUrl(url);
-    // Don't close the dialog or save the avatar yet
-    // The user will need to click the Save Avatar button explicitly
+    if (url && !isGenerated) {
+      setIsAvatarDialogOpen(false);
+    }
   };
 
   const handleSaveAvatar = async (url: string) => {
     if (!user || !profile) return;
     
-    setIsSavingAvatar(true);
+    setIsSaving(true);
     
     try {
       const { error } = await supabase
@@ -190,255 +184,300 @@ export default function ProfilePage() {
         variant: "destructive",
       });
     } finally {
-      setIsSavingAvatar(false);
+      setIsSaving(false);
     }
   };
 
-  const handleAttributesChange = (attributes: CharacterAttributes) => {
-    setCharacterAttributes(attributes);
-  };
-
-  const handleGeneratePrompt = (prompt: string) => {
-    setCustomPrompt(prompt);
-  };
-
-  const resetCustomPrompt = () => {
-    setCustomPrompt(null);
+  const handleGenerateAvatar = async (attributes: CharacterAttributes) => {
+    setIsGenerating(true);
+    try {
+      // Call your character generation API here
+      // For now, we'll just simulate a delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Once you have the generated URL, update it
+      // const generatedUrl = await generateCharacterAvatar(attributes);
+      // setAvatarUrl(generatedUrl);
+      // handleSaveAvatar(generatedUrl);
+      
+      toast({
+        title: "Success",
+        description: "Character avatar generated successfully",
+      });
+      setIsAvatarDialogOpen(false);
+    } catch (error) {
+      console.error('Error generating avatar:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate character avatar. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+      <main className="min-h-screen bg-[#F5F5F5] grid place-items-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6 lg:p-8">
-      <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Settings</CardTitle>
-            <CardDescription>
+    <main className="min-h-screen bg-[#F5F5F5]">
+      <div className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
+        <Button
+          variant="ghost"
+          className="mb-6 pl-0 text-gray-600 hover:text-gray-900 hover:bg-transparent"
+          aria-label="Back to recipes"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          <span className="hidden sm:inline">Back to recipes</span>
+        </Button>
+
+        <Card className="border-0 bg-white rounded-[48px] overflow-hidden shadow-none">
+          <CardHeader className="pb-6 border-b border-gray-100 p-6 sm:p-8">
+            <CardTitle className="text-2xl sm:text-3xl font-bold">Profile Settings</CardTitle>
+            <CardDescription className="mt-2 text-base">
               Manage your profile information and preferences
             </CardDescription>
           </CardHeader>
-          <CardContent>
+
+          <CardContent className="p-6 sm:p-8 space-y-8">
+            {/* Avatar section */}
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <Avatar className="h-24 w-24 border-2 border-white">
+                <AvatarImage src={profile?.avatar_url || undefined} alt="Profile picture" />
+                <AvatarFallback>
+                  {profile?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <Button
+                variant="outline"
+                className="w-full sm:w-auto rounded-full px-6 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-50 shadow-none"
+                onClick={() => setIsAvatarDialogOpen(true)}
+              >
+                Change Avatar
+              </Button>
+            </div>
+
+            {/* Form fields */}
             <form onSubmit={handleUpdateProfile} className="space-y-6">
-              <div className="flex items-center space-x-4">
-                <Avatar className="h-20 w-20">
-                  <AvatarImage src={profile?.avatar_url || undefined} />
-                  <AvatarFallback>
-                    {profile?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isSaving}
-                  onClick={() => setIsAvatarDialogOpen(true)}
+              <div className="space-y-2">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                  Email
+                </label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={user?.email || ''}
+                  disabled
+                  className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
+                  aria-describedby="email-description"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700">
+                  Username
+                </label>
+                <Input
+                  id="username"
+                  value={profile?.username || ''}
+                  onChange={(e) => setProfile(prev => prev ? { ...prev, username: e.target.value } : null)}
+                  className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
+                  aria-describedby="username-description"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
+                  Full Name
+                </label>
+                <Input
+                  id="fullName"
+                  value={profile?.full_name || ''}
+                  onChange={(e) => setProfile(prev => prev ? { ...prev, full_name: e.target.value } : null)}
+                  className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
+                  placeholder="Enter your full name"
+                  aria-describedby="fullname-description"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="measurement" className="block text-sm font-medium text-gray-700">
+                  Measurement System
+                </label>
+                <Select 
+                  value={profile?.measurement_system} 
+                  onValueChange={(value: MeasurementSystem) => 
+                    setProfile(prev => prev ? { ...prev, measurement_system: value } : null)
+                  }
                 >
-                  Change Avatar
-                </Button>
+                  <SelectTrigger
+                    id="measurement"
+                    className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
+                  >
+                    <SelectValue placeholder="Select measurement system" />
+                  </SelectTrigger>
+                  <SelectContent className="shadow-none">
+                    <SelectItem value="metric">Metric</SelectItem>
+                    <SelectItem value="imperial">Imperial</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-500">Choose your preferred units for recipes.</p>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                    Email
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={user?.email || ''}
-                    disabled
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                    Username
-                  </label>
-                  <Input
-                    id="username"
-                    value={profile?.username || ''}
-                    onChange={(e) => setProfile(prev => prev ? { ...prev, username: e.target.value } : null)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                    Full Name
-                  </label>
-                  <Input
-                    id="fullName"
-                    value={profile?.full_name || ''}
-                    onChange={(e) => setProfile(prev => prev ? { ...prev, full_name: e.target.value } : null)}
-                    className="mt-1"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">
-                      Measurement System
-                    </Label>
-                    <p className="text-sm text-gray-500 mb-2">
-                      Choose your preferred units for recipes
-                    </p>
-                    <Select
-                      value={profile?.measurement_system}
-                      onValueChange={(value: MeasurementSystem) => 
-                        setProfile(prev => prev ? { ...prev, measurement_system: value } : null)
-                      }
-                      disabled={isSaving}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select measurement system" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="metric">Metric</SelectItem>
-                        <SelectItem value="imperial">Imperial</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">
-                      Language
-                    </Label>
-                    <p className="text-sm text-gray-500 mb-2">
-                      Choose your preferred language for recipe generation
-                    </p>
-                    <Select
-                      value={profile?.language}
-                      onValueChange={(value: LanguageCode) => 
-                        setProfile(prev => prev ? { ...prev, language: value } : null)
-                      }
-                      disabled={isSaving}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(LANGUAGE_OPTIONS).map(([code, name]) => (
-                          <SelectItem key={code} value={code}>
-                            {name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <label htmlFor="language" className="block text-sm font-medium text-gray-700">
+                  Language
+                </label>
+                <Select 
+                  value={profile?.language}
+                  onValueChange={(value: LanguageCode) => 
+                    setProfile(prev => prev ? { ...prev, language: value } : null)
+                  }
+                >
+                  <SelectTrigger
+                    id="language"
+                    className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
+                  >
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent className="shadow-none">
+                    {Object.entries(LANGUAGE_OPTIONS).map(([code, name]) => (
+                      <SelectItem key={code} value={code}>
+                        {name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-500">Choose your preferred language for recipe generation.</p>
               </div>
+            </form>
+          </CardContent>
 
-              <div className="flex justify-between items-center pt-4">
-                <Button type="submit" disabled={isSaving}>
+          <CardFooter className="flex flex-col sm:flex-row justify-between gap-4 pt-6 border-t border-gray-100 p-6 sm:p-8">
+            <Button 
+              onClick={handleUpdateProfile}
+              disabled={isSaving}
+              className="w-full sm:w-auto bg-[#FA8922] hover:bg-[#e87d1f] text-white rounded-[500px] px-8 py-3 font-medium shadow-none text-base"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto text-[#1a1d2b] border-gray-200 hover:bg-gray-50 rounded-[500px] px-8 py-3 font-medium shadow-none text-base"
+              onClick={async () => {
+                try {
+                  await supabase.auth.signOut();
+                  toast({
+                    title: "Success",
+                    description: "You have been logged out successfully",
+                  });
+                } catch (error) {
+                  console.error('Error signing out:', error);
+                  toast({
+                    title: "Error",
+                    description: "Failed to sign out",
+                    variant: "destructive",
+                  });
+                }
+              }}
+            >
+              <LogOut className="mr-2 h-5 w-5" />
+              Sign Out
+            </Button>
+          </CardFooter>
+        </Card>
+
+        {/* Avatar Change Dialog */}
+        <Dialog open={isAvatarDialogOpen} onOpenChange={setIsAvatarDialogOpen}>
+          <DialogContent className="sm:max-w-[500px] p-0 bg-white rounded-[32px] border-0">
+            <DialogHeader className="p-6 sm:p-8 border-b border-gray-100">
+              <DialogTitle className="text-2xl font-bold">Change Avatar</DialogTitle>
+              <DialogDescription className="text-base mt-2">
+                Upload a new profile picture or generate a unique character
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Tabs defaultValue="upload" className="p-6 sm:p-8">
+              <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsTrigger 
+                  value="upload"
+                  className="data-[state=active]:bg-[#FA8922] data-[state=active]:text-white"
+                >
+                  Upload
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="generate"
+                  className="data-[state=active]:bg-[#FA8922] data-[state=active]:text-white"
+                >
+                  Generate
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="upload" className="mt-0">
+                <AvatarUploader 
+                  onImageSelected={(url) => handleAvatarSelected(url)}
+                  initialImage={profile?.avatar_url || undefined}
+                />
+              </TabsContent>
+              
+              <TabsContent value="generate" className="mt-0">
+                <CharacterAttributesInput
+                  initialAttributes={characterAttributes}
+                  onAttributesChange={setCharacterAttributes}
+                  onImageSelected={(url) => handleAvatarSelected(url, true)}
+                  onGenerate={handleGenerateAvatar}
+                  userName={profile?.full_name || profile?.username || user?.email}
+                  initialImage={profile?.avatar_url || undefined}
+                  isGenerating={isGenerating}
+                />
+              </TabsContent>
+
+              <footer className="flex justify-end gap-4 pt-6 mt-6 border-t border-gray-100">
+                <DialogClose asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-full px-6 py-2 text-sm font-medium border-gray-200 hover:bg-gray-50 shadow-none"
+                  >
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button 
+                  type="button"
+                  className="rounded-full px-6 py-2 text-sm font-medium bg-[#FA8922] hover:bg-[#e87d1f] text-white shadow-none"
+                  onClick={() => {
+                    handleSaveAvatar(avatarUrl || '');
+                    setIsAvatarDialogOpen(false);
+                  }}
+                  disabled={isSaving}
+                >
                   {isSaving ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Saving...
                     </>
                   ) : (
-                    'Save Changes'
+                    'Save Avatar'
                   )}
                 </Button>
-                <Button 
-                  type="button" 
-                  variant="destructive"
-                  onClick={async () => {
-                    try {
-                      await supabase.auth.signOut();
-                      toast({
-                        title: "Success",
-                        description: "You have been logged out successfully",
-                      });
-                    } catch (error) {
-                      console.error('Error signing out:', error);
-                      toast({
-                        title: "Error",
-                        description: "Failed to sign out",
-                        variant: "destructive",
-                      });
-                    }
-                  }}
-                >
-                  Sign Out
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Avatar Change Dialog */}
-      <Dialog open={isAvatarDialogOpen} onOpenChange={(open) => {
-        setIsAvatarDialogOpen(open);
-        if (!open) {
-          resetCustomPrompt();
-        }
-      }}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Change Avatar</DialogTitle>
-            <DialogDescription>
-              Update your profile picture by uploading an image, using a URL, or generating a character.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto pr-1 -mr-1">
-            <Tabs defaultValue="simple" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="simple">Simple</TabsTrigger>
-                <TabsTrigger value="character">Character Creator</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="simple" className="space-y-4 py-4">
-                <AvatarUploader 
-                  onImageSelected={handleAvatarSelected}
-                  initialImage={profile?.avatar_url || undefined}
-                />
-              </TabsContent>
-              
-              <TabsContent value="character" className="space-y-4 py-4">
-                <CharacterAttributesInput
-                  initialAttributes={characterAttributes}
-                  onAttributesChange={setCharacterAttributes}
-                  onImageSelected={handleAvatarSelected}
-                  userName={profile?.full_name || profile?.username || user?.email}
-                  initialImage={profile?.avatar_url || undefined}
-                />
-              </TabsContent>
+              </footer>
             </Tabs>
-          </div>
-          
-          <div className="flex justify-between pt-4 pb-2 bg-white border-t mt-4">
-            <DialogClose asChild>
-              <Button type="button" variant="outline">Cancel</Button>
-            </DialogClose>
-            <Button 
-              type="button" 
-              onClick={() => {
-                handleSaveAvatar(avatarUrl || '');
-                setIsAvatarDialogOpen(false);
-              }}
-              disabled={isSavingAvatar}
-            >
-              {isSavingAvatar ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Avatar'
-              )}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </main>
   );
 } 

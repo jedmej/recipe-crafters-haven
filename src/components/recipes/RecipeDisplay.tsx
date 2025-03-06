@@ -99,7 +99,7 @@ const ActionButtons = memo(({
         className="fixed top-4 left-4 h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors z-[60] shadow-sm"
         aria-label="Go Back"
       >
-        <CaretLeft weight="duotone" className="h-5 w-5 text-gray-700" />
+        <CaretLeft weight="duotone" size={20} className="text-gray-700" />
       </button>
       <div className="absolute top-4 right-4 flex gap-2 z-[60]">
         <button
@@ -109,8 +109,9 @@ const ActionButtons = memo(({
           aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
         >
           <Heart 
-            weight={isFavorited ? "duotone" : "regular"} 
-            className={`h-5 w-5 ${isFavorited ? 'text-red-500' : 'text-gray-700'}`} 
+            weight={isFavorited ? "duotone" : "regular"}
+            size={20}
+            className={`${isFavorited ? 'text-red-500' : 'text-gray-700'}`} 
           />
         </button>
         <button
@@ -118,7 +119,7 @@ const ActionButtons = memo(({
           className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors"
           aria-label={recipe.id ? "Edit Recipe" : "Generate New"}
         >
-          <PencilSimple weight="duotone" className="h-5 w-5 text-gray-700" />
+          <PencilSimple weight="duotone" size={20} className="text-gray-700" />
         </button>
         {recipe.id ? (
           <Button
@@ -128,9 +129,9 @@ const ActionButtons = memo(({
             aria-label="Delete Recipe"
           >
             {isSaving ? (
-              <SpinnerGap className="h-5 w-5 text-gray-700 animate-spin" />
+              <SpinnerGap size={20} className="text-gray-700 animate-spin" />
             ) : (
-              <Trash weight="duotone" className="h-5 w-5 text-gray-700" />
+              <Trash weight="duotone" size={20} className="text-gray-700" />
             )}
           </Button>
         ) : (
@@ -142,12 +143,12 @@ const ActionButtons = memo(({
           >
             {isSaving ? (
               <>
-                <SpinnerGap weight="bold" className="h-4 w-4 animate-spin" />
+                <SpinnerGap weight="bold" size={16} className="animate-spin" />
                 <span>Saving...</span>
               </>
             ) : (
               <>
-                <FloppyDisk weight="bold" className="h-4 w-4" />
+                <FloppyDisk weight="bold" size={16} />
                 <span>Save</span>
               </>
             )}

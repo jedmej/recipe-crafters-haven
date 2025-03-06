@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Edit, Trash, Tags } from "lucide-react";
+import { PencilSimple, Trash, Tag } from "@phosphor-icons/react";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { MeasurementSystem } from "@/lib/types";
@@ -157,7 +157,7 @@ export function RecipeActions({
           asChild
         >
           <Link to={`/recipes/${recipeId}/edit`} className="flex items-center justify-center">
-            <Edit className="h-5 w-5 mr-2" />
+            <PencilSimple size={20} weight="duotone" className="mr-2" />
             Edit
           </Link>
         </Button>
@@ -167,7 +167,7 @@ export function RecipeActions({
           disabled={isGeneratingCategories}
           className="h-12 text-base font-medium"
         >
-          <Tags className="h-5 w-5 mr-2" />
+          <Tag size={20} weight="duotone" className="mr-2" />
           {isGeneratingCategories ? 'Generating...' : 'Generate Categories'}
         </Button>
         <Button
@@ -176,7 +176,7 @@ export function RecipeActions({
           disabled={isDeleting}
           className="h-12 text-base font-medium"
         >
-          <Trash className="h-5 w-5 mr-2" />
+          <Trash size={20} weight="duotone" className="mr-2" />
           {isDeleting ? 'Deleting...' : 'Delete'}
         </Button>
       </div>

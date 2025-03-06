@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { CaretLeft } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
 
 interface BackButtonProps {
@@ -25,7 +25,7 @@ export function BackButton({ onClick, className = "" }: BackButtonProps) {
       className={`hover:bg-gray-100 transition-colors -ml-2 ${className}`}
       onClick={handleClick}
     >
-      <ChevronLeft className="mr-1 h-4 w-4" />
+      <CaretLeft size={16} weight="duotone" className="mr-1" />
       <span className="text-sm">Back</span>
     </Button>
   );

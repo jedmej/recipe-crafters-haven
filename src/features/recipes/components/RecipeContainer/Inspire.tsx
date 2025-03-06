@@ -199,7 +199,7 @@ const SearchSection = ({
   isGenerating: boolean;
   handleSearch: (e: React.FormEvent) => void;
 }) => (
-  <Card className="overflow-hidden rounded-[48px] mb-8">
+  <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
     <CardContent className="p-6">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Find Your Perfect Recipe</h1>
       
@@ -231,7 +231,7 @@ const SearchSection = ({
               ))}
             </SelectContent>
           </Select>
-          <Button type="submit" disabled={isGenerating} className="flex-1">
+          <Button type="submit" disabled={isGenerating} className="flex-1 rounded-[500px] bg-[#FA8923] hover:bg-[#FA8923]/90 text-white h-12" variant="primary">
             {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -297,8 +297,8 @@ const FilterButtons = ({
             onClick={() => toggleFilter(category, option)}
             className={`px-3 py-1 rounded-full text-sm ${
               selectedFilters.includes(option)
-                ? "bg-primary text-primary-foreground"
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                ? "bg-[#FA8923] text-white"
+                : "bg-white text-gray-700 hover:bg-white/90"
             }`}
             disabled={isGenerating}
           >
@@ -359,7 +359,7 @@ const InspireForm = ({
   isGenerating: boolean;
   handleGenerateRecipe: (e: React.FormEvent) => void;
 }) => (
-  <Card className="overflow-hidden rounded-[48px] mb-8">
+  <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
     <CardContent className="p-6">
       <h1 className="text-3xl font-bold mb-6">Get Inspired with AI</h1>
       
@@ -457,7 +457,8 @@ const InspireForm = ({
         <Button
           type="submit"
           disabled={isGenerating}
-          className="w-full"
+          className="w-full rounded-[500px] bg-[#FA8923] hover:bg-[#FA8923]/90 text-white h-12"
+          variant="primary"
         >
           {isGenerating ? (
             <>

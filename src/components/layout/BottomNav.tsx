@@ -7,7 +7,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { ChefHat, Plus, X, ShoppingCart, Bot, FileText, Sparkles } from "lucide-react"
+import { ChefHat, ShoppingCart, Plus, X, Sparkle, Robot, TextT } from "@phosphor-icons/react"
 
 export function BottomNav() {
   const location = useLocation()
@@ -17,17 +17,17 @@ export function BottomNav() {
   const addMenuItems = [
     {
       label: "Inspire Me",
-      icon: Sparkles,
+      icon: Sparkle,
       onClick: () => navigate("/recipes/inspire"),
     },
     {
       label: "Import from URL",
-      icon: Bot,
+      icon: Robot,
       onClick: () => navigate("/recipes/import-ai"),
     },
     {
       label: "Add Recipe",
-      icon: FileText,
+      icon: TextT,
       onClick: () => navigate("/recipes/new"),
     },
   ]
@@ -45,7 +45,15 @@ export function BottomNav() {
                 : "text-muted-foreground hover:text-primary"
             )}
           >
-            <ChefHat className="h-6 w-6" />
+            <ChefHat 
+              size={24} 
+              weight="duotone" 
+              className={cn(
+                location.pathname.startsWith("/recipes") 
+                  ? "text-primary" 
+                  : "text-muted-foreground hover:text-primary"
+              )}
+            />
             <span>Recipes</span>
           </Link>
 
@@ -61,14 +69,18 @@ export function BottomNav() {
               >
                 <div className="relative w-6 h-6">
                   <X 
+                    size={24}
+                    weight="regular"
                     className={cn(
-                      "h-6 w-6 text-[#fff] absolute top-0 left-0 transition-all duration-300 ease-in-out",
+                      "text-[#fff] absolute top-0 left-0 transition-all duration-300 ease-in-out",
                       open ? "opacity-100 rotate-0" : "opacity-0 rotate-90"
                     )} 
                   />
                   <Plus 
+                    size={24}
+                    weight="regular"
                     className={cn(
-                      "h-6 w-6 text-[#fff] absolute top-0 left-0 transition-all duration-300 ease-in-out",
+                      "text-[#fff] absolute top-0 left-0 transition-all duration-300 ease-in-out",
                       open ? "opacity-0 -rotate-90" : "opacity-100 rotate-0"
                     )} 
                   />
@@ -93,7 +105,7 @@ export function BottomNav() {
                       setOpen(false)
                     }}
                   >
-                    <item.icon className="h-6 w-6" />
+                    <item.icon className="h-6 w-6" weight="duotone" />
                     {item.label}
                   </Button>
                 ))}
@@ -110,7 +122,15 @@ export function BottomNav() {
                 : "text-muted-foreground hover:text-primary"
             )}
           >
-            <ShoppingCart className="h-6 w-6" />
+            <ShoppingCart 
+              size={24} 
+              weight="duotone" 
+              className={cn(
+                location.pathname.startsWith("/grocery-lists") 
+                  ? "text-primary" 
+                  : "text-muted-foreground hover:text-primary"
+              )}
+            />
             <span>Groceries</span>
           </Link>
         </div>

@@ -117,6 +117,14 @@ export default function RecipesPage() {
     }
   };
 
+  // Handle long press on recipe card
+  const handleLongPress = (recipeId: string) => {
+    if (!isSelectionMode) {
+      toggleSelectionMode();
+      toggleRecipeSelection(recipeId);
+    }
+  };
+
   // Function to check if a string is a URL
   const isValidUrl = (string: string) => {
     try {
@@ -240,6 +248,7 @@ export default function RecipesPage() {
                 isSelected={selectedRecipes.includes(recipe.id)}
                 isSelectionMode={isSelectionMode}
                 onClick={handleCardClick}
+                onLongPress={handleLongPress}
               />
             ))}
             {/* Always show the recipe generation card at the end of the list */}

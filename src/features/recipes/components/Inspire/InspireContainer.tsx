@@ -1,41 +1,30 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Switch } from "@/components/ui/switch";
-import { useUserPreferences } from "@/hooks/use-user-preferences";
-import { PageLayout } from './PageLayout';
+import { supabase } from "@/integrations/supabase/client";
+import { useUserPreferences } from '@/hooks/use-user-preferences';
+import { PageLayout } from '../RecipeContainer/PageLayout';
 import { RecipeDisplay } from "@/components/recipes/RecipeDisplay";
 import { RecipeData } from "@/types/recipe";
+import { SearchSection } from './SearchSection';
+import { SectionDivider } from './components/SectionDivider';
+import { InspireForm } from './InspireForm';
+import { scaleRecipe } from '@/utils/recipe-scaling';
 
-// Types and constants
-type MeasurementSystem = 'metric' | 'imperial';
+// Constants for language codes
+const LANGUAGE_NAMES = {
+  'en': 'English',
+  'es': 'Spanish', 
+  'fr': 'French',
+  'it': 'Italian',
+  'de': 'German',
+  'pl': 'Polish'
+} as const;
+
 type GenerationMode = 'search' | 'inspire';
-
-interface CategoryFilters {
-  meal_type: string | null;
-  dietary_restrictions: string | null | string[];
-  difficulty_level: string | null;
-  cuisine_type: string | null;
-  cooking_method: string | null | string[];
-  occasion: string | null;
-  course_category: string | null;
-  taste_profile: string | null | string[];
-}
 
 interface FilterState {
   mealType: string[];
@@ -50,15 +39,16 @@ interface FilterState {
   dynamicCategories: Record<string, string[]>;
 }
 
-// Constants for language codes and categories
-const LANGUAGE_NAMES = {
-  'en': 'English',
-  'es': 'Spanish', 
-  'fr': 'French',
-  'it': 'Italian',
-  'de': 'German',
-  'pl': 'Polish'
-};
+interface CategoryFilters {
+  meal_type: string | null;
+  dietary_restrictions: string | null | string[];
+  difficulty_level: string | null;
+  cuisine_type: string | null;
+  cooking_method: string | null | string[];
+  occasion: string | null;
+  course_category: string | null;
+  taste_profile: string | null | string[];
+}
 
 // Create a mutable version of filter categories that can be updated with new values
 let FILTER_CATEGORIES = {
@@ -183,298 +173,6 @@ let FILTER_CATEGORIES = {
   }
 };
 
-// Component for the search section
-const SearchSection = ({ 
-  searchQuery, 
-  setSearchQuery, 
-  language, 
-  setLanguage, 
-  isGenerating, 
-  handleSearch 
-}: {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  language: string;
-  setLanguage: (lang: string) => void;
-  isGenerating: boolean;
-  handleSearch: (e: React.FormEvent) => void;
-}) => (
-  <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
-    <CardContent className="p-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">Find Your Perfect Recipe</h1>
-      
-      <form onSubmit={handleSearch} className="space-y-4">
-        <div className="space-y-2">
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="What would you like to cook? (e.g., 'vegetarian pasta', 'quick breakfast')"
-            className="text-lg"
-            disabled={isGenerating}
-          />
-        </div>
-        
-        <div className="flex gap-4">
-          <Select
-            value={language}
-            onValueChange={setLanguage}
-            disabled={isGenerating}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
-                <SelectItem key={code} value={code}>
-                  {name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button type="submit" disabled={isGenerating} className="flex-1 rounded-[500px] bg-[#FA8923] hover:bg-[#FA8923]/90 text-white h-12" variant="primary">
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Searching...
-              </>
-            ) : (
-              <>
-                <Search className="mr-2 h-4 w-4" />
-                Search
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
-    </CardContent>
-  </Card>
-);
-
-// Component for the divider between search and inspire sections
-const SectionDivider = () => (
-  <div className="relative my-8">
-    <div className="absolute inset-0 flex items-center">
-      <span className="w-full border-t" />
-    </div>
-    <div className="relative flex justify-center text-xs uppercase">
-      <span className="bg-gray-50 px-2 text-muted-foreground">or let us inspire you</span>
-    </div>
-  </div>
-);
-
-// Component for the filter buttons
-const FilterButtons = ({ 
-  category, 
-  title, 
-  options, 
-  selectedFilters, 
-  toggleFilter, 
-  isGenerating,
-  customValues,
-  setCustomValue,
-  dynamicCategories
-}: {
-  category: string;
-  title: string;
-  options: string[];
-  selectedFilters: string[];
-  toggleFilter: (category: string, option: string) => void;
-  isGenerating: boolean;
-  customValues: Record<string, string>;
-  setCustomValue: (category: string, value: string) => void;
-  dynamicCategories: Record<string, string[]>;
-}) => {
-  const isOtherSelected = selectedFilters.includes("Other");
-  
-  return (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium">{title}</Label>
-      <div className="flex flex-wrap gap-2">
-        {options.map((option) => (
-          <button
-            key={option}
-            type="button"
-            onClick={() => toggleFilter(category, option)}
-            className={`px-3 py-1 rounded-full text-sm ${
-              selectedFilters.includes(option)
-                ? "bg-[#FA8923] text-white"
-                : "bg-white text-gray-700 hover:bg-white/90"
-            }`}
-            disabled={isGenerating}
-          >
-            {option}
-          </button>
-        ))}
-      </div>
-      
-      {isOtherSelected && (
-        <div className="mt-2">
-          <Input
-            placeholder={`Enter custom ${title.toLowerCase()}`}
-            value={customValues[category] || ''}
-            onChange={(e) => setCustomValue(category, e.target.value)}
-            disabled={isGenerating}
-            className="text-sm"
-            list={`${category}-suggestions`}
-          />
-          {/* Add datalist for suggestions from dynamic categories */}
-          <datalist id={`${category}-suggestions`}>
-            {dynamicCategories[category]?.map((suggestion, idx) => (
-              <option key={idx} value={suggestion} />
-            ))}
-          </datalist>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// Component for the inspire form
-const InspireForm = ({ 
-  useIngredients,
-  setUseIngredients,
-  ingredients,
-  setIngredients,
-  cookingTime,
-  setCookingTime,
-  filters,
-  toggleFilter,
-  setCustomValue,
-  language,
-  setLanguage,
-  isGenerating,
-  handleGenerateRecipe
-}: {
-  useIngredients: boolean;
-  setUseIngredients: (use: boolean) => void;
-  ingredients: string;
-  setIngredients: (ingredients: string) => void;
-  cookingTime: number;
-  setCookingTime: (time: number) => void;
-  filters: FilterState;
-  toggleFilter: (category: string, option: string) => void;
-  setCustomValue: (category: string, value: string) => void;
-  language: string;
-  setLanguage: (lang: string) => void;
-  isGenerating: boolean;
-  handleGenerateRecipe: (e: React.FormEvent) => void;
-}) => (
-  <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
-    <CardContent className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Get Inspired with AI</h1>
-      
-      <form onSubmit={handleGenerateRecipe} className="space-y-8">
-        {/* Ingredients section */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Switch 
-              id="use-ingredients" 
-              checked={useIngredients} 
-              onCheckedChange={setUseIngredients}
-            />
-            <Label htmlFor="use-ingredients" className="font-medium">Use ingredients</Label>
-          </div>
-          
-          {useIngredients && (
-            <div className="space-y-2">
-              <Label htmlFor="ingredients">Ingredients (comma separated)</Label>
-              <Input
-                id="ingredients"
-                placeholder="e.g., chicken, rice, tomatoes, olive oil"
-                value={ingredients}
-                onChange={(e) => setIngredients(e.target.value)}
-                disabled={isGenerating}
-              />
-              <p className="text-sm text-muted-foreground">
-                Add ingredients you want to use in your recipe
-              </p>
-            </div>
-          )}
-        </div>
-        
-        {/* Cooking time slider */}
-        <div className="space-y-4">
-          <Label className="font-medium">Cooking Time: {cookingTime} minutes</Label>
-          <Slider
-            min={10}
-            max={120}
-            step={5}
-            value={[cookingTime]}
-            onValueChange={(value) => setCookingTime(value[0])}
-            disabled={isGenerating}
-          />
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>10 min</span>
-            <span>60 min</span>
-            <span>120 min</span>
-          </div>
-        </div>
-        
-        {/* Filters section */}
-        <div className="space-y-4">
-          <h3 className="font-medium">Filters</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Object.entries(FILTER_CATEGORIES).map(([category, { title, options }]) => (
-              <FilterButtons
-                key={category}
-                category={category}
-                title={title}
-                options={options}
-                selectedFilters={filters[category as keyof FilterState]}
-                toggleFilter={toggleFilter}
-                isGenerating={isGenerating}
-                customValues={filters.customValues}
-                setCustomValue={setCustomValue}
-                dynamicCategories={filters.dynamicCategories}
-              />
-            ))}
-          </div>
-        </div>
-        
-        {/* Language selection */}
-        <div className="space-y-2">
-          <Label htmlFor="language" className="font-medium">Language</Label>
-          <Select
-            value={language}
-            onValueChange={(value) => setLanguage(value)}
-            disabled={isGenerating}
-          >
-            <SelectTrigger id="language" className="w-full md:w-[200px]">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(LANGUAGE_NAMES).map(([code, name]) => (
-                <SelectItem key={code} value={code}>
-                  {name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        
-        {/* Submit button */}
-        <Button
-          type="submit"
-          disabled={isGenerating}
-          className="w-full rounded-[500px] bg-[#FA8923] hover:bg-[#FA8923]/90 text-white h-12"
-          variant="primary"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Generating Recipe...
-            </>
-          ) : (
-            "Generate Recipe"
-          )}
-        </Button>
-      </form>
-    </CardContent>
-  </Card>
-);
-
-// Main component
 export function InspireContainer() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -514,7 +212,7 @@ export function InspireContainer() {
   
   // Recipe detail view state
   const [desiredServings, setDesiredServings] = useState(4);
-  const [measurementSystem, setMeasurementSystem] = useState<MeasurementSystem>(
+  const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'imperial'>(
     preferences.measurementSystem || 'metric'
   );
 
@@ -536,7 +234,7 @@ export function InspireContainer() {
       
       return () => clearTimeout(timer);
     }
-  }, [queryFromUrl]);
+  }, [queryFromUrl, generatedRecipe, isGenerating]);
 
   // Function to update filter categories with new values
   const updateFilterCategories = (category: string, newValue: string) => {
@@ -839,22 +537,27 @@ export function InspireContainer() {
       // Log the recipe structure before saving
       console.log('Saving recipe with structure:', JSON.stringify(generatedRecipe, null, 2));
       
+      const scaledRecipe = scaleRecipe(
+        generatedRecipe,
+        desiredServings,
+        generatedRecipe.suggested_portions
+      );
+      
       // Prepare recipe data for saving
       const recipeToSave = {
-        title: recipeData.title || "Untitled Recipe",
-        description: recipeData.description || "",
-        ingredients: Array.isArray(recipeData.ingredients) ? recipeData.ingredients : [],
-        instructions: Array.isArray(recipeData.instructions) ? recipeData.instructions : [],
-        prep_time: parseInt(recipeData.prep_time) || 0,
-        cook_time: parseInt(recipeData.cook_time) || cookingTime,
-        servings: parseInt(recipeData.servings || recipeData.suggested_portions) || 4,
-        suggested_portions: parseInt(recipeData.suggested_portions) || 4,
-        estimated_calories: parseInt(recipeData.estimated_calories) || 0,
-        portion_description: recipeData.portion_description || "servings",
+        title: scaledRecipe.title,
+        description: scaledRecipe.description,
+        ingredients: scaledRecipe.ingredients,
+        instructions: scaledRecipe.instructions,
+        cook_time: scaledRecipe.cook_time,
+        prep_time: scaledRecipe.prep_time,
+        estimated_calories: scaledRecipe.estimated_calories,
+        suggested_portions: scaledRecipe.suggested_portions,
+        portion_size: desiredServings,
+        source_url: scaledRecipe.source_url,
         image_url: recipeImage,
-        user_id: session.user.id,
-        language: language,
-        categories: formattedCategories
+        categories: formattedCategories,
+        user_id: session.user.id
       };
 
       // Save the recipe to the database
@@ -876,11 +579,10 @@ export function InspireContainer() {
       });
     },
     onError: (error: Error) => {
-      console.error('Save error:', error);
       toast({
         variant: "destructive",
         title: "Save Failed",
-        description: "We couldn't save this recipe. Please try again.",
+        description: error.message || "Failed to save the recipe. Please try again.",
       });
     }
   });
@@ -969,6 +671,7 @@ export function InspireContainer() {
             setLanguage={setLanguage}
             isGenerating={isGenerating}
             handleSearch={handleSearch}
+            languageOptions={LANGUAGE_NAMES}
           />
           
           <SectionDivider />
@@ -987,6 +690,7 @@ export function InspireContainer() {
             setLanguage={setLanguage}
             isGenerating={isGenerating}
             handleGenerateRecipe={handleGenerateRecipe}
+            languageOptions={LANGUAGE_NAMES}
           />
         </>
       )}
@@ -1026,4 +730,4 @@ export function InspireContainer() {
       )}
     </PageLayout>
   );
-} 
+}

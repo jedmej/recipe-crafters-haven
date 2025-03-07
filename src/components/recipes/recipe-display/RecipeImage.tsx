@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef } from "react";
 import { RecipeImageProps } from "./types";
 import ImageControls from "./ImageControls";
 import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration";
@@ -14,6 +14,7 @@ const RecipeImage = memo(
     const hasImage = !!imageUrl;
     const { generateImage, isLoading: isGenerating } = useImageGeneration();
     const { toast } = useToast();
+    const imageRef = useRef<HTMLDivElement>(null);
 
     // Generate image prompt based on recipe title
     const generateImagePrompt = (title: string): string => {
@@ -65,15 +66,23 @@ const RecipeImage = memo(
     };
 
     return (
-      <div className="fixed top-0 left-0 right-0 w-full h-[50vh] z-0">
+      <div className="relative w-full h-[60vh]">
         {hasImage ? (
-          <div className="w-full h-full">
+          <div className="w-full h-full relative overflow-hidden" ref={imageRef}>
             <img 
               src={imageUrl} 
               alt={title}
               className="w-full h-full object-cover"
               loading="lazy"
             />
+            {/* Dark gradient overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/0 via-black/10 to-black/30"></div>
+            
+            {/* Static white overlay with fixed opacity */}
+            <div className="absolute inset-0 bg-white pointer-events-none opacity-0"></div>
+            
+            {/* Strong fade effect at the bottom of the image */}
+            <div className="absolute bottom-0 left-0 right-0 h-[16rem] bg-gradient-to-t from-[#fff] via-[#fff]/80 to-transparent z-10"></div>
           </div>
         ) : (
           <div className="w-full h-full bg-[#E4E7DF] flex flex-col justify-center items-center">

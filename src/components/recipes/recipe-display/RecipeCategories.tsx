@@ -26,7 +26,7 @@ const RecipeCategories = memo(
     if (!hasCategories) return null;
     
     return (
-      <div className="overflow-hidden">
+      <div className="overflow-hidden px-4">
         <div className="flex flex-wrap gap-4">
           {categories.meal_type && (
             <CategoryItem 

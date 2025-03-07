@@ -68,15 +68,15 @@ const ActionButtons = memo(({
   }, [recipe.id, favoriteState.isToggling, handleFavoriteToggle, toast]);
 
   return (
-    <>
+    <div className="absolute top-0 left-0 right-0 py-4 px-4 flex justify-between items-center z-[60]">
       <button
         onClick={handleBackClick}
-        className="fixed top-4 left-4 h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors z-[60] shadow-sm"
+        className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors shadow-sm"
         aria-label="Go Back"
       >
         <CaretLeft weight="duotone" size={20} className="text-gray-700" />
       </button>
-      <div className="absolute top-4 right-4 flex gap-2 z-[60]">
+      <div className="flex gap-2">
         <button
           onClick={handleFavoriteClick}
           disabled={!recipe.id || favoriteState.isToggling}
@@ -130,7 +130,7 @@ const ActionButtons = memo(({
           </Button>
         )}
       </div>
-    </>
+    </div>
   );
 });
 

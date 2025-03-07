@@ -15,11 +15,11 @@ const TimeNutritionItem = memo(
         {icon}
       </div>
       <div className="flex flex-col items-center p-0">
-        <div className="font-medium text-foreground p-0">{label}</div>
-        <div className="text-sm p-0">
+        <div className="font-medium text-foreground text-sm sm:text-base p-0">{label}</div>
+        <div className="text-sm sm:text-base p-0">
           {value} {unit}
           {showOriginal && originalValue && (
-            <span className="text-xs block mt-1 text-muted-foreground p-0">
+            <span className="text-xs sm:text-sm block mt-1 text-muted-foreground p-0">
               (Original: {originalValue} {unit})
             </span>
           )}

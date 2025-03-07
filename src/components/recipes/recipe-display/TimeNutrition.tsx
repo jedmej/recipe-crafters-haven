@@ -20,9 +20,9 @@ const TimeNutrition = memo(
     if (!hasTimeOrNutrition) return null;
     
     return (
-      <Card className="overflow-hidden rounded-[48px] border-0 bg-[#F2F2F2]">
+      <Card className="overflow-hidden rounded-[48px] border-0 bg-[#F2F2F2] mx-4">
         <CardContent className="p-0">
-          <div className="flex flex-col sm:flex-row justify-between gap-4 p-6">
+          <div className="flex flex-row justify-between items-center gap-2 p-5">
             {scaledRecipe?.prep_time && (
               <TimeNutritionItem
                 icon={<Alarm className="h-6 w-6 text-primary" weight="duotone" />}

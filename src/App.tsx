@@ -26,10 +26,23 @@ import ProfilePage from "./pages/profile";
 const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => (
   <AuthGuard>
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-white relative overflow-hidden">
-      <main className="flex-1 pt-4 pb-20 md:pb-4 px-4 md:px-6 relative">
+      <main className="flex-1 pb-20 md:pb-4 relative">
         <div className="max-w-screen-xl mx-auto">
           {children}
         </div>
+      </main>
+      <BottomNav />
+      <SphereBackgroundGroup />
+    </div>
+  </AuthGuard>
+);
+
+// Special layout for recipe detail page without max-width constraint
+const RecipeDetailLayout = ({ children }: { children: React.ReactNode }) => (
+  <AuthGuard>
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-white relative overflow-hidden">
+      <main className="flex-1 pb-20 md:pb-4 relative">
+        {children}
       </main>
       <BottomNav />
       <SphereBackgroundGroup />
@@ -91,9 +104,9 @@ const App = () => (
                 <Route
                   path="/recipes/:id"
                   element={
-                    <AuthenticatedLayout>
+                    <RecipeDetailLayout>
                       <RecipeDetailPage />
-                    </AuthenticatedLayout>
+                    </RecipeDetailLayout>
                   }
                 />
                 <Route

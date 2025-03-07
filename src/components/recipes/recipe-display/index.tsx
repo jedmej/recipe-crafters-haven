@@ -32,16 +32,12 @@ export function RecipeDisplay({
   // Core image update function
   const updateImage: AsyncHandler<[string]> = useCallback(async (imageUrl: string) => {
     if (!onImageUpdate) return;
-    
     setImageState(prev => ({ ...prev, isUpdating: true, error: null }));
-    
     toast({
       title: "Saving image...",
       description: "Please wait while we save your changes.",
     });
-
     await onImageUpdate(imageUrl);
-    
     toast({
       title: "Success",
       description: "Recipe image has been updated.",
@@ -71,20 +67,26 @@ export function RecipeDisplay({
 
   return (
     <div className="w-full min-h-screen bg-[#f5f5f5] overflow-x-hidden p-0 m-0">
-      <ActionButtons
-        recipe={recipe}
-        onEditOrGenerate={onEditOrGenerate}
-        onSave={onSave}
-        isSaving={isSaving}
-        onBack={onBack}
-      />
-      
-      <RecipeImage
-        imageUrl={recipe.imageUrl}
-        title={recipe.title}
-        onImageUpdate={onImageUpdate ? handleImageUpdate : undefined}
-      />
-      
+      {/* Fixed Action Buttons at top of screen */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
+        <ActionButtons
+          recipe={recipe}
+          onEditOrGenerate={onEditOrGenerate}
+          onSave={onSave}
+          isSaving={isSaving}
+          onBack={onBack}
+        />
+      </div>
+
+      {/* Add padding to the top to account for the fixed buttons */}
+      <div className="relative">
+        <RecipeImage
+          imageUrl={recipe.imageUrl}
+          title={recipe.title}
+          onImageUpdate={onImageUpdate ? handleImageUpdate : undefined}
+        />
+      </div>
+
       <RecipeContent
         recipe={recipe}
         scaledRecipe={scaledRecipe}
@@ -100,7 +102,7 @@ export function RecipeDisplay({
         onDelete={handleDelete}
         setShowCookingMode={setShowCookingMode}
       />
-      
+
       <CookingModeWrapper
         showCookingMode={showCookingMode}
         setShowCookingMode={setShowCookingMode}
@@ -108,4 +110,4 @@ export function RecipeDisplay({
       />
     </div>
   );
-} 
+}

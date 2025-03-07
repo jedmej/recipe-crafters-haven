@@ -95,6 +95,12 @@ export interface PortionsInputProps {
 
 export interface IngredientsSectionProps {
   ingredients: RecipeData['ingredients'];
+  chosenPortions: number;
+  onPortionsChange: (portions: number) => void;
+  portionDescription?: string;
+  suggestedPortions?: number;
+  measurementSystem: 'metric' | 'imperial';
+  onMeasurementSystemChange: () => void;
 }
 
 export interface InstructionsSectionProps {

@@ -123,7 +123,7 @@ export default function RecipeDetailRoute() {
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="w-full">
       <RecipeDisplay
         recipe={{
           ...recipe,

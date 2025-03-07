@@ -1,6 +1,6 @@
 // src/features/groceries/components/MasterGroceryList.tsx
 import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -12,6 +12,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { categorizeItem } from "../utils/categorization";
 import { Link } from "react-router-dom";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { useToast } from "@/hooks/use-toast";
 
 // Item categories for organization
 const ITEM_CATEGORIES = [
@@ -28,12 +29,13 @@ const ITEM_CATEGORIES = [
   "Other"
 ];
 
-// Function to categorize items based on keywords is now imported from utils/categorizeItem
-
 export function MasterGroceryList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("All Items");
   const [viewMode, setViewMode] = useState("category"); // "category" or "recipe"
+  const [showActionsForId, setShowActionsForId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch all grocery lists
   const { data: lists, isLoading } = useQuery({
@@ -51,6 +53,61 @@ export function MasterGroceryList() {
       
       if (error) throw error;
       return data;
+    }
+  });
+
+  // Update item mutation
+  const updateItem = useMutation({
+    mutationFn: async ({ listId, itemName, isChecked }: { listId: string; itemName: string; isChecked: boolean }) => {
+      // First, get the current list to update the correct item
+      const { data, error: fetchError } = await supabase
+        .from('grocery_lists')
+        .select('items')
+        .eq('id', listId)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Update the specific item in the items array
+      const updatedItems = Array.isArray(data.items) 
+        ? data.items.map(item => {
+            const itemData = typeof item === 'string' 
+              ? { name: item, checked: false } 
+              : item;
+              
+            if (itemData.name === itemName) {
+              return {
+                ...itemData,
+                checked: isChecked
+              };
+            }
+            return itemData;
+          })
+        : [];
+      
+      // Save the updated items back to the database
+      const { error: updateError } = await supabase
+        .from('grocery_lists')
+        .update({ items: updatedItems })
+        .eq('id', listId);
+      
+      if (updateError) throw updateError;
+      
+      return { listId, itemName, isChecked };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['allGroceryLists'] });
+      toast({
+        title: "Item updated",
+        description: "Item status has been updated successfully."
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update item: " + error.message
+      });
     }
   });
 
@@ -111,26 +168,63 @@ export function MasterGroceryList() {
     });
   }, [allItems, searchTerm, activeCategory]);
 
-  // Group items by category or recipe for display
+  // Group items by category or recipe for display and sort them (unchecked first, then checked)
   const groupedItems = useMemo(() => {
     if (!filteredItems.length) return {};
     
+    // Helper function to sort items (unchecked first, then checked)
+    const sortItems = (items) => {
+      return [...items].sort((a, b) => {
+        // First sort by checked status (unchecked first)
+        if (a.checked !== b.checked) {
+          return a.checked ? 1 : -1;
+        }
+        // Then sort alphabetically by name
+        return a.name.localeCompare(b.name);
+      });
+    };
+    
     if (viewMode === "category") {
-      return filteredItems.reduce((acc, item) => {
+      // Group by category, then sort within each category
+      const grouped = filteredItems.reduce((acc, item) => {
         const category = item.category;
         if (!acc[category]) acc[category] = [];
         acc[category].push(item);
         return acc;
       }, {});
+      
+      // Sort items within each category
+      Object.keys(grouped).forEach(category => {
+        grouped[category] = sortItems(grouped[category]);
+      });
+      
+      return grouped;
     } else {
-      return filteredItems.reduce((acc, item) => {
+      // Group by recipe, then sort within each recipe
+      const grouped = filteredItems.reduce((acc, item) => {
         const recipeKey = item.recipeTitle || item.listTitle || "Uncategorized";
         if (!acc[recipeKey]) acc[recipeKey] = [];
         acc[recipeKey].push(item);
         return acc;
       }, {});
+      
+      // Sort items within each recipe
+      Object.keys(grouped).forEach(recipe => {
+        grouped[recipe] = sortItems(grouped[recipe]);
+      });
+      
+      return grouped;
     }
   }, [filteredItems, viewMode]);
+
+  // Handle checkbox click
+  const handleToggleItem = (item) => {
+    updateItem.mutate({
+      listId: item.listId,
+      itemName: item.name,
+      isChecked: !item.checked
+    });
+  };
 
   if (isLoading) {
     return (
@@ -231,8 +325,8 @@ export function MasterGroceryList() {
                         <input
                           type="checkbox"
                           checked={item.checked}
-                          className="rounded"
-                          readOnly
+                          onChange={() => handleToggleItem(item)}
+                          className="rounded cursor-pointer"
                         />
                         <span className={item.checked ? "line-through text-gray-400" : ""}>
                           {item.name}
@@ -278,8 +372,8 @@ export function MasterGroceryList() {
                             <input
                               type="checkbox"
                               checked={item.checked}
-                              className="rounded"
-                              readOnly
+                              onChange={() => handleToggleItem(item)}
+                              className="rounded cursor-pointer"
                             />
                             <span className={item.checked ? "line-through text-gray-400" : ""}>
                               {item.name}

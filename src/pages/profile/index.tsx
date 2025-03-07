@@ -227,7 +227,7 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-[#F5F5F5]">
-      <div className="max-w-2xl mx-auto py-0 sm:py-0 px-0 sm:px-0 lg:px-0">
+      <div className="max-w-3xl mx-auto py-8 sm:py-12 px-4 sm:px-6 lg:px-8">
         <Button
           variant="ghost"
           className="mb-6 pl-0 text-gray-600 hover:text-gray-900 hover:bg-transparent"

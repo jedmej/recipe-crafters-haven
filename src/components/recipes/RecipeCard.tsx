@@ -32,8 +32,28 @@ export const RecipeCard = memo(function RecipeCard({
   const [isLongPressing, setIsLongPressing] = useState(false);
   const longPressTriggeredRef = useRef(false);
   const startPositionRef = useRef({ x: 0, y: 0 });
+  const lastPositionRef = useRef({ x: 0, y: 0 });
+  const isScrollingRef = useRef(false);
+  const velocityTrackingRef = useRef<{
+    positions: Array<{ x: number, y: number, time: number }>;
+    lastUpdate: number;
+  }>({
+    positions: [],
+    lastUpdate: 0
+  });
   const LONG_PRESS_DURATION = 500; // ms
-  const MOVEMENT_THRESHOLD = 10; // pixels
+  const MOVEMENT_THRESHOLD = 20; // pixels
+  const SCROLL_VELOCITY_THRESHOLD = 0.5; // pixels per ms
+
+  // Define cancelLongPress first, before it's used in useEffect
+  const cancelLongPress = useCallback(() => {
+    // Clear the timeout
+    if (longPressTimeoutRef.current) {
+      window.clearTimeout(longPressTimeoutRef.current);
+      longPressTimeoutRef.current = null;
+    }
+    setIsLongPressing(false);
+  }, []);
 
   // Clean up timeout on unmount
   useEffect(() => {
@@ -43,6 +63,38 @@ export const RecipeCard = memo(function RecipeCard({
       }
     };
   }, []);
+
+  // Track document scrolling
+  useEffect(() => {
+    let lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    let scrollTimeout: number | null = null;
+    
+    const handleScroll = () => {
+      // User is scrolling, cancel any pending long press
+      isScrollingRef.current = true;
+      cancelLongPress();
+      
+      // Reset the scrolling flag after scrolling stops
+      if (scrollTimeout) {
+        window.clearTimeout(scrollTimeout);
+      }
+      
+      scrollTimeout = window.setTimeout(() => {
+        isScrollingRef.current = false;
+      }, 100);
+      
+      lastScrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout) {
+        window.clearTimeout(scrollTimeout);
+      }
+    };
+  }, [cancelLongPress]);
 
   const handleFavoriteClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -65,6 +117,12 @@ export const RecipeCard = memo(function RecipeCard({
     
     // Store the starting position
     startPositionRef.current = { x: clientX, y: clientY };
+    lastPositionRef.current = { x: clientX, y: clientY };
+    
+    // Reset tracking state
+    isScrollingRef.current = false;
+    velocityTrackingRef.current.positions = [];
+    velocityTrackingRef.current.lastUpdate = Date.now();
     
     // Reset the long press state
     longPressTriggeredRef.current = false;
@@ -74,36 +132,86 @@ export const RecipeCard = memo(function RecipeCard({
       window.clearTimeout(longPressTimeoutRef.current);
     }
     
-    // Start the long press timer
-    longPressTimeoutRef.current = window.setTimeout(() => {
-      setIsLongPressing(true);
-      longPressTriggeredRef.current = true;
-      if (onLongPress) {
-        onLongPress(recipe.id);
+    // Add a small delay before starting the long press timer
+    // This helps distinguish between scrolling and long press
+    setTimeout(() => {
+      // Only start the long press timer if we're not scrolling
+      if (!isScrollingRef.current) {
+        longPressTimeoutRef.current = window.setTimeout(() => {
+          // Double-check that we're still not scrolling before triggering
+          if (!isScrollingRef.current) {
+            setIsLongPressing(true);
+            longPressTriggeredRef.current = true;
+            if (onLongPress) {
+              onLongPress(recipe.id);
+            }
+          }
+        }, LONG_PRESS_DURATION);
       }
-    }, LONG_PRESS_DURATION);
+    }, 100);
   }, [isSelectionMode, onLongPress, recipe.id]);
 
-  const cancelLongPress = useCallback(() => {
-    // Clear the timeout
-    if (longPressTimeoutRef.current) {
-      window.clearTimeout(longPressTimeoutRef.current);
-      longPressTimeoutRef.current = null;
-    }
-    setIsLongPressing(false);
-  }, []);
-
+  // Define checkMovement first
   const checkMovement = useCallback((clientX: number, clientY: number): boolean => {
     const deltaX = Math.abs(clientX - startPositionRef.current.x);
     const deltaY = Math.abs(clientY - startPositionRef.current.y);
     
-    // If the user moved too much, cancel the long press
-    if (deltaX > MOVEMENT_THRESHOLD || deltaY > MOVEMENT_THRESHOLD) {
+    // Be more lenient with vertical movement (scrolling) than horizontal movement
+    const horizontalThreshold = MOVEMENT_THRESHOLD;
+    const verticalThreshold = MOVEMENT_THRESHOLD * 2; // Double the threshold for vertical movement
+    
+    // If the user moved too much horizontally or significantly vertically, cancel the long press
+    if (deltaX > horizontalThreshold || deltaY > verticalThreshold) {
       cancelLongPress();
       return true;
     }
     return false;
-  }, [cancelLongPress]);
+  }, [cancelLongPress, MOVEMENT_THRESHOLD]);
+
+  // Track touch/mouse movement to detect scrolling
+  const trackMovement = useCallback((clientX: number, clientY: number) => {
+    const now = Date.now();
+    lastPositionRef.current = { x: clientX, y: clientY };
+    
+    // Add current position to tracking array
+    velocityTrackingRef.current.positions.push({
+      x: clientX,
+      y: clientY,
+      time: now
+    });
+    
+    // Keep only the last 5 positions for velocity calculation
+    if (velocityTrackingRef.current.positions.length > 5) {
+      velocityTrackingRef.current.positions.shift();
+    }
+    
+    velocityTrackingRef.current.lastUpdate = now;
+    
+    // Calculate velocity based on the tracked positions
+    if (velocityTrackingRef.current.positions.length >= 2) {
+      const newest = velocityTrackingRef.current.positions[velocityTrackingRef.current.positions.length - 1];
+      const oldest = velocityTrackingRef.current.positions[0];
+      
+      const dx = newest.x - oldest.x;
+      const dy = newest.y - oldest.y;
+      const dt = newest.time - oldest.time;
+      
+      if (dt > 0) {
+        // Calculate velocity in pixels per millisecond
+        const velocityX = Math.abs(dx) / dt;
+        const velocityY = Math.abs(dy) / dt;
+        const velocity = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+        
+        // If velocity exceeds threshold, user is scrolling
+        if (velocity > SCROLL_VELOCITY_THRESHOLD) {
+          isScrollingRef.current = true;
+          cancelLongPress();
+        }
+      }
+    }
+    
+    return checkMovement(clientX, clientY);
+  }, [cancelLongPress, checkMovement]);
 
   // Mouse event handlers
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -112,59 +220,95 @@ export const RecipeCard = memo(function RecipeCard({
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (longPressTimeoutRef.current) {
-      checkMovement(e.clientX, e.clientY);
+      trackMovement(e.clientX, e.clientY);
     }
-  }, [checkMovement]);
+  }, [trackMovement]);
 
   const handleMouseUp = useCallback((e: React.MouseEvent) => {
     cancelLongPress();
     
     // If long press was triggered, prevent the normal click
-    if (longPressTriggeredRef.current) {
+    // But in selection mode, we want to allow clicks to toggle selection
+    if (longPressTriggeredRef.current && !isSelectionMode) {
       e.stopPropagation();
-      // Don't reset longPressTriggeredRef here to prevent click from firing
     }
-  }, [cancelLongPress]);
+    
+    // In selection mode, always reset the long press state to allow toggling
+    if (isSelectionMode) {
+      longPressTriggeredRef.current = false;
+    }
+  }, [cancelLongPress, isSelectionMode]);
 
   // Touch event handlers
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    // Don't prevent default here as it would break scrolling
+    // Instead, we'll use CSS to prevent image actions
+    
     if (e.touches.length === 1) {
       const touch = e.touches[0];
-      startLongPress(touch.clientX, touch.clientY);
+      
+      // Don't start long press if already scrolling
+      if (!isScrollingRef.current) {
+        startLongPress(touch.clientX, touch.clientY);
+      }
     }
   }, [startLongPress]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (longPressTimeoutRef.current && e.touches.length === 1) {
+    if (e.touches.length === 1) {
       const touch = e.touches[0];
-      const moved = checkMovement(touch.clientX, touch.clientY);
       
-      // If moved significantly, prevent default to avoid scrolling
-      if (moved && longPressTimeoutRef.current) {
-        e.preventDefault();
+      // Track movement to detect scrolling
+      if (longPressTimeoutRef.current) {
+        const moved = trackMovement(touch.clientX, touch.clientY);
+        
+        // If significant movement detected, mark as scrolling
+        if (moved) {
+          isScrollingRef.current = true;
+          cancelLongPress();
+        }
       }
     }
-  }, [checkMovement]);
+  }, [trackMovement, cancelLongPress]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    // Prevent default only if we're in long press mode
+    if (longPressTriggeredRef.current) {
+      e.preventDefault();
+    }
+    
+    // Reset scrolling state after a short delay
+    setTimeout(() => {
+      isScrollingRef.current = false;
+    }, 300);
+    
     cancelLongPress();
     
     // If long press was triggered, prevent the normal click/tap
-    if (longPressTriggeredRef.current) {
-      e.preventDefault();
-      // Don't reset longPressTriggeredRef here to prevent click from firing
+    // But in selection mode, we want to allow taps to toggle selection
+    if (longPressTriggeredRef.current && !isSelectionMode) {
+      e.stopPropagation(); // Use stopPropagation instead of preventDefault to allow scrolling
     }
-  }, [cancelLongPress]);
+    
+    // In selection mode, always reset the long press state to allow toggling
+    if (isSelectionMode) {
+      longPressTriggeredRef.current = false;
+    }
+  }, [cancelLongPress, isSelectionMode]);
 
   const handleCardClick = useCallback((e: React.MouseEvent) => {
-    // Only handle click if it wasn't a long press
-    if (!longPressTriggeredRef.current) {
+    // For selection mode, always allow clicks regardless of long press state
+    if (isSelectionMode) {
+      onClick(recipe.id, e);
+    } 
+    // For normal mode, only handle click if it wasn't a long press and we're not scrolling
+    else if (!longPressTriggeredRef.current && !isScrollingRef.current) {
       onClick(recipe.id, e);
     }
     
     // Reset the long press state after the click is processed
     longPressTriggeredRef.current = false;
-  }, [onClick, recipe.id]);
+  }, [onClick, recipe.id, isSelectionMode]);
 
   // Optimize rendering by conditionally showing selection UI only when needed
   const renderSelectionUI = useCallback(() => {
@@ -234,7 +378,12 @@ export const RecipeCard = memo(function RecipeCard({
           position: 'relative',
           transition: 'all 300ms cubic-bezier(0.19, 1, 0.22, 1)',
           transform: `scale(${isSelected || isLongPressing ? '0.98' : '1'})`,
-          transformOrigin: 'center'
+          transformOrigin: 'center',
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
+          KhtmlUserSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none'
         }}
         className={`
           cursor-pointer 
@@ -250,7 +399,7 @@ export const RecipeCard = memo(function RecipeCard({
               : 'hover:scale-[1.02] transition-all duration-300'
           }
           group
-          touch-none
+          select-none
         `}
         onClick={handleCardClick}
         onMouseDown={handleMouseDown}
@@ -273,12 +422,21 @@ export const RecipeCard = memo(function RecipeCard({
                   transition-all duration-300
                   group-hover:scale-[1.04]
                   ${isSelected || isLongPressing ? 'brightness-95' : ''}
+                  select-none
+                  pointer-events-none
                 `}
                 style={{
-                  transitionTimingFunction: 'cubic-bezier(0.19, 1, 0.22, 1)'
+                  transitionTimingFunction: 'cubic-bezier(0.19, 1, 0.22, 1)',
+                  WebkitTouchCallout: 'none'
                 }}
                 loading="lazy"
                 draggable="false"
+                onContextMenu={(e) => e.preventDefault()}
+              />
+              {/* Transparent overlay to capture touch events */}
+              <div 
+                className="absolute inset-0 z-[1]" 
+                aria-hidden="true"
               />
               {renderSelectionUI()}
               {renderFavoriteButton()}
@@ -306,7 +464,7 @@ export const RecipeCard = memo(function RecipeCard({
           )}
         </div>
         <div className="absolute inset-x-0 bottom-0 p-4">
-          <h3 className="font-normal text-[21px] font-['Judson'] line-clamp-2 text-white">
+          <h3 className="font-normal text-[21px] font-['Judson'] line-clamp-2 text-white select-none pointer-events-none">
             {recipe.title}
           </h3>
         </div>

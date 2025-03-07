@@ -109,6 +109,14 @@
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-judson), serif;
   }
+  
+  /* Prevent image selection on mobile devices */
+  img {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+    pointer-events: none;
+  }
 }
 
 @layer base {

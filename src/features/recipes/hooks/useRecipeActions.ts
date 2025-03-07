@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 import { MeasurementSystem } from '@/lib/types';
 import { scaleAndConvertIngredient } from '../utils/ingredient-parsing';
+import { categorizeItem, categorizeItemLocally } from '@/features/groceries/utils/categorization';
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
 
@@ -53,11 +54,19 @@ export function useRecipeActions(recipe: Recipe | undefined, scaleFactor: number
         scaleAndConvertIngredient(ingredient, scaleFactor, measurementSystem)
       );
 
+      // First, categorize all ingredients using local categorization for immediate display
+      const localCategorizedIngredients = scaledIngredients.map(item => ({ 
+        name: item, 
+        checked: false,
+        category: categorizeItemLocally(item)
+      }));
+
+      // Create the grocery list with local categorization first
       const { data, error } = await supabase
         .from('grocery_lists')
         .insert({
           title: listTitle,
-          items: scaledIngredients.map(item => ({ name: item, checked: false })),
+          items: localCategorizedIngredients,
           user_id: user.id,
           recipe_id: recipe.id
         })
@@ -65,13 +74,59 @@ export function useRecipeActions(recipe: Recipe | undefined, scaleFactor: number
         .single();
       
       if (error) throw error;
+
+      // Then, in the background, update with AI categorization
+      setTimeout(async () => {
+        try {
+          // Get AI categories for all ingredients
+          const aiCategorizedIngredients = await Promise.all(
+            scaledIngredients.map(async (item) => {
+              try {
+                const category = await categorizeItem(item);
+                return { 
+                  name: item, 
+                  checked: false,
+                  category 
+                };
+              } catch (error) {
+                console.error(`Error getting AI category for ${item}:`, error);
+                return { 
+                  name: item, 
+                  checked: false,
+                  category: categorizeItemLocally(item) 
+                };
+              }
+            })
+          );
+
+          // Check if there are any category changes
+          const hasChanges = aiCategorizedIngredients.some((aiItem, index) => 
+            aiItem.category !== localCategorizedIngredients[index].category
+          );
+
+          if (hasChanges) {
+            // Update the database with AI categories
+            await supabase
+              .from('grocery_lists')
+              .update({ items: aiCategorizedIngredients })
+              .eq('id', data.id);
+            
+            // Update the cache
+            queryClient.invalidateQueries({ queryKey: ['groceryLists', data.id] });
+            queryClient.invalidateQueries({ queryKey: ['allGroceryLists'] });
+          }
+        } catch (error) {
+          console.error('Error updating grocery list with AI categories:', error);
+        }
+      }, 100);
+
       return data;
     },
     onSuccess: (data) => {
-      navigate(`/grocery-lists/${data.id}`);
+      queryClient.invalidateQueries({ queryKey: ['allGroceryLists'] });
       toast({
-        title: "Grocery list created",
-        description: "Recipe ingredients have been added to a new grocery list.",
+        title: "Added to grocery list",
+        description: "Recipe ingredients have been added to your grocery list.",
       });
     },
     onError: (error: Error) => {
@@ -79,7 +134,7 @@ export function useRecipeActions(recipe: Recipe | undefined, scaleFactor: number
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to create grocery list. Please try again.",
+        description: "Failed to add to grocery list. Please try again.",
       });
     }
   });

@@ -98,11 +98,10 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
-
   body {
-    @apply bg-background text-foreground antialiased font-sans;
+    @apply bg-background text-foreground p-0 m-0;
     font-family: var(--font-archivo), sans-serif;
   }
 
@@ -116,14 +115,5 @@
     -webkit-user-select: none;
     user-select: none;
     pointer-events: none;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }

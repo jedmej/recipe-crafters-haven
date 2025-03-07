@@ -3,6 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
+// Define the interface for favorite items
+interface FavoriteItem {
+  recipe_id: string;
+  created_at: string;
+}
+
 export function useFavorites() {
   const queryClient = useQueryClient();
   const [userId, setUserId] = useState<string | null>(null);
@@ -17,7 +23,7 @@ export function useFavorites() {
     getUserId();
   }, []);
 
-  const { data: favorites = [], isLoading } = useQuery({
+  const { data: favoritesData = [], isLoading } = useQuery<FavoriteItem[]>({
     queryKey: ['favorites', userId],
     queryFn: async () => {
       if (!userId) return [];
@@ -25,7 +31,7 @@ export function useFavorites() {
       try {
         const { data, error } = await supabase
           .from('user_favorites')
-          .select('recipe_id')
+          .select('recipe_id, created_at')
           .eq('user_id', userId);
         
         if (error) {
@@ -36,7 +42,7 @@ export function useFavorites() {
           }
           throw error;
         }
-        return data.map(fav => fav.recipe_id);
+        return data;
       } catch (error) {
         console.error('Error fetching favorites:', error);
         return [];
@@ -45,6 +51,9 @@ export function useFavorites() {
     enabled: !!userId,
     retry: false, // Don't retry if the table doesn't exist
   });
+
+  // Extract just the recipe IDs for backward compatibility
+  const favorites = favoritesData.map(fav => fav.recipe_id);
 
   const toggleFavorite = useMutation({
     mutationFn: async (recipeId: string) => {
@@ -111,6 +120,7 @@ export function useFavorites() {
 
   return {
     favorites,
+    favoritesData,
     isLoading,
     toggleFavorite,
     isFavorite

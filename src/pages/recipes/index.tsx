@@ -18,13 +18,16 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function RecipesPage() {
   const navigate = useNavigate();
   const { data: recipes, isLoading } = useRecipes();
-  const { favorites } = useFavorites();
+  const { favorites, favoritesData } = useFavorites();
   const [profile, setProfile] = useState<{
     full_name: string | null;
     username: string | null;
     avatar_url: string | null;
   } | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{
+    id: string;
+    email: string;
+  } | null>(null);
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -91,15 +94,38 @@ export default function RecipesPage() {
 
   // Sort recipes to prioritize favorites
   const sortedRecipes = useMemo(() => {
+    // Create a map of recipe IDs to their favorite timestamps for quick lookup
+    const favoriteTimestamps = new Map();
+    favoritesData.forEach(fav => {
+      favoriteTimestamps.set(fav.recipe_id, new Date(fav.created_at));
+    });
+
     return [...filteredRecipes].sort((a, b) => {
       const aIsFavorite = favorites.includes(a.id);
       const bIsFavorite = favorites.includes(b.id);
       
+      // If both are favorites, sort by created_at timestamp (most recent first)
+      if (aIsFavorite && bIsFavorite) {
+        const aTimestamp = favoriteTimestamps.get(a.id);
+        const bTimestamp = favoriteTimestamps.get(b.id);
+        
+        // Handle case where timestamps might be undefined
+        if (!aTimestamp && !bTimestamp) return 0;
+        if (!aTimestamp) return 1;
+        if (!bTimestamp) return -1;
+        
+        // Sort in descending order (most recent first)
+        return bTimestamp.getTime() - aTimestamp.getTime();
+      }
+      
+      // If only one is a favorite, it comes first
       if (aIsFavorite && !bIsFavorite) return -1;
       if (!aIsFavorite && bIsFavorite) return 1;
+      
+      // If neither are favorites, maintain original order
       return 0;
     });
-  }, [filteredRecipes, favorites]);
+  }, [filteredRecipes, favorites, favoritesData]);
 
   const {
     selectedRecipes,

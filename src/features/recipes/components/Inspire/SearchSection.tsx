@@ -3,32 +3,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface SearchSectionProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  language: string;
-  setLanguage: (lang: string) => void;
   isGenerating: boolean;
   handleSearch: (e: React.FormEvent) => void;
-  languageOptions: Record<string, string>;
 }
 
 export const SearchSection: React.FC<SearchSectionProps> = ({
   searchQuery,
   setSearchQuery,
-  language,
-  setLanguage,
   isGenerating,
   handleSearch,
-  languageOptions
 }) => (
   <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
     <CardContent className="p-6">
@@ -46,22 +33,6 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
         </div>
         
         <div className="flex gap-4">
-          <Select
-            value={language}
-            onValueChange={setLanguage}
-            disabled={isGenerating}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(languageOptions).map(([code, name]) => (
-                <SelectItem key={code} value={code}>
-                  {name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Button 
             type="submit" 
             disabled={isGenerating} 

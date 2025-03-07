@@ -34,7 +34,9 @@ const SUPPORTED_LANGUAGES = {
   'es': 'Spanish',
   'fr': 'French',
   'de': 'German',
-  'it': 'Italian'
+  'it': 'Italian',
+  'ru': 'Russian',
+  'uk': 'Ukrainian'
 };
 
 // Define the category options that match the frontend
@@ -146,7 +148,7 @@ serve(async (req) => {
     
     // Configure the model with safety settings and generation config
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
+      model: 'gemini-2.0-pro',
       safetySettings: [
         {
           category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -169,11 +171,12 @@ serve(async (req) => {
         temperature: 0.7,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
       },
     });
 
-    const prompt = `You are a helpful cooking assistant. Please create a recipe in ${SUPPORTED_LANGUAGES[language]} language based on the user's request: "${query}"
+    // Create the prompt for the AI
+    const prompt = `You are a helpful cooking assistant. Please create a recipe ENTIRELY in ${SUPPORTED_LANGUAGES[language]} language based on the user's request: "${query}"
 
     Return ONLY a JSON object with this exact structure, and no other text:
     {
@@ -187,32 +190,27 @@ serve(async (req) => {
       "suggested_portions": number,
       "portion_description": "Portion size description in ${SUPPORTED_LANGUAGES[language]}",
       "categories": {
-        "meal_type": "One of: ${CATEGORY_OPTIONS.meal_type.join(', ')}",
-        "dietary_restrictions": ["Array of applicable options: ${CATEGORY_OPTIONS.dietary_restrictions.join(', ')}"],
-        "difficulty_level": "One of: ${CATEGORY_OPTIONS.difficulty_level.join(', ')}",
-        "cuisine_type": "One of: ${CATEGORY_OPTIONS.cuisine_type.join(', ')}",
-        "cooking_method": ["Array of applicable options: ${CATEGORY_OPTIONS.cooking_method.join(', ')}"],
-        "occasion": "One of: ${CATEGORY_OPTIONS.occasion.join(', ')}",
-        "course_category": "One of: ${CATEGORY_OPTIONS.course_category.join(', ')}",
-        "taste_profile": ["Array of applicable options: ${CATEGORY_OPTIONS.taste_profile.join(', ')}"]
+        "meal_type": "One of: Breakfast, Brunch, Lunch, Dinner, Snacks, Dessert, Appetizer, Soup, Side Dish",
+        "dietary_restrictions": ["Array of applicable options: Vegetarian, Vegan, Gluten-free, Dairy-free, Keto, Paleo, Halal, Kosher, Nut-free, Low-Sodium"],
+        "difficulty_level": "One of: Easy, Medium, Hard, Expert",
+        "cuisine_type": "One of: Italian, Mexican, Chinese, Japanese, Thai, French, Middle Eastern, Indian, American, Mediterranean, Caribbean, Greek, Spanish",
+        "cooking_method": ["Array of applicable options: Baking, Frying, Grilling, Roasting, Steaming, Boiling, Slow Cooking, Sous Vide"],
+        "occasion": "One of: Everyday, Party, Holiday, Birthday",
+        "course_category": "One of: Soup, Salad, Main Course, Side Dish, Dessert, Beverage",
+        "taste_profile": ["Array of applicable options: Sweet, Savory, Spicy, Sour, Salty, Bitter, Umami, Tangy, Mild"]
       }
     }
 
     Important:
     1. Return ONLY the JSON object, no other text or explanations
     2. All numbers must be integers
-    3. All text must be in ${SUPPORTED_LANGUAGES[language]}
+    3. All text MUST be in ${SUPPORTED_LANGUAGES[language]} language - this is CRITICAL
     4. Follow the exact structure shown above
     5. Make sure all fields are present and properly formatted
     6. ALL category fields must be filled with appropriate values
     7. For dietary_restrictions, cooking_method, and taste_profile, you can include multiple relevant tags as an array
     8. Try to use the exact category values provided in the lists above. If none match exactly, you can suggest a new appropriate value
-    9. For portion suggestions, analyze the dish type and provide realistic portions:
-       - Single-serve items (toast, sandwich): typically 1-2 portions
-       - Family meals (casseroles, lasagna): typically 6-8 portions
-       - Baked goods (cookies, muffins): typically 12-24 portions
-       - Pizza: typically 6-8 slices
-    10. The portion_description should clearly describe what a portion means (e.g., "slices" for pizza, "cookies" for cookie recipes, "servings" for casseroles)`;
+    9. IMPORTANT: ALL text fields (title, description, ingredients, instructions, portion_description) MUST be in ${SUPPORTED_LANGUAGES[language]} language`;
 
     try {
       console.log('Sending request to Gemini...');

@@ -42,6 +42,8 @@ export const SUPPORTED_LANGUAGES = [
   { value: 'fr', label: 'French' },
   { value: 'de', label: 'German' },
   { value: 'it', label: 'Italian' },
+  { value: 'ru', label: 'Russian' },
+  { value: 'uk', label: 'Ukrainian' },
 ] as const;
 
 export const RECIPE_CATEGORIES = {

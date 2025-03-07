@@ -27,7 +27,9 @@ const SUPPORTED_LANGUAGES = {
   es: 'Spanish',
   fr: 'French',
   de: 'German',
-  it: 'Italian'
+  it: 'Italian',
+  ru: 'Russian',
+  uk: 'Ukrainian'
 } as const;
 
 export function AIRecipeSearch() {

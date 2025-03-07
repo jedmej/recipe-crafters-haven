@@ -2,7 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 
 // Define language codes type
-export type LanguageCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'zh' | 'ja' | 'ko';
+export type LanguageCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'zh' | 'ja' | 'ko' | 'pl' | 'ru' | 'uk';
 
 // Define the structure of user preferences
 interface UserPreferences {
@@ -34,7 +34,7 @@ const UserPreferencesContext = createContext<UserPreferencesContextType | undefi
 
 // Helper function to check if language code is valid
 const isValidLanguage = (lang: string): lang is LanguageCode => {
-  return ['en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'ko'].includes(lang);
+  return ['en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'ko', 'pl', 'ru', 'uk'].includes(lang);
 };
 
 // Provider component

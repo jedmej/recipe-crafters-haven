@@ -39,11 +39,8 @@ interface InspireFormProps {
   filters: FilterState;
   toggleFilter: (category: string, option: string) => void;
   setCustomValue: (category: string, value: string) => void;
-  language: string;
-  setLanguage: (lang: string) => void;
   isGenerating: boolean;
   handleGenerateRecipe: (e: React.FormEvent) => void;
-  languageOptions: Record<string, string>;
 }
 
 export const InspireForm: React.FC<InspireFormProps> = ({
@@ -56,11 +53,8 @@ export const InspireForm: React.FC<InspireFormProps> = ({
   filters,
   toggleFilter,
   setCustomValue,
-  language,
-  setLanguage,
   isGenerating,
   handleGenerateRecipe,
-  languageOptions
 }) => (
   <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
     <CardContent className="p-6">
@@ -122,27 +116,6 @@ export const InspireForm: React.FC<InspireFormProps> = ({
               />
             ))}
           </div>
-        </div>
-        
-        {/* Language selection */}
-        <div className="space-y-2">
-          <Label htmlFor="language" className="font-medium">Language</Label>
-          <Select
-            value={language}
-            onValueChange={(value) => setLanguage(value)}
-            disabled={isGenerating}
-          >
-            <SelectTrigger id="language" className="w-full md:w-[200px]">
-              <SelectValue placeholder="Select language" />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(languageOptions).map(([code, name]) => (
-                <SelectItem key={code} value={code}>
-                  {name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
         
         {/* Submit button */}

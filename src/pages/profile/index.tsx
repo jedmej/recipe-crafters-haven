@@ -22,6 +22,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CharacterAttributesInput, CharacterAttributes } from "@/components/profile/CharacterAttributesInput";
 import { AvatarUploader } from "@/components/profile/AvatarUploader";
+import { LanguageFlag } from "@/components/profile/LanguageFlag";
 
 const LANGUAGE_OPTIONS = {
   en: 'English',
@@ -29,7 +30,9 @@ const LANGUAGE_OPTIONS = {
   fr: 'French',
   it: 'Italian',
   de: 'German',
-  pl: 'Polish'
+  pl: 'Polish',
+  ru: 'Russian',
+  uk: 'Ukrainian'
 } as const;
 
 type LanguageCode = keyof typeof LANGUAGE_OPTIONS;
@@ -349,7 +352,7 @@ export default function ProfilePage() {
                   <SelectContent className="shadow-none">
                     {Object.entries(LANGUAGE_OPTIONS).map(([code, name]) => (
                       <SelectItem key={code} value={code}>
-                        {name}
+                        <LanguageFlag languageCode={code} languageName={name} />
                       </SelectItem>
                     ))}
                   </SelectContent>

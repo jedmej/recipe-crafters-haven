@@ -58,5 +58,7 @@ export const SUPPORTED_LANGUAGES = {
   fr: "French",
   it: "Italian",
   de: "German",
-  pl: "Polish"
+  pl: "Polish",
+  ru: "Russian",
+  uk: "Ukrainian"
 }; 

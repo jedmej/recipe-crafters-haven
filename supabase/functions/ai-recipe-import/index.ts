@@ -1,6 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { GoogleGenerativeAI } from 'npm:@google/generative-ai@1.2.0';
+import { HarmCategory, HarmBlockThreshold } from 'npm:@google/generative-ai@1.2.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,7 +51,9 @@ function getLanguageName(code: string): string {
     'fr': 'French',
     'de': 'German',
     'it': 'Italian',
-    'pl': 'Polish'
+    'pl': 'Polish',
+    'ru': 'Russian',
+    'uk': 'Ukrainian'
   };
   return languages[code] || 'English';
 }
@@ -132,19 +135,37 @@ serve(async (req) => {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.0-pro',
+      safetySettings: [
+        {
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+        {
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+          threshold: HarmBlockThreshold.BLOCK_NONE,
+        },
+      ],
       generationConfig: {
         temperature: 0.7,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
       }
     });
 
     const languageName = getLanguageName(targetLanguage);
     
-    // Create a prompt that explicitly asks for JSON
-    const prompt = `You are a recipe extraction expert. Extract recipe information from this webpage content and translate it into ${languageName}.
+    // Create the prompt for the AI
+    const prompt = `You are a recipe extraction expert. Extract recipe information from this webpage content and translate it ENTIRELY into ${languageName}.
 
     Webpage content:
     ${cleanedContent}
@@ -161,22 +182,20 @@ serve(async (req) => {
       "suggested_portions": number,
       "portion_description": "Portion size description in ${languageName}",
       "categories": {
-        "meal_type": "One of: breakfast, lunch, dinner, snack, dessert",
-        "dietary_restrictions": "One of: vegetarian, vegan, gluten-free, low-carb, dairy-free, none",
-        "difficulty_level": "One of: easy, intermediate, advanced",
-        "cuisine_type": "One of: Italian, Mexican, Asian, Mediterranean, French, American, Indian, etc.",
-        "cooking_method": "One of: baked, grilled, fried, slow-cooked, steamed, raw"
+        "meal_type": "One of: Breakfast, Brunch, Lunch, Dinner, Snacks, Dessert, Appetizer, Soup, Side Dish",
+        "dietary_restrictions": "One of: Vegetarian, Vegan, Gluten-free, Dairy-free, Keto, Paleo, Halal, Kosher, Nut-free, Low-Sodium",
+        "difficulty_level": "One of: Easy, Medium, Hard, Expert",
+        "cuisine_type": "One of: Italian, Mexican, Chinese, Japanese, Thai, French, Middle Eastern, Indian, American, Mediterranean, Caribbean, Greek, Spanish"
       }
     }
 
     Important:
     1. Return ONLY the JSON object, no other text or explanations
     2. All numbers must be integers
-    3. All text must be in ${languageName}
+    3. All text MUST be in ${languageName} language - this is CRITICAL
     4. Follow the exact structure shown above
     5. Make sure all fields are present and properly formatted
-    6. ALL category fields must be filled with appropriate values
-    7. If any information is missing, make reasonable estimates based on similar recipes`;
+    6. IMPORTANT: ALL text fields (title, description, ingredients, instructions, portion_description) MUST be in ${languageName} language`;
     
     console.log('Sending prompt to Gemini...');
     

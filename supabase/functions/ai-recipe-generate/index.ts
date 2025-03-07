@@ -60,7 +60,9 @@ const SUPPORTED_LANGUAGES = {
   'es': 'Spanish',
   'fr': 'French',
   'de': 'German',
-  'it': 'Italian'
+  'it': 'Italian',
+  'ru': 'Russian',
+  'uk': 'Ukrainian'
 };
 
 // Function to validate and clean recipe data
@@ -164,7 +166,7 @@ serve(async (req) => {
 
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ 
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.0-pro',
       safetySettings: [
         {
           category: HarmCategory.HARM_CATEGORY_HARASSMENT,
@@ -187,14 +189,14 @@ serve(async (req) => {
         temperature: 0.7,
         topK: 40,
         topP: 0.95,
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
       }
     });
 
     const languageName = SUPPORTED_LANGUAGES[targetLanguage] || 'English';
     
     // Build the prompt based on the input parameters
-    let promptBase = `You are a creative recipe generator. Create a delicious recipe in ${languageName} language`;
+    let promptBase = `You are a creative recipe generator. Create a delicious recipe ENTIRELY in ${languageName} language. It is CRITICAL that you use ONLY the ${languageName} language for ALL text in the response, including the title, description, ingredients, and instructions.`;
     
     // Add ingredient constraints if needed
     if (useIngredients && ingredients.length > 0) {
@@ -256,7 +258,7 @@ serve(async (req) => {
     Important:
     1. Return ONLY the JSON object, no other text or explanations
     2. All numbers must be integers
-    3. All text must be in ${languageName}
+    3. All text MUST be in ${languageName} language - this is CRITICAL
     4. Follow the exact structure shown above
     5. Make sure all fields are present and properly formatted
     6. ALL category fields must be filled with appropriate values
@@ -267,7 +269,8 @@ serve(async (req) => {
        - Family meals (casseroles, lasagna): typically 4-6 portions
        - Baked goods (cookies, muffins): typically 12-24 portions
        - Pizza: typically 6-8 slices
-    10. The portion_description should clearly describe what a portion means (e.g., "slices" for pizza, "cookies" for cookie recipes, "servings" for casseroles)`;
+    10. The portion_description should clearly describe what a portion means (e.g., "slices" for pizza, "cookies" for cookie recipes, "servings" for casseroles)
+    11. IMPORTANT: ALL text fields (title, description, ingredients, instructions, portion_description) MUST be in ${languageName} language`;
     
     console.log('Sending prompt to Gemini...');
     

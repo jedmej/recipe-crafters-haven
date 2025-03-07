@@ -21,7 +21,9 @@ const LANGUAGE_NAMES = {
   'fr': 'French',
   'it': 'Italian',
   'de': 'German',
-  'pl': 'Polish'
+  'pl': 'Polish',
+  'ru': 'Russian',
+  'uk': 'Ukrainian'
 } as const;
 
 type GenerationMode = 'search' | 'inspire';
@@ -667,11 +669,8 @@ export function InspireContainer() {
           <SearchSection 
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            language={language}
-            setLanguage={setLanguage}
             isGenerating={isGenerating}
             handleSearch={handleSearch}
-            languageOptions={LANGUAGE_NAMES}
           />
           
           <SectionDivider />
@@ -686,11 +685,8 @@ export function InspireContainer() {
             filters={filters}
             toggleFilter={toggleFilter}
             setCustomValue={setCustomValue}
-            language={language}
-            setLanguage={setLanguage}
             isGenerating={isGenerating}
             handleGenerateRecipe={handleGenerateRecipe}
-            languageOptions={LANGUAGE_NAMES}
           />
         </>
       )}

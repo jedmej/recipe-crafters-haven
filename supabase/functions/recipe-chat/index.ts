@@ -176,7 +176,14 @@ serve(async (req) => {
     });
 
     // Create the prompt for the AI
+    let languageEmphasis = '';
+    if (language === 'ru' || language === 'uk') {
+      languageEmphasis = `IMPORTANT: I need this recipe SPECIFICALLY in ${SUPPORTED_LANGUAGES[language]} language, not in English. This is extremely important. ALL text fields including title, description, ingredients, instructions, and portion_description MUST be in ${SUPPORTED_LANGUAGES[language]} language using Cyrillic characters. DO NOT use English or Latin characters for any text content.`;
+    }
+
     const prompt = `You are a helpful cooking assistant. Please create a recipe ENTIRELY in ${SUPPORTED_LANGUAGES[language]} language based on the user's request: "${query}"
+
+    ${languageEmphasis}
 
     Return ONLY a JSON object with this exact structure, and no other text:
     {
@@ -226,15 +233,30 @@ serve(async (req) => {
       // Extract JSON from the response
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
+        console.error('Failed to extract JSON. Raw response:', text);
         throw new Error('No valid JSON found in response');
       }
 
       let recipeData;
       try {
-        const parsedData = JSON.parse(jsonMatch[0]);
+        // Normalize JSON string to handle potential Unicode issues
+        const jsonString = jsonMatch[0]
+          .replace(/[\u2018\u2019]/g, "'") // Replace smart quotes
+          .replace(/[\u201C\u201D]/g, '"') // Replace smart double quotes
+          .replace(/\u2013/g, '-') // Replace en dash
+          .replace(/\u2014/g, '--') // Replace em dash
+          .replace(/\u2026/g, '...'); // Replace ellipsis
+        
+        const parsedData = JSON.parse(jsonString);
         recipeData = validateAndCleanRecipeData(parsedData);
+        
+        // Additional logging for debugging
+        if (language === 'ru' || language === 'uk') {
+          console.log('Successfully parsed recipe data for', SUPPORTED_LANGUAGES[language]);
+        }
       } catch (parseError) {
         console.error('Error parsing or validating recipe data:', parseError);
+        console.error('Problematic JSON string:', jsonMatch[0]);
         throw new Error('Failed to parse recipe data from AI response');
       }
 

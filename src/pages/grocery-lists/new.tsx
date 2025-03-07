@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ImageUploadOrGenerate } from "@/components/recipes/ImageUploadOrGenerate";
+import { categorizeItem } from "@/features/groceries/utils/categorization";
 
 export default function NewGroceryListPage() {
   const navigate = useNavigate();
@@ -59,7 +60,11 @@ export default function NewGroceryListPage() {
             user_id: user.id,
             items: formData.items
               .filter(i => i.trim() !== "")
-              .map(item => ({ name: item, checked: false })),
+              .map(item => ({ 
+                name: item, 
+                checked: false,
+                category: categorizeItem(item)
+              })),
             recipe_id: formData.recipe_id,
             image_url: formData.image_url || (recipe?.image_url || "")
           }

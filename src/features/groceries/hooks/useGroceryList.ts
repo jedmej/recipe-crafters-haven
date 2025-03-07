@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
+import { categorizeItem } from '../utils/categorization';
 
 interface GroceryItem {
   name: string;
   checked: boolean;
+  category?: string;
 }
 
 type GroceryList = Omit<Database['public']['Tables']['grocery_lists']['Row'], 'items'> & {
@@ -44,9 +46,18 @@ export function useGroceryList(id: string | undefined) {
       const items = Array.isArray(data.items) 
         ? (data.items as (string | GroceryItem)[]).map(item => {
             if (typeof item === 'string') {
-              return { name: item, checked: false };
+              // For string items, create a new GroceryItem with auto-categorization
+              return { 
+                name: item, 
+                checked: false,
+                category: categorizeItem(item) 
+              };
             }
-            return item as GroceryItem;
+            // For existing GroceryItem objects, ensure they have a category
+            return {
+              ...item,
+              category: item.category || (item.name ? categorizeItem(item.name) : undefined)
+            } as GroceryItem;
           })
         : [];
 
@@ -56,9 +67,11 @@ export function useGroceryList(id: string | undefined) {
 
   const updateItems = useMutation({
     mutationFn: async (items: GroceryItem[]) => {
+      // Ensure all items have categories before storing
       const itemsForStorage = items.map(item => ({
         name: item.name,
-        checked: item.checked
+        checked: item.checked,
+        category: item.category || categorizeItem(item.name)
       }));
 
       const { error } = await supabase
@@ -136,7 +149,11 @@ export function useGroceryList(id: string | undefined) {
 
     const newItems = list.items.map(item => 
       item.name === itemToToggle.name 
-        ? { ...item, checked: !item.checked }
+        ? { 
+            ...item, 
+            checked: !item.checked, 
+            category: itemToToggle.category || item.category || categorizeItem(item.name) 
+          }
         : item
     );
 
@@ -159,11 +176,33 @@ export function useGroceryList(id: string | undefined) {
     }
   };
 
+  // Add a new method to add an item with automatic categorization
+  const addItem = async (itemName: string) => {
+    if (!list || !itemName.trim()) return;
+
+    const newItem: GroceryItem = {
+      name: itemName.trim(),
+      checked: false,
+      category: categorizeItem(itemName.trim())
+    };
+
+    const newItems = [...list.items, newItem];
+
+    queryClient.setQueryData(['groceryLists', id], {
+      ...list,
+      items: newItems
+    });
+
+    await updateItems.mutateAsync(newItems);
+  };
+
   return {
     list,
     isLoading,
     deleteList,
     updateImage,
-    toggleItem
+    toggleItem,
+    addItem,
+    updateItems
   };
 } 

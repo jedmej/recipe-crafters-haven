@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Slider } from "@/components/ui/slider";
 import { format, subDays, isAfter } from "date-fns";
+import { MasterGroceryList } from "@/features/groceries/components/MasterGroceryList";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -201,6 +202,9 @@ export default function GroceryListsPage() {
             My Grocery Lists
           </h1>
         </header>
+
+        {/* Add the MasterGroceryList component here */}
+        <MasterGroceryList />
 
         {/* Search and Controls Section */}
         <div className="flex flex-col gap-6 mb-8">

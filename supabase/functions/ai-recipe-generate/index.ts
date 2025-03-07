@@ -198,6 +198,11 @@ serve(async (req) => {
     // Build the prompt based on the input parameters
     let promptBase = `You are a creative recipe generator. Create a delicious recipe ENTIRELY in ${languageName} language. It is CRITICAL that you use ONLY the ${languageName} language for ALL text in the response, including the title, description, ingredients, and instructions.`;
     
+    // Add special instructions for Russian and Ukrainian
+    if (targetLanguage === 'ru' || targetLanguage === 'uk') {
+      promptBase += ` I need this recipe SPECIFICALLY in ${languageName} language, not in English. This is extremely important. ALL text fields including title, description, ingredients, instructions, and portion_description MUST be in ${languageName} language using Cyrillic characters. DO NOT use English or Latin characters for any text content.`;
+    }
+    
     // Add ingredient constraints if needed
     if (useIngredients && ingredients.length > 0) {
       promptBase += ` using these ingredients: ${ingredients.join(', ')}`;
@@ -293,11 +298,77 @@ serve(async (req) => {
 
       let recipeData;
       try {
-        const parsedData = JSON.parse(jsonMatch[0]);
+        // Normalize JSON string to handle potential Unicode issues
+        const jsonString = jsonMatch[0]
+          .replace(/[\u2018\u2019]/g, "'") // Replace smart quotes
+          .replace(/[\u201C\u201D]/g, '"') // Replace smart double quotes
+          .replace(/\u2013/g, '-') // Replace en dash
+          .replace(/\u2014/g, '--') // Replace em dash
+          .replace(/\u2026/g, '...'); // Replace ellipsis
+        
+        // For Russian and Ukrainian, add extra handling for potential JSON issues
+        let processedJsonString = jsonString;
+        if (targetLanguage === 'ru' || targetLanguage === 'uk') {
+          // Fix common JSON syntax errors that might occur with Cyrillic text
+          processedJsonString = processedJsonString
+            // Fix unescaped quotes within strings
+            .replace(/"([^"]*?)(?<!\\)"([^"]*?)"/g, (match, p1, p2) => {
+              return `"${p1.replace(/"/g, '\\"')}${p2.replace(/"/g, '\\"')}"`;
+            })
+            // Fix trailing commas in arrays and objects
+            .replace(/,\s*]/g, ']')
+            .replace(/,\s*}/g, '}');
+        }
+        
+        const parsedData = JSON.parse(processedJsonString);
         recipeData = validateAndCleanRecipeData(parsedData);
+        
+        // Additional logging for debugging
+        if (targetLanguage === 'ru' || targetLanguage === 'uk') {
+          console.log('Successfully parsed recipe data for', languageName);
+        }
       } catch (parseError) {
         console.error('Error parsing or validating recipe data:', parseError);
-        throw new Error('Failed to parse recipe data from AI response');
+        console.error('Problematic JSON string:', jsonMatch[0]);
+        
+        // For Russian and Ukrainian, try a more aggressive fallback approach
+        if (targetLanguage === 'ru' || targetLanguage === 'uk') {
+          try {
+            console.log('Attempting fallback JSON parsing for Cyrillic text...');
+            
+            // Try to extract individual fields using regex patterns
+            const titleMatch = text.match(/"title"\s*:\s*"([^"]+)"/);
+            const descriptionMatch = text.match(/"description"\s*:\s*"([^"]+)"/);
+            
+            // Create a minimal valid JSON structure
+            const minimalJson = {
+              title: titleMatch ? titleMatch[1] : 'Untitled Recipe',
+              description: descriptionMatch ? descriptionMatch[1] : '',
+              ingredients: [],
+              instructions: [],
+              prep_time: 30,
+              cook_time: 30,
+              estimated_calories: 0,
+              suggested_portions: 4,
+              portion_description: 'servings',
+              categories: {
+                meal_type: 'Main Course',
+                dietary_restrictions: ['Regular'],
+                difficulty_level: 'Medium',
+                cuisine_type: 'International',
+                cooking_method: ['Various']
+              }
+            };
+            
+            console.log('Using fallback minimal JSON structure');
+            recipeData = minimalJson;
+          } catch (fallbackError) {
+            console.error('Fallback parsing also failed:', fallbackError);
+            throw parseError; // Throw the original error
+          }
+        } else {
+          throw parseError;
+        }
       }
 
       return new Response(

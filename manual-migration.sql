@@ -1,5 +1,5 @@
 -- Migration to add missing columns to profiles table
-ALTER TABLE profiles ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'en' CHECK (language IN ('en', 'es', 'fr', 'it', 'de', 'pl'));
+ALTER TABLE profiles ADD COLUMN IF NOT EXISTS language TEXT DEFAULT 'en' CHECK (language IN ('en', 'es', 'fr', 'it', 'de', 'pl', 'ru', 'uk'));
 ALTER TABLE profiles ADD COLUMN IF NOT EXISTS measurement_system TEXT DEFAULT 'metric' CHECK (measurement_system IN ('metric', 'imperial'));
 
 -- Update existing profiles with default values

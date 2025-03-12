@@ -7,6 +7,8 @@ import { SelectionIndicator } from "./SelectionIndicator";
 import { CookTimeIndicator } from "./CookTimeIndicator";
 import { useLongPress } from "@/hooks/useLongPress";
 import { INTERACTION_CONSTANTS, STYLE_CONSTANTS } from "@/constants/recipe-card";
+import { cn } from "@/lib/utils";
+import { Clock } from "lucide-react";
 
 // Define more specific types
 /** Recipe data type from the database */
@@ -32,6 +34,8 @@ interface RecipeCardProps {
   onClick: (recipeId: RecipeId, event: MouseEventType) => void;
   /** Optional callback for when the card is long-pressed */
   onLongPress?: (recipeId: RecipeId) => void;
+  /** Display variant of the card */
+  variant?: "default" | "compact";
 }
 
 /**
@@ -57,7 +61,8 @@ export const RecipeCard = memo(function RecipeCard({
   isSelected, 
   isSelectionMode, 
   onClick, 
-  onLongPress 
+  onLongPress, 
+  variant = "default"
 }: RecipeCardProps): ReactElement {
   const { isFavorite, toggleFavorite } = useFavorites();
   
@@ -224,8 +229,10 @@ export const RecipeCard = memo(function RecipeCard({
     cursor-pointer 
     shadow-sm
     hover:shadow-lg
-    min-h-[${STYLE_CONSTANTS.CARD_HEIGHTS.DEFAULT}]
-    h-[${STYLE_CONSTANTS.CARD_HEIGHTS.DEFAULT}] sm:h-[${STYLE_CONSTANTS.CARD_HEIGHTS.SM}] md:h-[${STYLE_CONSTANTS.CARD_HEIGHTS.MD}]
+    min-h-[${STYLE_CONSTANTS.CARD_HEIGHTS.DEFAULT}] 
+    h-[${STYLE_CONSTANTS.CARD_HEIGHTS.DEFAULT}] 
+    sm:h-[${STYLE_CONSTANTS.CARD_HEIGHTS.SM}] 
+    md:h-[${STYLE_CONSTANTS.CARD_HEIGHTS.MD}] 
     rounded-[${STYLE_CONSTANTS.BORDER_RADIUS}]
     transform-gpu
     ${isSelected 
@@ -259,78 +266,153 @@ export const RecipeCard = memo(function RecipeCard({
     WebkitTouchCallout: 'none'
   }), []);
 
-  return (
-    <div className="relative group">
-      <Card 
-        style={cardStyle}
-        className={cardClassName}
-        onClick={handleCardClick}
-        {...handlers}
-      >
-        <div className="absolute inset-0 rounded-[24px] overflow-hidden">
-          {recipe.image_url ? (
-            <>
-              <img
-                src={recipe.image_url}
-                alt={recipe.title}
-                className={imageClassName}
-                style={imageStyle}
-                loading="lazy"
-                draggable="false"
-                onContextMenu={(e: React.MouseEvent): void => e.preventDefault()}
-              />
-              {/* Transparent overlay to capture touch events */}
-              <div 
-                className="absolute inset-0 z-[1]" 
-                aria-hidden="true"
-              />
-              
-              {/* Selection indicator */}
-              {isSelectionMode && <SelectionIndicator isSelected={isSelected} />}
-              
-              {/* Favorite button */}
-              {!isSelectionMode && (
-                <FavoriteButton 
-                  isFavorited={isFavorited}
-                  isToggling={favoriteButtonState.isToggling}
-                  onClick={handleFavoriteClick}
-                  onInteractionStart={handleFavoriteInteractionStart}
+  // Render the appropriate variant
+  const renderContent = () => {
+    if (variant === "compact") {
+      return (
+        <div className="w-full max-w-[1200px] mx-auto">
+          <Card 
+            className={cn(
+              "h-16 rounded-xl cursor-pointer shadow-sm hover:shadow-md w-full flex items-center relative overflow-hidden",
+              isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background bg-primary/5"
+            )}
+            onClick={handleCardClick}
+            {...handlers}
+          >
+            <div className="h-16 w-16 relative rounded-l-xl overflow-hidden flex-shrink-0">
+              {recipe.image_url ? (
+                <img
+                  src={recipe.image_url}
+                  alt={recipe.title}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                  draggable="false"
                 />
+              ) : (
+                <div className="h-full w-full bg-gray-100" />
               )}
               
-              {/* Cook time indicator */}
-              <CookTimeIndicator cookTime={recipe.cook_time} />
-              
-              {/* Gradient overlay without blur */}
-              <div 
-                className="absolute inset-0 z-[2]"
-                style={{
-                  background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.8) 5%, rgba(0,0,0,0.75) 10%, rgba(0,0,0,0.7) 15%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.6) 25%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.5) 35%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.4) 45%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.2) 65%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.075) 80%, rgba(0,0,0,0.05) 85%, rgba(0,0,0,0.025) 90%, rgba(0,0,0,0.01) 95%, rgba(0,0,0,0) 100%)',
-                  opacity: 0.8
-                }}
-              />
-              
-              {/* Blur effect only for bottom 30% */}
-              <div 
-                className="absolute inset-x-0 bottom-0 backdrop-blur-[3px] z-[2]" 
-                style={{
-                  height: '30%',
-                  maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 40%, rgba(0,0,0,0.6) 70%, rgba(0,0,0,0) 100%)',
-                  WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 40%, rgba(0,0,0,0.6) 70%, rgba(0,0,0,0) 100%)',
-                  opacity: 0.95
-                }}
-              />
-            </>
-          ) : (
-            <div className="absolute inset-0 bg-gray-100" />
-          )}
+              {/* Selection indicator positioned over the image */}
+              {isSelectionMode && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className={cn(
+                    "h-5 w-5 rounded-full border-2 transition-colors duration-200 flex items-center justify-center shadow-sm",
+                    isSelected
+                      ? "bg-primary border-transparent" // Selected state
+                      : "border-white/80 bg-black/20"   // Unselected state
+                  )}>
+                    {isSelected && (
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-full w-full p-0.5"
+                      >
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1 px-4 min-w-0 flex items-center">
+              <h3 className="font-normal text-base font-['Judson'] line-clamp-1 pr-2">
+                {recipe.title}
+              </h3>
+            </div>
+            
+            {/* Cook time indicator positioned on the right side of the card */}
+            {recipe.cook_time && (
+              <div className="pr-4 flex items-center gap-1.5 flex-shrink-0">
+                <Clock className="w-3.5 h-3.5 text-gray-600" />
+                <span className="text-sm font-medium text-gray-600">{recipe.cook_time} min</span>
+              </div>
+            )}
+          </Card>
         </div>
-        <div className="absolute inset-x-0 bottom-0 p-4 z-[3]">
-          <h3 className="font-normal text-[21px] font-['Judson'] line-clamp-2 text-white select-none pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">
-            {recipe.title}
-          </h3>
-        </div>
-      </Card>
-    </div>
-  );
+      );
+    }
+
+    // Default grid variant
+    return (
+      <div className="relative group">
+        <Card 
+          style={cardStyle}
+          className={cardClassName}
+          onClick={handleCardClick}
+          {...handlers}
+        >
+          <div className="absolute inset-0 rounded-[24px] overflow-hidden">
+            {recipe.image_url ? (
+              <>
+                <img
+                  src={recipe.image_url}
+                  alt={recipe.title}
+                  className={imageClassName}
+                  style={imageStyle}
+                  loading="lazy"
+                  draggable="false"
+                  onContextMenu={(e: React.MouseEvent): void => e.preventDefault()}
+                />
+                {/* Transparent overlay to capture touch events */}
+                <div 
+                  className="absolute inset-0 z-[1]" 
+                  aria-hidden="true"
+                />
+                
+                {/* Selection indicator */}
+                {isSelectionMode && <SelectionIndicator isSelected={isSelected} />}
+                
+                {/* Favorite button */}
+                {!isSelectionMode && (
+                  <FavoriteButton 
+                    isFavorited={isFavorited}
+                    isToggling={favoriteButtonState.isToggling}
+                    onClick={handleFavoriteClick}
+                    onInteractionStart={handleFavoriteInteractionStart}
+                  />
+                )}
+                
+                {/* Cook time indicator */}
+                <CookTimeIndicator cookTime={recipe.cook_time} />
+                
+                {/* Gradient overlay without blur */}
+                <div 
+                  className="absolute inset-0 z-[2]"
+                  style={{
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.8) 5%, rgba(0,0,0,0.75) 10%, rgba(0,0,0,0.7) 15%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.6) 25%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.5) 35%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.4) 45%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.2) 65%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.075) 80%, rgba(0,0,0,0.05) 85%, rgba(0,0,0,0.025) 90%, rgba(0,0,0,0.01) 95%, rgba(0,0,0,0) 100%)',
+                    opacity: 0.8
+                  }}
+                />
+                
+                {/* Blur effect only for bottom 30% */}
+                <div 
+                  className="absolute inset-x-0 bottom-0 backdrop-blur-[3px] z-[2]" 
+                  style={{
+                    height: '30%',
+                    maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 40%, rgba(0,0,0,0.6) 70%, rgba(0,0,0,0) 100%)',
+                    WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 40%, rgba(0,0,0,0.6) 70%, rgba(0,0,0,0) 100%)',
+                    opacity: 0.95
+                  }}
+                />
+              </>
+            ) : (
+              <div className="absolute inset-0 bg-gray-100" />
+            )}
+          </div>
+          <div className="absolute inset-x-0 bottom-0 p-4 z-[3]">
+            <h3 className="font-normal text-[21px] font-['Judson'] line-clamp-2 text-white select-none pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">
+              {recipe.title}
+            </h3>
+          </div>
+        </Card>
+      </div>
+    );
+  };
+
+  return renderContent();
 }); 

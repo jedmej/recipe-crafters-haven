@@ -6,7 +6,7 @@ import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 export function GroceryListDetail() {
   const { id } = useParams<{ id: string }>();
-  const { list, isLoading, deleteList, updateImage, toggleItem } = useGroceryList(id);
+  const { list, isLoading, deleteList, updateImage, toggleItem, recategorizeItems } = useGroceryList(id);
 
   if (isLoading) {
     return (
@@ -36,6 +36,7 @@ export function GroceryListDetail() {
         recipeTitle={list.recipe?.title}
         onDelete={() => deleteList.mutate()}
         onUpdateImage={(url) => updateImage.mutate(url)}
+        onRecategorize={recategorizeItems}
       />
 
       <GroceryListItems

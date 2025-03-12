@@ -201,6 +201,7 @@ export const RecipeCard = memo(function RecipeCard({
     borderRadius: STYLE_CONSTANTS.BORDER_RADIUS,
     overflow: 'hidden',
     position: 'relative',
+    minHeight: STYLE_CONSTANTS.CARD_HEIGHTS.DEFAULT,
     transition: `all ${STYLE_CONSTANTS.TRANSITION_DURATION} ${STYLE_CONSTANTS.TRANSITION_TIMING}`,
     // Scale down the card when selected or long pressing, unless interacting with favorite button
     transform: `scale(${(isSelected || isLongPressing) && !favoriteButtonState.isInteracting 
@@ -223,6 +224,7 @@ export const RecipeCard = memo(function RecipeCard({
     cursor-pointer 
     shadow-sm
     hover:shadow-lg
+    min-h-[${STYLE_CONSTANTS.CARD_HEIGHTS.DEFAULT}]
     h-[${STYLE_CONSTANTS.CARD_HEIGHTS.DEFAULT}] sm:h-[${STYLE_CONSTANTS.CARD_HEIGHTS.SM}] md:h-[${STYLE_CONSTANTS.CARD_HEIGHTS.MD}]
     rounded-[${STYLE_CONSTANTS.BORDER_RADIUS}]
     transform-gpu
@@ -299,26 +301,32 @@ export const RecipeCard = memo(function RecipeCard({
               {/* Cook time indicator */}
               <CookTimeIndicator cookTime={recipe.cook_time} />
               
-              {/* Gradient overlay for text */}
-              <div className={`absolute inset-x-0 bottom-0 h-[${STYLE_CONSTANTS.GRADIENT.HEIGHT}]`}>
-                <div 
-                  className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"
-                />
-                <div 
-                  className="absolute inset-0 backdrop-blur-[5px]"
-                  style={{ 
-                    maskImage: `linear-gradient(to top, black ${STYLE_CONSTANTS.GRADIENT.MASK_OPACITY}, transparent)`,
-                    WebkitMaskImage: `linear-gradient(to top, black ${STYLE_CONSTANTS.GRADIENT.MASK_OPACITY}, transparent)`
-                  }}
-                />
-              </div>
+              {/* Gradient overlay without blur */}
+              <div 
+                className="absolute inset-0 z-[2]"
+                style={{
+                  background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.8) 5%, rgba(0,0,0,0.75) 10%, rgba(0,0,0,0.7) 15%, rgba(0,0,0,0.65) 20%, rgba(0,0,0,0.6) 25%, rgba(0,0,0,0.55) 30%, rgba(0,0,0,0.5) 35%, rgba(0,0,0,0.45) 40%, rgba(0,0,0,0.4) 45%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.3) 55%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.2) 65%, rgba(0,0,0,0.15) 70%, rgba(0,0,0,0.1) 75%, rgba(0,0,0,0.075) 80%, rgba(0,0,0,0.05) 85%, rgba(0,0,0,0.025) 90%, rgba(0,0,0,0.01) 95%, rgba(0,0,0,0) 100%)',
+                  opacity: 0.8
+                }}
+              />
+              
+              {/* Blur effect only for bottom 30% */}
+              <div 
+                className="absolute inset-x-0 bottom-0 backdrop-blur-[3px] z-[2]" 
+                style={{
+                  height: '30%',
+                  maskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 40%, rgba(0,0,0,0.6) 70%, rgba(0,0,0,0) 100%)',
+                  WebkitMaskImage: 'linear-gradient(to top, rgba(0,0,0,1) 0%, rgba(0,0,0,0.9) 40%, rgba(0,0,0,0.6) 70%, rgba(0,0,0,0) 100%)',
+                  opacity: 0.95
+                }}
+              />
             </>
           ) : (
             <div className="absolute inset-0 bg-gray-100" />
           )}
         </div>
-        <div className="absolute inset-x-0 bottom-0 p-4">
-          <h3 className="font-normal text-[21px] font-['Judson'] line-clamp-2 text-white select-none pointer-events-none">
+        <div className="absolute inset-x-0 bottom-0 p-4 z-[3]">
+          <h3 className="font-normal text-[21px] font-['Judson'] line-clamp-2 text-white select-none pointer-events-none drop-shadow-[0_1px_2px_rgba(0,0,0,1)]">
             {recipe.title}
           </h3>
         </div>

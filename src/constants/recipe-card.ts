@@ -17,8 +17,8 @@ export const STYLE_CONSTANTS = {
     MD: '320px',
   },
   GRADIENT: {
-    HEIGHT: '50%',
-    MASK_OPACITY: '60%',
+    HEIGHT: '70%',
+    MASK_OPACITY: '80%',
   },
   SCALE: {
     PRESSED: '0.98',

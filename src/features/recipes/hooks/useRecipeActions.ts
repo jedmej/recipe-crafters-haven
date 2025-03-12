@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 import { MeasurementSystem } from '@/lib/types';
 import { scaleAndConvertIngredient } from '../utils/ingredient-parsing';
-import { categorizeItem, categorizeItemLocally } from '@/features/groceries/utils/categorization';
+import { categorizeItem } from '@/features/groceries/utils/categorization';
 
 type Recipe = Database['public']['Tables']['recipes']['Row'];
 
@@ -58,7 +58,7 @@ export function useRecipeActions(recipe: Recipe | undefined, scaleFactor: number
       const localCategorizedIngredients = scaledIngredients.map(item => ({ 
         name: item, 
         checked: false,
-        category: categorizeItemLocally(item)
+        category: categorizeItem(item)
       }));
 
       // Create the grocery list with local categorization first
@@ -93,7 +93,7 @@ export function useRecipeActions(recipe: Recipe | undefined, scaleFactor: number
                 return { 
                   name: item, 
                   checked: false,
-                  category: categorizeItemLocally(item) 
+                  category: categorizeItem(item) 
                 };
               }
             })

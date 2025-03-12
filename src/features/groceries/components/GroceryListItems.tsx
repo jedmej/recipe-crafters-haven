@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { TodoItem } from "@/components/ui/to-do-item";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { categorizeItem } from "../utils/categorization";
+import { categorizeItem, categorizeItemLocally } from "../utils/categorization";
+import { Badge } from "@/components/ui/badge";
 
 // Item categories (same as in MasterGroceryList)
 const ITEM_CATEGORIES = [
@@ -19,8 +20,6 @@ const ITEM_CATEGORIES = [
   "Other"
 ];
 
-// Function to categorize items is now imported from utils/categorizeItem
-
 interface GroceryItem {
   name: string;
   checked: boolean;
@@ -35,22 +34,122 @@ interface GroceryListItemsProps {
 export function GroceryListItems({ items, onToggleItem }: GroceryListItemsProps) {
   const [showActionsForId, setShowActionsForId] = useState<number | null>(null);
   const [activeCategory, setActiveCategory] = useState("All Items");
+  const [localItems, setLocalItems] = useState<GroceryItem[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+  const [isAIProcessing, setIsAIProcessing] = useState(false);
+  const aiProcessedRef = useRef<Set<string>>(new Set());
 
-  // Assign categories to items if they don't have them already
-  const categorizedItems = useMemo(() => {
-    return items.map(item => ({
+  // Initialize with local categorization for immediate display
+  useEffect(() => {
+    console.log("Items received:", items);
+    
+    // Skip AI categorization if we're already processing
+    if (isAIProcessing) {
+      console.log("Skipping update while AI is processing");
+      return;
+    }
+    
+    // Ensure all items have categories
+    const itemsWithCategories = items.map(item => ({
       ...item,
-      category: item.category || categorizeItem(item.name)
+      category: item.category || categorizeItemLocally(item.name)
     }));
-  }, [items]);
+    
+    setLocalItems(itemsWithCategories);
+    
+    // Calculate category counts
+    const counts = ITEM_CATEGORIES.slice(1).reduce((acc, category) => {
+      acc[category] = itemsWithCategories.filter(item => item.category === category && !item.checked).length;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    setCategoryCounts(counts);
+    
+    // Then update with AI categorization in the background, but only for items not already processed
+    const updateWithAICategories = async () => {
+      // Skip if we're already processing
+      if (isAIProcessing) return;
+      
+      // Find items that need AI categorization (not already processed and either no category or 'Other')
+      const itemsToProcess = itemsWithCategories.filter(item => 
+        !aiProcessedRef.current.has(item.name) && 
+        (!item.category || item.category === 'Other')
+      );
+      
+      if (itemsToProcess.length === 0) {
+        console.log("No items need AI categorization");
+        return;
+      }
+      
+      try {
+        setIsAIProcessing(true);
+        console.log(`Processing ${itemsToProcess.length} items with AI`);
+        
+        const updatedItems = [...itemsWithCategories];
+        
+        // Process items one by one to avoid overwhelming the API
+        for (const item of itemsToProcess) {
+          try {
+            console.log(`Getting AI category for: ${item.name}`);
+            const aiCategory = await categorizeItem(item.name);
+            console.log(`AI categorized "${item.name}" as "${aiCategory}"`);
+            
+            // Mark this item as processed
+            aiProcessedRef.current.add(item.name);
+            
+            // Update the item in our local array
+            const index = updatedItems.findIndex(i => i.name === item.name);
+            if (index !== -1) {
+              updatedItems[index] = { ...updatedItems[index], category: aiCategory };
+            }
+          } catch (error) {
+            console.error(`Error getting AI category for ${item.name}:`, error);
+            // Still mark as processed to avoid retrying
+            aiProcessedRef.current.add(item.name);
+          }
+        }
+        
+        // Update state with all the changes at once
+        setLocalItems(updatedItems);
+        
+        // Update category counts
+        const newCounts = ITEM_CATEGORIES.slice(1).reduce((acc, category) => {
+          acc[category] = updatedItems.filter(item => item.category === category && !item.checked).length;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        setCategoryCounts(newCounts);
+        
+        // Also update the items in the database via onToggleItem, but only once per item
+        const itemsToUpdate = updatedItems.filter((item, index) => 
+          item.category !== itemsWithCategories[index].category
+        );
+        
+        if (itemsToUpdate.length > 0) {
+          console.log(`Updating ${itemsToUpdate.length} items in database`);
+          
+          // Update items one by one to avoid race conditions
+          for (const item of itemsToUpdate) {
+            await onToggleItem({ ...item, checked: item.checked });
+          }
+        }
+      } catch (error) {
+        console.error('Error updating with AI categories:', error);
+      } finally {
+        setIsAIProcessing(false);
+      }
+    };
+    
+    updateWithAICategories();
+  }, [items, onToggleItem]);
 
   // Filter items by active category
   const filteredItems = useMemo(() => {
     if (activeCategory === "All Items") {
-      return categorizedItems;
+      return localItems;
     }
-    return categorizedItems.filter(item => item.category === activeCategory);
-  }, [categorizedItems, activeCategory]);
+    return localItems.filter(item => item.category === activeCategory);
+  }, [localItems, activeCategory]);
 
   // Convert to todos format for TodoItem component
   const todos = filteredItems.map((item, index) => ({
@@ -70,43 +169,50 @@ export function GroceryListItems({ items, onToggleItem }: GroceryListItemsProps)
   };
 
   return (
-    <Card className="p-6">
-      <h2 className="text-2xl font-bold mb-4">Items</h2>
-      
-      {/* Add category tabs */}
-      <Tabs defaultValue="All Items" value={activeCategory} onValueChange={setActiveCategory} className="mb-4">
-        <TabsList className="w-full overflow-x-auto flex">
-          {ITEM_CATEGORIES.map(category => (
-            <TabsTrigger
-              key={category}
-              value={category}
-              className="whitespace-nowrap"
-            >
-              {category}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
-      
-      <div className="space-y-4">
-        {todos.map((todo) => (
-          <TodoItem
-            key={todo.id}
-            todo={todo}
-            onComplete={handleComplete}
-            onDelete={handleDelete}
-            onShowActions={setShowActionsForId}
-            showActions={showActionsForId === todo.id}
-            className="hover:bg-secondary/50 rounded-lg p-2 transition-colors"
-          />
-        ))}
-        {todos.length === 0 && (
-          <p className="text-gray-500 italic">
-            {activeCategory === "All Items"
-              ? "No items in this list yet."
-              : `No ${activeCategory.toLowerCase()} items in this list.`}
-          </p>
-        )}
+    <Card className="overflow-hidden rounded-[48px]">
+      <div className="p-6">
+        <Tabs defaultValue="All Items" value={activeCategory} onValueChange={setActiveCategory}>
+          <TabsList className="flex w-full overflow-x-auto mb-6">
+            {ITEM_CATEGORIES.map(category => (
+              <TabsTrigger
+                key={category}
+                value={category}
+                className="whitespace-nowrap"
+              >
+                {category}
+                {category !== "All Items" && categoryCounts[category] > 0 && (
+                  <Badge variant="secondary" className="ml-2">
+                    {categoryCounts[category]}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          
+          <TabsContent value={activeCategory} className="mt-0">
+            <div className="space-y-2">
+              {todos.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  {activeCategory === "All Items" 
+                    ? "No items in this list yet." 
+                    : `No ${activeCategory} items in this list.`}
+                </div>
+              ) : (
+                todos.map(todo => (
+                  <TodoItem
+                    key={todo.id}
+                    todo={todo}
+                    onComplete={() => handleComplete(todo.id)}
+                    onDelete={() => handleDelete(todo.id)}
+                    showActions={showActionsForId === todo.id}
+                    onShowActions={() => setShowActionsForId(todo.id)}
+                    onHideActions={() => setShowActionsForId(null)}
+                  />
+                ))
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </Card>
   );

@@ -347,7 +347,7 @@ export function MasterGroceryList() {
 
   // Render the master grocery list with tabs for different views
   return (
-    <Card className="overflow-hidden rounded-[48px]">
+    <Card className="overflow-hidden rounded-[48px] bg-[#f5f5f5] border-0">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Master Grocery List</span>
@@ -440,7 +440,7 @@ export function MasterGroceryList() {
                 </div>
               ) : (
                 Object.entries(groupedItems).map(([groupName, items]) => (
-                  <div key={groupName} className="rounded-[24px] overflow-hidden bg-[#FFF] p-[24px]">
+                  <div key={groupName} className="rounded-[24px] overflow-hidden bg-[#FFF]">
                     <Accordion type="single" collapsible defaultValue={groupName}>
                       <AccordionItem value={groupName} className="border-0">
                         <AccordionTrigger className="px-4 py-2 hover:no-underline hover:bg-muted/50">

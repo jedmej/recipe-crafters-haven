@@ -2,19 +2,25 @@ import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface RecipeGenerationCardProps {
   searchTerm?: string;
   onGenerateRecipe?: () => void;
   generateButtonText?: string;
   isUrl?: boolean;
+  shouldGenerateImage?: boolean;
+  setShouldGenerateImage?: (value: boolean) => void;
 }
 
 export function RecipeGenerationCard({
   searchTerm,
   onGenerateRecipe,
   generateButtonText = "Generate Recipe Now",
-  isUrl = false
+  isUrl = false,
+  shouldGenerateImage = false,
+  setShouldGenerateImage
 }: RecipeGenerationCardProps) {
   const navigate = useNavigate();
 
@@ -43,14 +49,24 @@ export function RecipeGenerationCard({
         
         <div className="flex flex-col gap-3 w-full max-w-xs">
           {searchTerm ? (
-            <Button 
-              onClick={onGenerateRecipe}
-              variant="default"
-              className="bg-orange-500 hover:bg-orange-600 text-white h-[48px] rounded-[500px] w-full"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              {generateButtonText}
-            </Button>
+            <>
+              <div className="flex items-center gap-2 mb-2">
+                <Switch 
+                  id="generate-image-search" 
+                  checked={shouldGenerateImage} 
+                  onCheckedChange={setShouldGenerateImage}
+                />
+                <Label htmlFor="generate-image-search" className="font-medium">Generate Image</Label>
+              </div>
+              <Button 
+                onClick={onGenerateRecipe}
+                variant="default"
+                className="bg-orange-500 hover:bg-orange-600 text-white h-[48px] rounded-[500px] w-full"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {generateButtonText}
+              </Button>
+            </>
           ) : (
             <>
               <Button 

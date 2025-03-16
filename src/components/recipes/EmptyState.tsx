@@ -2,19 +2,25 @@ import { FileText, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface EmptyStateProps {
   searchTerm?: string;
   onGenerateRecipe?: () => void;
   onClearSearch?: () => void;
   generateButtonText?: string;
+  shouldGenerateImage?: boolean;
+  setShouldGenerateImage?: (value: boolean) => void;
 }
 
 export function EmptyState({ 
   searchTerm, 
   onGenerateRecipe, 
   onClearSearch,
-  generateButtonText = "Generate Recipe Now"
+  generateButtonText = "Generate Recipe Now",
+  shouldGenerateImage = false,
+  setShouldGenerateImage
 }: EmptyStateProps) {
   const navigate = useNavigate();
   
@@ -35,24 +41,34 @@ export function EmptyState({
             Our AI will craft something delicious just for you.
           </p>
           
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button 
-              onClick={onGenerateRecipe}
-              variant="default"
-              className="bg-orange-500 hover:bg-orange-600 text-white h-[48px] rounded-[500px]"
-            >
-              <Sparkles className="h-4 w-4 mr-2" />
-              {generateButtonText}
-            </Button>
-            
-            <Button 
-              onClick={onClearSearch}
-              variant="outline"
-              className="h-[48px] rounded-[500px] border-gray-300"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Clear Search
-            </Button>
+          <div className="flex flex-col items-center gap-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Switch 
+                id="generate-image-empty" 
+                checked={shouldGenerateImage} 
+                onCheckedChange={setShouldGenerateImage}
+              />
+              <Label htmlFor="generate-image-empty" className="font-medium">Generate Image</Label>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button 
+                onClick={onGenerateRecipe}
+                variant="default"
+                className="bg-orange-500 hover:bg-orange-600 text-white h-[48px] rounded-[500px]"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                {generateButtonText}
+              </Button>
+              
+              <Button 
+                onClick={onClearSearch}
+                variant="outline"
+                className="h-[48px] rounded-[500px] border-gray-300"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Clear Search
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

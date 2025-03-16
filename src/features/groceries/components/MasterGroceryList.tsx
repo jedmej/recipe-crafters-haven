@@ -424,9 +424,9 @@ export function MasterGroceryList() {
 
             {/* Category Tabs - only shown when in category view */}
             {viewMode === "category" && (
-              <div className="mb-4 overflow-x-auto">
+              <div className="mb-4 overflow-x-auto h-auto">
                 <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-                  <TabsList className="flex w-full overflow-x-auto bg-[#e4e7e0] rounded-[500px] py-2">
+                  <TabsList className="flex w-full overflow-x-auto bg-[#e4e7e0] rounded-[500px] py-3 min-h-[64px]">
                     {ITEM_CATEGORIES.map(category => {
                       // Skip categories with 0 items, except "All Items"
                       if (category !== "All Items" && 
@@ -440,7 +440,7 @@ export function MasterGroceryList() {
                         <TabsTrigger
                           key={category}
                           value={category}
-                          className="whitespace-nowrap data-[state=active]:bg-[#FA8923] data-[state=active]:text-white rounded-[500px] px-4 py-2"
+                          className="whitespace-nowrap data-[state=active]:bg-[#FA8923] data-[state=active]:text-white rounded-[500px] px-4 py-2 h-auto min-h-[40px] flex items-center"
                         >
                           {category}
                           {summaryStats && (

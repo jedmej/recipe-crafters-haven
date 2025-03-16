@@ -38,23 +38,24 @@ export function BottomNav() {
         <div className="flex items-center justify-around h-16 px-4 max-w-screen-xl mx-auto">
           <Link
             to="/recipes"
-            className={cn(
-              "flex flex-col items-center gap-1 text-xs font-medium transition-colors",
-              location.pathname.startsWith("/recipes") 
-                ? "text-[#FA8923]" 
-                : "text-muted-foreground hover:text-[#FA8923]"
-            )}
+            className="group flex flex-col items-center gap-0.5 text-xs font-medium transition-colors"
           >
             <ChefHat 
               size={24} 
               weight="duotone" 
               className={cn(
+                "transition-colors",
                 location.pathname.startsWith("/recipes") 
                   ? "text-[#FA8923]" 
-                  : "text-muted-foreground hover:text-[#FA8923]"
+                  : "text-muted-foreground group-hover:text-[#FA8923]"
               )}
             />
-            <span>Recipes</span>
+            <span className={cn(
+              "transition-colors",
+              location.pathname.startsWith("/recipes") 
+                ? "text-[#FA8923]" 
+                : "text-muted-foreground group-hover:text-[#FA8923]"
+            )}>Recipes</span>
           </Link>
 
           <Popover open={open} onOpenChange={setOpen}>
@@ -99,7 +100,7 @@ export function BottomNav() {
                   <Button
                     key={item.label}
                     variant="ghost"
-                    className="w-full flex items-center justify-center gap-3 py-8 px-4 text-lg group hover:bg-[#FA8923]/5 first:pt-4 last:pb-4 transition-colors"
+                    className="w-full flex items-center justify-center gap- py-8 px-4 text-lg group hover:bg-[#FA8923]/5 first:pt-4 last:pb-4 transition-colors"
                     onClick={() => {
                       item.onClick()
                       setOpen(false)
@@ -115,23 +116,24 @@ export function BottomNav() {
 
           <Link
             to="/grocery-lists"
-            className={cn(
-              "flex flex-col items-center gap-1 text-xs font-medium transition-colors",
-              location.pathname.startsWith("/grocery-lists") 
-                ? "text-[#FA8923]" 
-                : "text-muted-foreground hover:text-[#FA8923]"
-            )}
+            className="group flex flex-col items-center gap-0.5 text-xs font-medium transition-colors"
           >
             <ShoppingCart 
               size={24} 
               weight="duotone" 
               className={cn(
+                "transition-colors",
                 location.pathname.startsWith("/grocery-lists") 
                   ? "text-[#FA8923]" 
-                  : "text-muted-foreground hover:text-[#FA8923]"
+                  : "text-muted-foreground group-hover:text-[#FA8923]"
               )}
             />
-            <span>Groceries</span>
+            <span className={cn(
+              "transition-colors",
+              location.pathname.startsWith("/grocery-lists") 
+                ? "text-[#FA8923]" 
+                : "text-muted-foreground group-hover:text-[#FA8923]"
+            )}>Groceries</span>
           </Link>
         </div>
       </div>

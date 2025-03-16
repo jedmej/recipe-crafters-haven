@@ -183,9 +183,10 @@ export function InspireContainer() {
   const { preferences } = useUserPreferences();
   const location = useLocation();
   
-  // Get query parameter from URL if it exists
+  // Get query parameters from URL if they exist
   const queryParams = new URLSearchParams(location.search);
   const queryFromUrl = queryParams.get('query');
+  const generateImageFromUrl = queryParams.get('generateImage') === 'true';
   
   // Search state
   const [searchQuery, setSearchQuery] = useState(queryFromUrl || '');
@@ -212,7 +213,7 @@ export function InspireContainer() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatedRecipe, setGeneratedRecipe] = useState<RecipeData | null>(null);
   const [recipeImage, setRecipeImage] = useState<string | null>(null);
-  const [shouldGenerateImage, setShouldGenerateImage] = useState<boolean>(false);
+  const [shouldGenerateImage, setShouldGenerateImage] = useState<boolean>(generateImageFromUrl);
   const [isGeneratingImage, setIsGeneratingImage] = useState<boolean>(false);
   
   // Recipe detail view state

@@ -29,6 +29,7 @@ export default function RecipesPage() {
     email: string;
   } | null>(null);
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [shouldGenerateImage, setShouldGenerateImage] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -168,8 +169,8 @@ export default function RecipesPage() {
         // If it's a URL, navigate to the import-ai page with the URL as a query parameter
         navigate(`/recipes/import-ai?url=${encodeURIComponent(searchTerm)}`);
       } else {
-        // Otherwise, navigate to the inspire page with the search term as a query parameter
-        navigate(`/recipes/inspire?query=${encodeURIComponent(searchTerm)}`);
+        // Otherwise, navigate to the inspire page with the search term and image generation preference as query parameters
+        navigate(`/recipes/inspire?query=${encodeURIComponent(searchTerm)}&generateImage=${shouldGenerateImage}`);
       }
     }
   };
@@ -291,6 +292,8 @@ export default function RecipesPage() {
               onGenerateRecipe={handleGenerateRecipe}
               generateButtonText={isUrl ? "Import with AI" : "Generate Recipe Now"}
               isUrl={isUrl}
+              shouldGenerateImage={shouldGenerateImage}
+              setShouldGenerateImage={setShouldGenerateImage}
             />
           </div>
         ) : (
@@ -299,6 +302,8 @@ export default function RecipesPage() {
             onGenerateRecipe={handleGenerateRecipe}
             onClearSearch={handleClearSearch}
             generateButtonText={isUrl ? "Import with AI" : "Generate Recipe Now"}
+            shouldGenerateImage={shouldGenerateImage}
+            setShouldGenerateImage={setShouldGenerateImage}
           />
         )}
       </div>

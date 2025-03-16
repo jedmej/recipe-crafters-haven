@@ -428,7 +428,7 @@ export function MasterGroceryList() {
             {viewMode === "category" && (
               <div className="mb-4 overflow-x-auto">
                 <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-                  <TabsList className="flex w-full overflow-x-auto">
+                  <TabsList className="flex w-full overflow-x-auto bg-white rounded-[500px]">
                     {ITEM_CATEGORIES.map(category => {
                       // Skip categories with 0 items, except "All Items"
                       if (category !== "All Items" && 
@@ -442,7 +442,7 @@ export function MasterGroceryList() {
                         <TabsTrigger
                           key={category}
                           value={category}
-                          className="whitespace-nowrap"
+                          className="whitespace-nowrap data-[state=active]:bg-[#FA8923] data-[state=active]:text-white rounded-[500px]"
                         >
                           {category}
                           {summaryStats && (
@@ -499,9 +499,9 @@ export function MasterGroceryList() {
                       onValueChange={setOpenAccordionItems}
                     >
                       <AccordionItem value={groupName} className="border-0">
-                        <AccordionTrigger className="px-4 py-2 hover:no-underline hover:bg-muted/50">
+                        <AccordionTrigger className="px-4 py-4 hover:no-underline hover:bg-muted/50">
                           <div className="flex items-center justify-between w-full">
-                            <span className="font-medium">{groupName}</span>
+                            <span className="font-medium text-lg">{groupName}</span>
                             <div className="flex items-center gap-2">
                               {viewMode === "recipe" && (
                                 <>
@@ -538,9 +538,9 @@ export function MasterGroceryList() {
                           </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                          <div className="divide-y">
+                          <div className="divide-y px-4">
                             {(items as any[]).map((item) => (
-                              <div key={item.id} className="px-4 py-2">
+                              <div key={item.id} className="py-2">
                                 <TodoItem
                                   todo={{
                                     id: item.id,

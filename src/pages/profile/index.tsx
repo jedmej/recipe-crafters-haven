@@ -240,7 +240,7 @@ export default function ProfilePage() {
           <span className="hidden sm:inline">Back to recipes</span>
         </Button>
 
-        <Card className="border-0 bg-white rounded-[48px] overflow-hidden shadow-none">
+        <Card className="border-0 bg-[#F5F5F5] rounded-[48px] overflow-hidden shadow-none">
           <CardHeader className="pb-6 border-b border-gray-100 p-6 sm:p-8">
             <CardTitle className="text-2xl sm:text-3xl font-bold">Profile Settings</CardTitle>
             <CardDescription className="mt-2 text-base">

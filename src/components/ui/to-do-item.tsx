@@ -57,7 +57,7 @@ export function TodoItem({
       <motion.p
         animate={{ opacity: todo.completed ? 0.3 : 1 }}
         transition={{ duration: 0.3 }}
-        className="relative flex select-none items-center"
+        className="relative flex select-none items-center text-base"
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
         dragElastic={0.12}

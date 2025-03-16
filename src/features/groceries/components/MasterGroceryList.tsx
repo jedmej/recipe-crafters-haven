@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { RoundButton } from "@/components/ui/round-button";
 import { TodoItem } from "@/components/ui/to-do-item";
 import { Search, Filter, ChevronDown, ChevronUp, Link as LinkIcon } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
@@ -406,26 +407,18 @@ export function MasterGroceryList() {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Button
-                  variant={viewMode === "category" ? "default" : "outline"}
+                <RoundButton
+                  icon={<SquaresFour weight="duotone" className="w-6 h-6" />}
+                  label="By Category"
+                  active={viewMode === "category"}
                   onClick={() => setViewMode("category")}
-                  className="group relative w-12 h-12 p-0 hover:w-[140px] transition-all duration-200 overflow-hidden rounded-full"
-                >
-                  <SquaresFour weight="duotone" className="w-6 h-6 absolute left-3" />
-                  <span className="opacity-0 group-hover:opacity-100 ml-8 transition-opacity duration-200">
-                    By Category
-                  </span>
-                </Button>
-                <Button
-                  variant={viewMode === "recipe" ? "default" : "outline"}
+                />
+                <RoundButton
+                  icon={<Notebook weight="duotone" className="w-6 h-6" />}
+                  label="By Recipe"
+                  active={viewMode === "recipe"}
                   onClick={() => setViewMode("recipe")}
-                  className="group relative w-12 h-12 p-0 hover:w-[140px] transition-all duration-200 overflow-hidden rounded-full"
-                >
-                  <Notebook weight="duotone" className="w-6 h-6 absolute left-3" />
-                  <span className="opacity-0 group-hover:opacity-100 ml-8 transition-opacity duration-200">
-                    By Recipe
-                  </span>
-                </Button>
+                />
               </div>
             </div>
 

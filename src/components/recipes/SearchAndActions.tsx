@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { ActionButton } from "./ActionButton";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { ViewToggle } from "./ViewToggle";
+import { RoundButton } from "@/components/ui/round-button";
 
 interface SearchAndActionsProps {
   searchTerm: string;
@@ -16,6 +18,8 @@ interface SearchAndActionsProps {
   isFiltersVisible: boolean;
   setIsFiltersVisible: (visible: boolean) => void;
   activeFilterCount: number;
+  view: "grid" | "list";
+  onViewChange: (view: "grid" | "list") => void;
 }
 
 export function SearchAndActions({
@@ -27,7 +31,9 @@ export function SearchAndActions({
   handleDeleteSelected,
   isFiltersVisible,
   setIsFiltersVisible,
-  activeFilterCount
+  activeFilterCount,
+  view,
+  onViewChange
 }: SearchAndActionsProps) {
   return (
     <div className="flex flex-col gap-4">
@@ -37,34 +43,34 @@ export function SearchAndActions({
         
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <button
+          <ViewToggle view={view} onViewChange={onViewChange} />
+          
+          <RoundButton
             onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-            className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors"
-          >
-            <Sliders 
-              size={20} 
-              weight="regular" 
-              className={isFiltersVisible ? "text-[#FA8922]" : "text-[#222222]"}
-            />
-          </button>
+            icon={<Sliders size={20} weight="regular" />}
+            label="Filters"
+            active={isFiltersVisible}
+          />
 
-          <button
+          <RoundButton
             onClick={toggleSelectionMode}
-            className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors"
-          >
-            {isSelectionMode ? (
-              <X className="h-5 w-5 text-[#FA8922]" />
+            icon={isSelectionMode ? (
+              <X className="h-5 w-5" />
             ) : (
-              <Checks size={20} weight="regular" className="text-[#222222]" />
+              <Checks size={20} weight="regular" />
             )}
-          </button>
+            label="Select Multiple"
+            active={isSelectionMode}
+          />
 
           {isSelectionMode && selectedRecipes.length > 0 && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <button className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm hover:bg-gray-50 transition-colors">
-                  <Trash className="h-5 w-5 text-[#FA8922]" />
-                </button>
+                <RoundButton
+                  icon={<Trash className="h-5 w-5" />}
+                  label="Delete"
+                  active={true}
+                />
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>

@@ -2,7 +2,7 @@ import { MasterGroceryList } from "@/features/groceries/components/MasterGrocery
 
 export default function GroceryListsPage() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="max-w-7xl mx-auto min-h-screen px-0 py-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
         <header className="mb-8 pl-6 pt-6">
           <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">

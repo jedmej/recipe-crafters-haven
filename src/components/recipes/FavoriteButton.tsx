@@ -54,12 +54,12 @@ export const FavoriteButton = memo(function FavoriteButton({
    */
   const buttonClassName: string = useMemo((): string => `
     relative
-    bg-white/30 backdrop-blur-md 
+    bg-[#F5F5F5]
     p-1.5 rounded-full 
     flex items-center justify-center 
-    shadow-lg border border-white/30 
-    transition-all duration-200 
-    ${isToggling ? 'opacity-70' : `hover:scale-[${STYLE_CONSTANTS.SCALE.HOVER}]`}
+    shadow-lg border border-[#F5F5F5]
+    transition-all duration-300 ease-in-out
+    ${isToggling ? 'opacity-70' : 'hover:bg-[#FA8923]/10 hover:border-[#FA8923]/20 hover:scale-110 hover:shadow-xl'}
   `, [isToggling]);
 
   /**
@@ -67,7 +67,7 @@ export const FavoriteButton = memo(function FavoriteButton({
    * Changes color based on favorited state
    */
   const heartClassName: string = useMemo((): string => 
-    `w-5 h-5 ${isFavorited ? 'text-red-500' : 'text-white'}`, 
+    `w-5 h-5 text-[#FA8923] transition-transform duration-300 ease-in-out group-hover:scale-110`, 
     [isFavorited]
   );
 
@@ -79,13 +79,13 @@ export const FavoriteButton = memo(function FavoriteButton({
         onTouchStart={handleInteractionStart as (e: TouchEventType) => void}
         disabled={isToggling}
         data-favorite-button="true"
-        className={buttonClassName}
+        className={`group ${buttonClassName}`}
         aria-label={isFavorited 
           ? ACCESSIBILITY_CONSTANTS.FAVORITE_BUTTON_LABELS.REMOVE 
           : ACCESSIBILITY_CONSTANTS.FAVORITE_BUTTON_LABELS.ADD}
       >
         <Heart 
-          weight={isFavorited ? "duotone" : "regular"} 
+          weight={isFavorited ? "fill" : "regular"} 
           className={heartClassName} 
         />
       </button>

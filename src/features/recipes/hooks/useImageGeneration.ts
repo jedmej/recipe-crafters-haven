@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import * as fal from '@fal-ai/serverless-client';
 
 fal.config({

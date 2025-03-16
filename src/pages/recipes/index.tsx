@@ -28,6 +28,7 @@ export default function RecipesPage() {
     id: string;
     email: string;
   } | null>(null);
+  const [view, setView] = useState<"grid" | "list">("grid");
 
   useEffect(() => {
     const fetchUserAndProfile = async () => {
@@ -191,7 +192,7 @@ export default function RecipesPage() {
 
   return (
     <div className="max-w-7xl mx-auto min-h-screen px-0 py-4 md:p-6 lg:p-8">
-      <div className="flex justify-between items-center mb-8">
+      <div className="flex justify-between items-center mb-8 px-6">
         <h1 className="text-[48px] font-bold text-[#222222]">Hello, {getDisplayName()}</h1>
         <button 
           onClick={() => navigate('/profile')}
@@ -203,8 +204,8 @@ export default function RecipesPage() {
           </Avatar>
         </button>
       </div>
-      <div className="bg-[#F5F5F5] rounded-t-[48px] md:rounded-[48px] p-6 shadow-sm -mx-4 md:mx-8 lg:mx-0">
-        <div className="mb-12">
+      <div className="bg-[#F5F5F5] rounded-t-[48px] md:rounded-[48px] p-6 shadow-sm">
+        <div className="mb-6">
           {/* Search and Controls Section */}
           <div className="flex flex-col gap-6">
             <SearchAndActions 
@@ -217,6 +218,8 @@ export default function RecipesPage() {
               isFiltersVisible={isFiltersVisible}
               setIsFiltersVisible={setIsFiltersVisible}
               activeFilterCount={getActiveFilterCount()}
+              view={view}
+              onViewChange={setView}
             />
 
             {/* Recipe Count */}
@@ -266,7 +269,11 @@ export default function RecipesPage() {
         </div>
 
         {hasRecipes ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6">
+          <div className={
+            view === "grid"
+              ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6"
+              : "flex flex-col gap-3"
+          }>
             {recipesToDisplay.map((recipe) => (
               <RecipeCard 
                 key={recipe.id}
@@ -275,6 +282,7 @@ export default function RecipesPage() {
                 isSelectionMode={isSelectionMode}
                 onClick={handleCardClick}
                 onLongPress={handleLongPress}
+                variant={view === "list" ? "compact" : "default"}
               />
             ))}
             {/* Always show the recipe generation card at the end of the list */}

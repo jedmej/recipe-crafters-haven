@@ -26,7 +26,7 @@ import ProfilePage from "./pages/profile";
 const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => (
   <AuthGuard>
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-white relative overflow-hidden">
-      <main className="flex-1 pb-20 md:pb-4 relative px-4">
+      <main className="flex-1 pb-20 md:pb-4 relative">
         <div className="max-w-screen-xl mx-auto">
           {children}
         </div>
@@ -41,7 +41,7 @@ const AuthenticatedLayout = ({ children }: { children: React.ReactNode }) => (
 const RecipeDetailLayout = ({ children }: { children: React.ReactNode }) => (
   <AuthGuard>
     <div className="min-h-screen flex flex-col bg-gradient-to-br from-background to-white relative overflow-hidden">
-      <main className="flex-1 pb-20 md:pb-4 relative px-4">
+      <main className="flex-1 pb-20 md:pb-4 relative">
         {children}
       </main>
       <BottomNav />

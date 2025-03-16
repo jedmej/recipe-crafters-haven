@@ -3,12 +3,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface SearchSectionProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
   isGenerating: boolean;
   handleSearch: (e: React.FormEvent) => void;
+  shouldGenerateImage: boolean;
+  setShouldGenerateImage: (value: boolean) => void;
 }
 
 export const SearchSection: React.FC<SearchSectionProps> = ({
@@ -16,6 +20,8 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
   setSearchQuery,
   isGenerating,
   handleSearch,
+  shouldGenerateImage,
+  setShouldGenerateImage,
 }) => (
   <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
     <CardContent className="p-6">
@@ -30,6 +36,16 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
             className="text-lg"
             disabled={isGenerating}
           />
+        </div>
+        
+        <div className="flex items-center gap-2 mb-4">
+          <Switch 
+            id="generate-image-search" 
+            checked={shouldGenerateImage} 
+            onCheckedChange={setShouldGenerateImage}
+            disabled={isGenerating}
+          />
+          <Label htmlFor="generate-image-search" className="font-medium">Generate Image</Label>
         </div>
         
         <div className="flex gap-4">

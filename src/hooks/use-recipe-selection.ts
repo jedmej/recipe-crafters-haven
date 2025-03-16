@@ -11,12 +11,21 @@ export function useRecipeSelection() {
 
   const deleteRecipes = useMutation({
     mutationFn: async (recipeIds: string[]) => {
-      const { error } = await supabase
+      // First, delete all grocery list entries that reference these recipes
+      const { error: groceryListError } = await supabase
+        .from('grocery_lists')
+        .delete()
+        .in('recipe_id', recipeIds);
+      
+      if (groceryListError) throw groceryListError;
+
+      // Then delete the recipes themselves
+      const { error: recipesError } = await supabase
         .from('recipes')
         .delete()
         .in('id', recipeIds);
       
-      if (error) throw error;
+      if (recipesError) throw recipesError;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['recipes'] });

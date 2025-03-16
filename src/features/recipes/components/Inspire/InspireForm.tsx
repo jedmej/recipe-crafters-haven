@@ -41,6 +41,8 @@ interface InspireFormProps {
   setCustomValue: (category: string, value: string) => void;
   isGenerating: boolean;
   handleGenerateRecipe: (e: React.FormEvent) => void;
+  shouldGenerateImage: boolean;
+  setShouldGenerateImage: (value: boolean) => void;
 }
 
 export const InspireForm: React.FC<InspireFormProps> = ({
@@ -55,6 +57,8 @@ export const InspireForm: React.FC<InspireFormProps> = ({
   setCustomValue,
   isGenerating,
   handleGenerateRecipe,
+  shouldGenerateImage,
+  setShouldGenerateImage,
 }) => (
   <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
     <CardContent className="p-6">
@@ -116,6 +120,17 @@ export const InspireForm: React.FC<InspireFormProps> = ({
               />
             ))}
           </div>
+        </div>
+        
+        {/* Generate Image toggle */}
+        <div className="flex items-center gap-2">
+          <Switch 
+            id="generate-image-inspire" 
+            checked={shouldGenerateImage} 
+            onCheckedChange={setShouldGenerateImage}
+            disabled={isGenerating}
+          />
+          <Label htmlFor="generate-image-inspire" className="font-medium">Generate Image</Label>
         </div>
         
         {/* Submit button */}

@@ -71,7 +71,7 @@ const ActionButtons = memo(({
     <div className="absolute top-0 left-0 right-0 py-4 px-4 flex justify-between items-center z-[60]">
       <button
         onClick={handleBackClick}
-        className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors shadow-sm"
+        className="h-12 w-12 rounded-full bg-[#F5F5F5] hover:bg-gray-200 flex items-center justify-center transition-colors shadow-sm"
         aria-label="Go Back"
       >
         <CaretLeft weight="duotone" size={20} className="text-gray-700" />
@@ -80,18 +80,18 @@ const ActionButtons = memo(({
         <button
           onClick={handleFavoriteClick}
           disabled={!recipe.id || favoriteState.isToggling}
-          className="relative h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+          className="group relative h-12 w-12 rounded-full bg-[#F5F5F5] hover:bg-[#FA8923]/10 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-300 ease-in-out hover:shadow-xl"
           aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
         >
           <Heart 
             weight={isFavorited ? "duotone" : "regular"}
             size={20}
-            className={`${isFavorited ? 'text-red-500' : 'text-gray-700'}`} 
+            className="text-[#FA8923] transition-transform duration-300 ease-in-out group-hover:scale-110"
           />
         </button>
         <button
           onClick={onEditOrGenerate}
-          className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 flex items-center justify-center transition-colors"
+          className="h-12 w-12 rounded-full bg-[#F5F5F5] hover:bg-gray-200 flex items-center justify-center transition-colors"
           aria-label={recipe.id ? "Edit Recipe" : "Generate New"}
         >
           <PencilSimple weight="duotone" size={20} className="text-gray-700" />
@@ -100,7 +100,7 @@ const ActionButtons = memo(({
           <Button
             onClick={onSave}
             disabled={isSaving}
-            className="h-12 w-12 rounded-full bg-gray-100/90 backdrop-blur hover:bg-gray-200/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+            className="h-12 w-12 rounded-full bg-[#F5F5F5] hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
             aria-label="Delete Recipe"
           >
             {isSaving ? (

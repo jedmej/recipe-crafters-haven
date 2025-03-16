@@ -34,15 +34,15 @@ export function BottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
-      <div className="bg-background/80 backdrop-blur-lg border-t pb-6">
+      <div className="bg-background/80 backdrop-blur-lg border-t pb-6 lg:pb-2 pt-2">
         <div className="flex items-center justify-around h-16 px-4 max-w-screen-xl mx-auto">
           <Link
             to="/recipes"
             className={cn(
               "flex flex-col items-center gap-1 text-xs font-medium transition-colors",
               location.pathname.startsWith("/recipes") 
-                ? "text-primary" 
-                : "text-muted-foreground hover:text-primary"
+                ? "text-[#FA8923]" 
+                : "text-muted-foreground hover:text-[#FA8923]"
             )}
           >
             <ChefHat 
@@ -50,8 +50,8 @@ export function BottomNav() {
               weight="duotone" 
               className={cn(
                 location.pathname.startsWith("/recipes") 
-                  ? "text-primary" 
-                  : "text-muted-foreground hover:text-primary"
+                  ? "text-[#FA8923]" 
+                  : "text-muted-foreground hover:text-[#FA8923]"
               )}
             />
             <span>Recipes</span>
@@ -63,8 +63,8 @@ export function BottomNav() {
                 variant="default"
                 size="icon"
                 className={cn(
-                  "h-14 w-14 rounded-full border-2 bg-[#0C111D] text-white border-primary hover:bg-[#0C111D] hover:text-white hover:opacity-100 relative",
-                  open && "bg-[#0C111D] text-white border-primary"
+                  "h-14 w-14 rounded-full bg-[#FA8923] text-white hover:bg-[#FA8923] hover:text-white hover:opacity-90 relative",
+                  open && "bg-[#FA8923] text-white"
                 )}
               >
                 <div className="relative w-6 h-6">
@@ -92,21 +92,21 @@ export function BottomNav() {
               className="w-screen max-w-[280px] p-4 rounded-3xl bg-background/80 backdrop-blur-lg border shadow-lg" 
               align="center"
               side="top"
-              sideOffset={16}
+              sideOffset={24}
             >
               <div className="grid divide-y divide-[#000]/5">
                 {addMenuItems.map((item) => (
                   <Button
                     key={item.label}
                     variant="ghost"
-                    className="w-full flex items-center justify-center gap-3 py-8 px-4 text-lg hover:bg-transparent first:pt-4 last:pb-4"
+                    className="w-full flex items-center justify-center gap-3 py-8 px-4 text-lg group hover:bg-[#FA8923]/5 first:pt-4 last:pb-4 transition-colors"
                     onClick={() => {
                       item.onClick()
                       setOpen(false)
                     }}
                   >
-                    <item.icon className="h-6 w-6" weight="duotone" />
-                    {item.label}
+                    <item.icon className="h-6 w-6 transition-colors text-muted-foreground group-hover:text-[#FA8923]" weight="duotone" />
+                    <span className="transition-colors text-foreground group-hover:text-[#FA8923]">{item.label}</span>
                   </Button>
                 ))}
               </div>
@@ -118,8 +118,8 @@ export function BottomNav() {
             className={cn(
               "flex flex-col items-center gap-1 text-xs font-medium transition-colors",
               location.pathname.startsWith("/grocery-lists") 
-                ? "text-primary" 
-                : "text-muted-foreground hover:text-primary"
+                ? "text-[#FA8923]" 
+                : "text-muted-foreground hover:text-[#FA8923]"
             )}
           >
             <ShoppingCart 
@@ -127,8 +127,8 @@ export function BottomNav() {
               weight="duotone" 
               className={cn(
                 location.pathname.startsWith("/grocery-lists") 
-                  ? "text-primary" 
-                  : "text-muted-foreground hover:text-primary"
+                  ? "text-[#FA8923]" 
+                  : "text-muted-foreground hover:text-[#FA8923]"
               )}
             />
             <span>Groceries</span>

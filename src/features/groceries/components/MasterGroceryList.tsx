@@ -426,7 +426,7 @@ export function MasterGroceryList() {
             {viewMode === "category" && (
               <div className="mb-4 overflow-x-auto">
                 <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-                  <TabsList className="flex w-full overflow-x-auto bg-white rounded-[500px]">
+                  <TabsList className="flex w-full overflow-x-auto bg-[#e4e7e0] rounded-[500px] py-2">
                     {ITEM_CATEGORIES.map(category => {
                       // Skip categories with 0 items, except "All Items"
                       if (category !== "All Items" && 
@@ -440,7 +440,7 @@ export function MasterGroceryList() {
                         <TabsTrigger
                           key={category}
                           value={category}
-                          className="whitespace-nowrap data-[state=active]:bg-[#FA8923] data-[state=active]:text-white rounded-[500px]"
+                          className="whitespace-nowrap data-[state=active]:bg-[#FA8923] data-[state=active]:text-white rounded-[500px] px-4 py-2"
                         >
                           {category}
                           {summaryStats && (
@@ -458,26 +458,27 @@ export function MasterGroceryList() {
               </div>
             )}
 
-            {/* Expand/Collapse All Buttons */}
+            {/* Expand/Collapse Toggle Button */}
             {Object.keys(groupedItems).length > 0 && (
-              <div className="flex justify-end mb-4 gap-2">
+              <div className="flex justify-end mb-4">
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={expandAll}
-                  className="flex items-center gap-1"
+                  onClick={() => {
+                    if (openAccordionItems.length === 0) {
+                      expandAll();
+                    } else {
+                      collapseAll();
+                    }
+                  }}
+                  className="flex items-center gap-1 rounded-full h-10 px-4 bg-white hover:bg-gray-50 transition-all duration-300"
                 >
-                  <ChevronDown className="h-4 w-4" />
-                  Expand All
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={collapseAll}
-                  className="flex items-center gap-1"
-                >
-                  <ChevronUp className="h-4 w-4" />
-                  Collapse All
+                  {openAccordionItems.length === 0 ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronUp className="h-4 w-4" />
+                  )}
+                  {openAccordionItems.length === 0 ? "Expand All" : "Collapse All"}
                 </Button>
               </div>
             )}

@@ -34,6 +34,7 @@ export function MasterGroceryList() {
   const [activeCategory, setActiveCategory] = useState("All Items");
   const [viewMode, setViewMode] = useState("category"); // "category" or "recipe"
   const [showActionsForId, setShowActionsForId] = useState<string | null>(null);
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -226,20 +227,24 @@ export function MasterGroceryList() {
     };
   }, [allItems]);
 
-  // Filter items based on search and category
+  // Filter items based on search and category/recipe view
   const filteredItems = useMemo(() => {
     if (!allItems.length) return [];
     
     return allItems.filter(item => {
-      // Search filter
+      // Search filter always applies
       const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
       
-      // Category filter - only apply if not "All Items"
-      const matchesCategory = activeCategory === "All Items" || item.category === activeCategory;
-      
-      return matchesSearch && matchesCategory;
+      if (viewMode === "category") {
+        // Category filter - only apply if not "All Items"
+        const matchesCategory = activeCategory === "All Items" || item.category === activeCategory;
+        return matchesSearch && matchesCategory;
+      } else {
+        // In recipe view, only apply search filter
+        return matchesSearch;
+      }
     });
-  }, [allItems, searchTerm, activeCategory]);
+  }, [allItems, searchTerm, activeCategory, viewMode]);
 
   // Group items by category or recipe for display and sort them (unchecked first, then checked)
   const groupedItems = useMemo(() => {
@@ -289,6 +294,29 @@ export function MasterGroceryList() {
       return grouped;
     }
   }, [filteredItems, viewMode]);
+
+  // Reset category when switching views
+  useEffect(() => {
+    setActiveCategory("All Items");
+  }, [viewMode]);
+
+  // Initialize open accordion items when groupedItems changes
+  useEffect(() => {
+    // By default, open all accordion items
+    const groupNames = Object.keys(groupedItems);
+    setOpenAccordionItems(groupNames);
+  }, [groupedItems]);
+
+  // Function to expand all accordion items
+  const expandAll = () => {
+    const allGroupNames = Object.keys(groupedItems);
+    setOpenAccordionItems(allGroupNames);
+  };
+
+  // Function to collapse all accordion items
+  const collapseAll = () => {
+    setOpenAccordionItems([]);
+  };
 
   // Handle checkbox click
   const handleToggleItem = (item) => {
@@ -432,6 +460,30 @@ export function MasterGroceryList() {
               </div>
             )}
 
+            {/* Expand/Collapse All Buttons */}
+            {Object.keys(groupedItems).length > 0 && (
+              <div className="flex justify-end mb-4 gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={expandAll}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                  Expand All
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={collapseAll}
+                  className="flex items-center gap-1"
+                >
+                  <ChevronUp className="h-4 w-4" />
+                  Collapse All
+                </Button>
+              </div>
+            )}
+
             {/* Grouped Items */}
             <div className="space-y-4">
               {Object.keys(groupedItems).length === 0 ? (
@@ -441,7 +493,11 @@ export function MasterGroceryList() {
               ) : (
                 Object.entries(groupedItems).map(([groupName, items]) => (
                   <div key={groupName} className="rounded-[24px] overflow-hidden bg-[#FFF]">
-                    <Accordion type="single" collapsible defaultValue={groupName}>
+                    <Accordion 
+                      type="multiple" 
+                      value={openAccordionItems}
+                      onValueChange={setOpenAccordionItems}
+                    >
                       <AccordionItem value={groupName} className="border-0">
                         <AccordionTrigger className="px-4 py-2 hover:no-underline hover:bg-muted/50">
                           <div className="flex items-center justify-between w-full">

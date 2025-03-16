@@ -21,7 +21,10 @@ export function RoundButton({
       {...props}
       variant={active ? "default" : "outline"}
       className={cn(
-        "group relative w-12 h-12 p-0 hover:w-[140px] transition-all duration-200 overflow-hidden rounded-full",
+        "group relative w-12 h-12 p-0 rounded-full",
+        // Only apply hover styles on desktop devices
+        "md:hover:w-[140px] md:transition-all md:duration-200",
+        "overflow-hidden",
         active && "bg-[#FA8923] text-white hover:bg-[#FA8923]/90",
         !active && "bg-white hover:bg-gray-50",
         className
@@ -29,7 +32,7 @@ export function RoundButton({
     >
       <div className="absolute left-3">{icon}</div>
       {label && (
-        <span className="opacity-0 group-hover:opacity-100 ml-8 transition-opacity duration-200">
+        <span className="hidden opacity-0 md:block md:group-hover:opacity-100 ml-8 md:transition-opacity md:duration-200">
           {label}
         </span>
       )}

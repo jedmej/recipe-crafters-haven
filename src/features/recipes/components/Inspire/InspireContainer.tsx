@@ -13,6 +13,7 @@ import { SearchSection } from './SearchSection';
 import { SectionDivider } from './components/SectionDivider';
 import { InspireForm } from './InspireForm';
 import { scaleRecipe } from '@/utils/recipe-scaling';
+import { useImageGeneration } from '@/features/recipes/hooks/useImageGeneration';
 
 // Constants for language codes
 const LANGUAGE_NAMES = {
@@ -211,12 +212,17 @@ export function InspireContainer() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [generatedRecipe, setGeneratedRecipe] = useState<RecipeData | null>(null);
   const [recipeImage, setRecipeImage] = useState<string | null>(null);
+  const [shouldGenerateImage, setShouldGenerateImage] = useState<boolean>(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState<boolean>(false);
   
   // Recipe detail view state
   const [desiredServings, setDesiredServings] = useState(4);
   const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'imperial'>(
     preferences.measurementSystem || 'metric'
   );
+
+  // Image generation hook
+  const { generateImage } = useImageGeneration();
 
   // Update language when user preferences change
   useEffect(() => {
@@ -652,6 +658,36 @@ export function InspireContainer() {
     setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric');
   };
 
+  // Automatically generate image when recipe is generated and shouldGenerateImage is true
+  useEffect(() => {
+    const generateImageForRecipe = async () => {
+      if (generatedRecipe && shouldGenerateImage && !recipeImage) {
+        // Generate image prompt based on recipe title
+        const imagePrompt = `professional food photography: ${generatedRecipe.title.trim()}, appetizing presentation, elegant plating, soft natural lighting, shallow depth of field, bokeh effect, clean background, no text overlay, minimalist style, high resolution, food magazine quality, centered composition, vibrant colors, crisp details, no text, no words, no writing, no labels, no watermarks`;
+        
+        try {
+          setIsGeneratingImage(true);
+          const generatedImageUrl = await generateImage(imagePrompt, 'recipe');
+          
+          if (generatedImageUrl) {
+            setRecipeImage(generatedImageUrl);
+          }
+        } catch (error) {
+          console.error('Error generating image:', error);
+          toast({
+            title: "Image Generation Failed",
+            description: "We couldn't generate an image for this recipe. You can try again manually.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsGeneratingImage(false);
+        }
+      }
+    };
+
+    generateImageForRecipe();
+  }, [generatedRecipe, shouldGenerateImage, recipeImage, generateImage, toast]);
+
   return (
     <PageLayout>
       <Button
@@ -671,6 +707,8 @@ export function InspireContainer() {
             setSearchQuery={setSearchQuery}
             isGenerating={isGenerating}
             handleSearch={handleSearch}
+            shouldGenerateImage={shouldGenerateImage}
+            setShouldGenerateImage={setShouldGenerateImage}
           />
           
           <SectionDivider />
@@ -687,6 +725,8 @@ export function InspireContainer() {
             setCustomValue={setCustomValue}
             isGenerating={isGenerating}
             handleGenerateRecipe={handleGenerateRecipe}
+            shouldGenerateImage={shouldGenerateImage}
+            setShouldGenerateImage={setShouldGenerateImage}
           />
         </>
       )}
@@ -722,6 +762,7 @@ export function InspireContainer() {
             setGeneratedRecipe(null);
             setRecipeImage(null);
           }}
+          isGeneratingImage={isGeneratingImage}
         />
       )}
     </PageLayout>

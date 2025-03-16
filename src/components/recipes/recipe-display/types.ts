@@ -15,6 +15,7 @@ export interface RecipeDisplayProps {
   isAddingToGroceryList?: boolean;
   onEditOrGenerate: () => void;
   onBack: () => void;
+  isGeneratingImage?: boolean;
 }
 
 export interface CategoryItemProps {
@@ -57,9 +58,10 @@ export interface ImageControlsProps {
 }
 
 export interface RecipeImageProps {
-  imageUrl: string;
+  imageUrl?: string;
   title: string;
-  onImageUpdate?: (imageUrl: string) => void;
+  onImageUpdate?: (imageUrl: string) => Promise<void>;
+  isGeneratingImage?: boolean;
 }
 
 export interface RecipeCategoriesProps {

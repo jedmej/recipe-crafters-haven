@@ -9,12 +9,16 @@ const RecipeImage = memo(
   ({ 
     imageUrl, 
     title, 
-    onImageUpdate 
+    onImageUpdate,
+    isGeneratingImage 
   }: RecipeImageProps) => {
     const hasImage = !!imageUrl;
-    const { generateImage, isLoading: isGenerating } = useImageGeneration();
+    const { generateImage, isLoading: isGeneratingFromButton } = useImageGeneration();
     const { toast } = useToast();
     const imageRef = useRef<HTMLDivElement>(null);
+
+    // Combine both loading states
+    const isGenerating = isGeneratingFromButton || isGeneratingImage;
 
     // Generate image prompt based on recipe title
     const generateImagePrompt = (title: string): string => {

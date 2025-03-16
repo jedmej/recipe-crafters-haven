@@ -21,6 +21,7 @@ export function RecipeDisplay({
   isAddingToGroceryList,
   onEditOrGenerate,
   onBack,
+  isGeneratingImage,
 }: RecipeDisplayProps) {
   const { toast } = useToast();
   const [imageState, setImageState] = useState({
@@ -84,6 +85,7 @@ export function RecipeDisplay({
           imageUrl={recipe.imageUrl}
           title={recipe.title}
           onImageUpdate={onImageUpdate ? handleImageUpdate : undefined}
+          isGeneratingImage={isGeneratingImage}
         />
       </div>
 

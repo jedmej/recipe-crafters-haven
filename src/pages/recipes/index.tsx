@@ -14,6 +14,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState, useMemo } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
+import { 
+  MagicWand, 
+  Robot,
+  NotePencil
+} from "@phosphor-icons/react";
 
 export default function RecipesPage() {
   const navigate = useNavigate();
@@ -179,6 +184,18 @@ export default function RecipesPage() {
     setSearchTerm('');
   };
 
+  const handleNavigateToCreate = () => {
+    navigate('/recipes/new');
+  };
+
+  const handleNavigateToGenerate = () => {
+    navigate('/recipes/inspire');
+  };
+
+  const handleNavigateToImport = () => {
+    navigate('/recipes/import-ai');
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -206,6 +223,41 @@ export default function RecipesPage() {
         </button>
       </div>
       <div className="bg-[#F5F5F5] rounded-t-[48px] md:rounded-[48px] p-6 shadow-sm">
+        {/* New Action Buttons Section */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <button
+            onClick={handleNavigateToGenerate}
+            className="flex items-center justify-center gap-3 px-6 py-4 bg-white rounded-[500px] shadow-sm hover:bg-gray-50 transition-colors group"
+          >
+            <MagicWand 
+              weight="duotone" 
+              className="w-6 h-6 text-purple-600 group-hover:scale-110 transition-transform" 
+            />
+            <span className="font-medium">Generate Recipe</span>
+          </button>
+          <button
+            onClick={handleNavigateToImport}
+            className="flex items-center justify-center gap-3 px-6 py-4 bg-white rounded-[500px] shadow-sm hover:bg-gray-50 transition-colors group"
+          >
+            <Robot 
+              weight="duotone" 
+              className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" 
+            />
+            <span className="font-medium">Import with AI</span>
+          </button>
+          <button
+            onClick={handleNavigateToCreate}
+            className="flex items-center justify-center gap-3 px-6 py-4 bg-white rounded-[500px] shadow-sm hover:bg-gray-50 transition-colors group"
+          >
+            <NotePencil 
+              weight="duotone" 
+              className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" 
+            />
+            <span className="font-medium">Add Recipe</span>
+          </button>
+        </div>
+        {/* Divider */}
+        <div className="w-full h-px bg-gray-200 mb-8" />
         <div className="mb-6">
           {/* Search and Controls Section */}
           <div className="flex flex-col gap-6">

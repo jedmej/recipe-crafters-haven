@@ -7,12 +7,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TodoItem } from "@/components/ui/to-do-item";
-import { Search, Filter, ChevronDown, ChevronUp, Link as LinkIcon, ExternalLink, Trash2 } from "lucide-react";
+import { Search, Filter, ChevronDown, ChevronUp, Link as LinkIcon } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { categorizeItem, categorizeItemLocally } from "../utils/categorization";
 import { Link } from "react-router-dom";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
+import { SquaresFour, Notebook, ArrowSquareOut, TrashSimple } from "@phosphor-icons/react";
 
 // Item categories for organization
 const ITEM_CATEGORIES = [
@@ -375,15 +376,10 @@ export function MasterGroceryList() {
 
   // Render the master grocery list with tabs for different views
   return (
-    <Card className="overflow-hidden rounded-[48px] bg-[#f5f5f5] border-0">
+    <Card className="overflow-hidden rounded-[48px] bg-[#f5f5f5] border-0 mb-24">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span>Master Grocery List</span>
-          {summaryStats && (
-            <span className="text-sm font-normal text-muted-foreground">
-              {summaryStats.checkedItems}/{summaryStats.totalItems} items checked
-            </span>
-          )}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -397,29 +393,38 @@ export function MasterGroceryList() {
         ) : (
           <>
             <div className="flex flex-col sm:flex-row gap-4 mb-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search items..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
+              <div className="relative w-full">
+                <div className="relative flex items-center w-full h-12 bg-white rounded-full shadow-sm">
+                  <Search className="absolute left-4 h-5 w-5 text-[#222222] opacity-30" />
+                  <Input
+                    type="search"
+                    placeholder="Search"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full h-full pl-12 pr-4 border-none rounded-full text-sm font-archivo placeholder:text-[#222222] placeholder:opacity-30 focus-visible:ring-0 focus-visible:ring-offset-0"
+                  />
+                </div>
               </div>
               <div className="flex gap-2">
                 <Button
                   variant={viewMode === "category" ? "default" : "outline"}
                   onClick={() => setViewMode("category")}
-                  className="whitespace-nowrap"
+                  className="group relative w-12 h-12 p-0 hover:w-[140px] transition-all duration-200 overflow-hidden rounded-full"
                 >
-                  By Category
+                  <SquaresFour weight="duotone" className="w-6 h-6 absolute left-3" />
+                  <span className="opacity-0 group-hover:opacity-100 ml-8 transition-opacity duration-200">
+                    By Category
+                  </span>
                 </Button>
                 <Button
                   variant={viewMode === "recipe" ? "default" : "outline"}
                   onClick={() => setViewMode("recipe")}
-                  className="whitespace-nowrap"
+                  className="group relative w-12 h-12 p-0 hover:w-[140px] transition-all duration-200 overflow-hidden rounded-full"
                 >
-                  By Recipe
+                  <Notebook weight="duotone" className="w-6 h-6 absolute left-3" />
+                  <span className="opacity-0 group-hover:opacity-100 ml-8 transition-opacity duration-200">
+                    By Recipe
+                  </span>
                 </Button>
               </div>
             </div>
@@ -484,6 +489,21 @@ export function MasterGroceryList() {
               </div>
             )}
 
+            {/* Total Items Count */}
+            {summaryStats && (
+              <div className="text-center mb-6">
+                <p className="text-base font-medium">
+                  {viewMode === "category" && activeCategory !== "All Items" ? (
+                    // Show count for specific category
+                    `${filteredItems.filter(item => item.checked).length}/${filteredItems.length} items checked in ${activeCategory}`
+                  ) : (
+                    // Show total count across all categories
+                    `${summaryStats.checkedItems}/${summaryStats.totalItems} items checked`
+                  )}
+                </p>
+              </div>
+            )}
+
             {/* Grouped Items */}
             <div className="space-y-4">
               {Object.keys(groupedItems).length === 0 ? (
@@ -514,7 +534,7 @@ export function MasterGroceryList() {
                                       title={`View recipe: ${groupName}`}
                                     >
                                       <Link to={`/recipes/${(items as any[])[0].recipeId}`}>
-                                        <ExternalLink className="h-4 w-4 mr-1" />
+                                        <ArrowSquareOut weight="duotone" className="h-5 w-5" />
                                         <span className="sr-only">View Recipe</span>
                                       </Link>
                                     </Button>
@@ -526,13 +546,13 @@ export function MasterGroceryList() {
                                     title={`Remove all items from ${groupName}`}
                                     onClick={(e) => handleRemoveRecipe((items as any[])[0].listId, e)}
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <TrashSimple weight="duotone" className="h-5 w-5" />
                                     <span className="sr-only">Remove All Items</span>
                                   </Button>
                                 </>
                               )}
                               <span className="text-sm text-muted-foreground">
-                                {(items as any[]).filter(i => !i.checked).length}/{(items as any[]).length} remaining
+                                {(items as any[]).filter(i => i.checked).length}/{(items as any[]).length} checked
                               </span>
                             </div>
                           </div>

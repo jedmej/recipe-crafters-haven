@@ -31,6 +31,7 @@ type GenerationMode = 'search' | 'inspire';
 
 interface FilterState {
   mealType: string[];
+  healthFocus: string[];
   dietaryRestrictions: string[];
   difficultyLevel: string[];
   cuisineType: string[];
@@ -44,6 +45,7 @@ interface FilterState {
 
 interface CategoryFilters {
   meal_type: string | null;
+  health_focus: string | null | string[];
   dietary_restrictions: string | null | string[];
   difficulty_level: string | null;
   cuisine_type: string | null;
@@ -196,6 +198,7 @@ export function InspireContainer() {
   const [cookingTime, setCookingTime] = useState<number>(30);
   const [filters, setFilters] = useState<FilterState>({
     mealType: [],
+    healthFocus: [],
     dietaryRestrictions: [],
     difficultyLevel: [],
     cuisineType: [],
@@ -376,6 +379,9 @@ export function InspireContainer() {
         meal_type: filters.mealType?.[0] === "Other" 
           ? filters.customValues.mealType || null 
           : filters.mealType?.[0] || null,
+        health_focus: filters.healthFocus?.[0] === "Other"
+          ? filters.customValues.healthFocus || null
+          : filters.healthFocus?.[0] || null,
         dietary_restrictions: filters.dietaryRestrictions?.[0] === "Other" 
           ? filters.customValues.dietaryRestrictions || null 
           : filters.dietaryRestrictions?.[0] || null,
@@ -628,6 +634,7 @@ export function InspireContainer() {
     setCookingTime(30);
     setFilters({
       mealType: [],
+      healthFocus: [],
       dietaryRestrictions: [],
       difficultyLevel: [],
       cuisineType: [],

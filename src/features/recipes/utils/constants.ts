@@ -4,6 +4,11 @@ export const FILTER_CATEGORIES = {
     options: ["Breakfast", "Brunch", "Lunch", "Dinner", "Snacks", "Dessert", "Appetizer", "Soup", "Side Dish"],
     badgeClass: "bg-blue-100 text-blue-800"
   },
+  healthFocus: {
+    title: "Health Focus",
+    options: ["Low-Calorie", "High-Protein", "Low-Carb", "Heart-Healthy", "Weight Loss", "Balanced", "Superfood", "Clean Eating", "Mediterranean Diet", "Other"],
+    badgeClass: "bg-emerald-100 text-emerald-800"
+  },
   dietaryRestrictions: {
     title: "Dietary Restrictions",
     options: ["Vegetarian", "Vegan", "Gluten-free", "Dairy-free", "Keto", "Paleo", "Halal", "Kosher", "Nut-free", "Low-Sodium", "None"],

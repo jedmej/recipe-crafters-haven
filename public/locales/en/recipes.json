@@ -1,7 +1,15 @@
 {
   "search": {
     "title": "Search Recipes",
-    "placeholder": "Search by name, ingredients, or cuisine...",
+    "description": "Describe what kind of recipe you're looking for",
+    "placeholder": "e.g., healthy vegetarian dinner under 30 minutes",
+    "button": {
+      "searching": "Searching...",
+      "search": "Search"
+    },
+    "generateImage": {
+      "label": "Generate Image"
+    },
     "noResults": "No recipes found",
     "filters": {
       "title": "Filters",
@@ -85,25 +93,44 @@
     "cookingMethod": "Cooking Method",
     "cookTime": "Total Time",
     "calories": "Calories per Serving",
+    "customOption": "Enter custom option...",
+    "other": "Other",
+    "healthFocus": "Health Focus",
     "mealTypes": {
       "breakfast": "Breakfast",
+      "brunch": "Brunch",
       "lunch": "Lunch",
       "dinner": "Dinner",
-      "snack": "Snack",
+      "snacks": "Snacks",
       "dessert": "Dessert",
       "appetizer": "Appetizer",
-      "sidedish": "Side Dish",
-      "drink": "Drink"
+      "soup": "Soup",
+      "sideDish": "Side Dish"
+    },
+    "healthFocusTypes": {
+      "lowCalorie": "Low-Calorie",
+      "highProtein": "High-Protein",
+      "lowCarb": "Low-Carb",
+      "heartHealthy": "Heart-Healthy",
+      "weightLoss": "Weight Loss",
+      "balanced": "Balanced",
+      "superfood": "Superfood",
+      "cleanEating": "Clean Eating",
+      "mediterraneanDiet": "Mediterranean Diet",
+      "other": "Other"
     },
     "dietaryTypes": {
       "vegetarian": "Vegetarian",
       "vegan": "Vegan",
-      "gluten-free": "Gluten Free",
-      "dairyfree": "Dairy Free",
-      "nutfree": "Nut Free",
-      "lowcarb": "Low Carb",
+      "glutenFree": "Gluten-free",
+      "dairyFree": "Dairy-free",
       "keto": "Keto",
-      "paleo": "Paleo"
+      "paleo": "Paleo",
+      "halal": "Halal",
+      "kosher": "Kosher",
+      "nutFree": "Nut-free",
+      "lowSodium": "Low-Sodium",
+      "none": "None"
     },
     "difficultyLevels": {
       "easy": "Easy",
@@ -116,31 +143,27 @@
       "mexican": "Mexican",
       "chinese": "Chinese",
       "japanese": "Japanese",
-      "indian": "Indian",
-      "french": "French",
-      "mediterranean": "Mediterranean",
-      "american": "American",
       "thai": "Thai",
-      "vietnamese": "Vietnamese",
-      "korean": "Korean",
-      "spanish": "Spanish",
+      "french": "French",
+      "middleEastern": "Middle Eastern",
+      "indian": "Indian",
+      "american": "American",
+      "mediterranean": "Mediterranean",
+      "caribbean": "Caribbean",
       "greek": "Greek",
-      "middle eastern": "Middle Eastern"
+      "spanish": "Spanish",
+      "other": "Other"
     },
     "cookingMethods": {
-      "baked": "Baked",
       "baking": "Baking",
-      "fried": "Fried",
       "frying": "Frying",
       "grilling": "Grilling",
+      "roasting": "Roasting",
       "steaming": "Steaming",
       "boiling": "Boiling",
-      "roasting": "Roasting",
-      "slowcooking": "Slow Cooking",
-      "pressure cooking": "Pressure Cooking",
-      "sous vide": "Sous Vide",
-      "smoking": "Smoking",
-      "braising": "Braising"
+      "slowCooking": "Slow Cooking",
+      "sousVide": "Sous Vide",
+      "other": "Other"
     }
   },
   "empty": {
@@ -175,5 +198,30 @@
     "plating": "Plating with care...",
     "finishing": "Adding final touches...",
     "almostDone": "Almost ready to serve..."
+  },
+  "inspire": {
+    "title": "Get Inspired with AI",
+    "cookingTime": {
+      "label": "Cooking Time",
+      "description": "Select the desired cooking time"
+    },
+    "ingredients": {
+      "useCustom": "Use custom ingredients",
+      "label": "Ingredients (comma separated)",
+      "placeholder": "e.g., chicken, rice, tomatoes, olive oil",
+      "description": "Add ingredients you want to use in your recipe"
+    },
+    "filters": {
+      "title": "Filters",
+      "removeAll": "Remove all",
+      "selectedFilters": "Selected Filters"
+    },
+    "generateImage": {
+      "label": "Generate Image"
+    },
+    "button": {
+      "creating": "Creating Recipe...",
+      "create": "Create Recipe"
+    }
   }
 } 

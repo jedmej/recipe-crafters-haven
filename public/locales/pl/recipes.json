@@ -1,15 +1,23 @@
 {
   "search": {
-    "title": "Szukaj przepisów",
-    "placeholder": "Szukaj po nazwie, składnikach lub kuchni...",
+    "title": "Szukaj Przepisów",
+    "description": "Opisz, jakiego rodzaju przepisu szukasz",
+    "placeholder": "np. zdrowa kolacja wegetariańska w mniej niż 30 minut",
+    "button": {
+      "searching": "Szukanie...",
+      "search": "Szukaj"
+    },
+    "generateImage": {
+      "label": "Wygeneruj Zdjęcie"
+    },
     "noResults": "Nie znaleziono przepisów",
     "filters": {
       "title": "Filtry",
-      "mealType": "Rodzaj posiłku",
+      "mealType": "Rodzaj Posiłku",
       "cuisine": "Kuchnia",
-      "diet": "Ograniczenia dietetyczne",
-      "difficulty": "Poziom trudności",
-      "time": "Czas przygotowania"
+      "diet": "Ograniczenia Dietetyczne",
+      "difficulty": "Poziom Trudności",
+      "time": "Czas Przygotowania"
     }
   },
   "myRecipes": {
@@ -57,7 +65,8 @@
     "selectMultiple": "Wybierz wiele",
     "cancel": "Anuluj",
     "startCooking": "Rozpocznij gotowanie",
-    "addToGroceryList": "Dodaj składniki do listy zakupów"
+    "addToGroceryList": "Dodaj składniki do listy zakupów",
+    "add": "Dodaj"
   },
   "messages": {
     "saveSuccess": "Przepis został pomyślnie zapisany",
@@ -78,68 +87,115 @@
   "filters": {
     "title": "Filtry",
     "all": "Wszystkie",
-    "mealType": "Rodzaj posiłku",
-    "dietary": "Ograniczenia dietetyczne",
-    "difficulty": "Poziom trudności",
-    "cuisine": "Rodzaj kuchni",
-    "cookingMethod": "Metoda gotowania",
-    "cookTime": "Całkowity czas",
-    "calories": "Kalorie na porcję",
+    "mealType": "Rodzaj Posiłku",
+    "dietary": "Ograniczenia Dietetyczne",
+    "difficulty": "Poziom Trudności",
+    "cuisine": "Rodzaj Kuchni",
+    "cookingMethod": "Metoda Gotowania",
+    "cookTime": "Całkowity Czas",
+    "calories": "Kalorie na Porcję",
+    "customOption": "Wprowadź własną opcję...",
+    "other": "Inne",
+    "healthFocus": "Aspekt Zdrowotny",
+    "occasion": "Okazja",
+    "courseCategory": "Kategoria Dania",
+    "tasteProfile": "Profil Smakowy",
+    "dietaryRestrictions": "Ograniczenia Dietetyczne",
+    "difficultyLevel": "Poziom Trudności",
+    "cuisineType": "Rodzaj Kuchni",
+    "healthFocusTypes": {
+      "lowCalorie": "Niskokaloryczne",
+      "highProtein": "Wysokobiałkowe",
+      "lowCarb": "Niskowęglowodanowe",
+      "heartHealthy": "Zdrowe dla Serca",
+      "weightLoss": "Odchudzające",
+      "balanced": "Zbalansowane",
+      "superfood": "Superfood",
+      "cleanEating": "Clean Eating",
+      "mediterraneanDiet": "Dieta Śródziemnomorska",
+      "other": "Inne"
+    },
+    "occasionTypes": {
+      "everyday": "Codzienne",
+      "party": "Impreza",
+      "holiday": "Święta",
+      "birthday": "Urodziny"
+    },
+    "courseCategoryTypes": {
+      "soup": "Zupa",
+      "salad": "Sałatka",
+      "mainCourse": "Danie Główne",
+      "sideDish": "Dodatek",
+      "dessert": "Deser",
+      "beverage": "Napój"
+    },
+    "tasteProfileTypes": {
+      "sweet": "Słodki",
+      "savory": "Wytrawny",
+      "spicy": "Pikantny",
+      "sour": "Kwaśny",
+      "salty": "Słony",
+      "bitter": "Gorzki",
+      "umami": "Umami",
+      "tangy": "Cierpki",
+      "mild": "Łagodny"
+    },
     "mealTypes": {
       "breakfast": "Śniadanie",
+      "brunch": "Brunch",
       "lunch": "Obiad",
       "dinner": "Kolacja",
-      "snack": "Przekąska",
+      "snacks": "Przekąski",
       "dessert": "Deser",
       "appetizer": "Przystawka",
-      "sidedish": "Dodatek",
-      "drink": "Napój"
+      "soup": "Zupa",
+      "sideDish": "Dodatek"
     },
     "dietaryTypes": {
       "vegetarian": "Wegetariańskie",
       "vegan": "Wegańskie",
-      "gluten-free": "Bezglutenowe",
-      "dairyfree": "Bez nabiału",
-      "nutfree": "Bez orzechów",
-      "lowcarb": "Niskowęglowodanowe",
+      "glutenFree": "Bezglutenowe",
+      "dairyFree": "Bez Nabiału",
       "keto": "Ketogeniczne",
-      "paleo": "Paleo"
-    },
-    "difficultyLevels": {
-      "easy": "Łatwe",
-      "medium": "Średnie",
-      "hard": "Trudne",
-      "expert": "Eksperckie"
+      "paleo": "Paleo",
+      "halal": "Halal",
+      "kosher": "Koszerne",
+      "nutFree": "Bez Orzechów",
+      "lowSodium": "Niskosodowe",
+      "none": "Brak"
     },
     "cuisineTypes": {
       "italian": "Włoska",
       "mexican": "Meksykańska",
       "chinese": "Chińska",
       "japanese": "Japońska",
-      "indian": "Indyjska",
-      "french": "Francuska",
-      "mediterranean": "Śródziemnomorska",
-      "american": "Amerykańska",
       "thai": "Tajska",
-      "vietnamese": "Wietnamska",
-      "korean": "Koreańska",
-      "spanish": "Hiszpańska",
+      "french": "Francuska",
+      "middleEastern": "Bliskowschodnia",
+      "indian": "Indyjska",
+      "american": "Amerykańska",
+      "mediterranean": "Śródziemnomorska",
+      "caribbean": "Karaibska",
       "greek": "Grecka",
-      "middle eastern": "Bliskowschodnia"
+      "spanish": "Hiszpańska",
+      "other": "Inne"
     },
     "cookingMethods": {
-      "baked": "Pieczone",
       "baking": "Pieczenie",
-      "fried": "Smażone",
       "frying": "Smażenie",
-      "steaming": "Gotowanie na parze",
-      "boiling": "Gotowanie",
+      "grilling": "Grillowanie",
       "roasting": "Pieczenie",
-      "slowcooking": "Wolne gotowanie",
-      "pressure cooking": "Gotowanie ciśnieniowe",
-      "sous vide": "Sous vide",
-      "smoking": "Wędzenie",
-      "braising": "Duszenie"
+      "steaming": "Gotowanie na Parze",
+      "boiling": "Gotowanie",
+      "slowCooking": "Wolne Gotowanie",
+      "sousVide": "Sous Vide",
+      "other": "Inne"
+    },
+    "difficultyLevels": {
+      "easy": "Łatwy",
+      "medium": "Średni",
+      "hard": "Trudny",
+      "expert": "Ekspercki"
     }
   },
   "empty": {
@@ -174,5 +230,33 @@
     "plating": "Dekorowanie talerza...",
     "finishing": "Dodawanie ostatnich szczegółów...",
     "almostDone": "Prawie gotowe do podania..."
+  },
+  "divider": {
+    "inspire": "lub pozwól nam cię zainspirować"
+  },
+  "inspire": {
+    "title": "Zainspiruj się z AI",
+    "cookingTime": {
+      "label": "Czas Gotowania",
+      "description": "Wybierz pożądany czas gotowania"
+    },
+    "ingredients": {
+      "useCustom": "Użyj własnych składników",
+      "label": "Składniki (oddzielone przecinkami)",
+      "placeholder": "np. kurczak, ryż, pomidory, oliwa z oliwek",
+      "description": "Dodaj składniki, których chcesz użyć w swoim przepisie"
+    },
+    "filters": {
+      "title": "Filtry",
+      "removeAll": "Usuń wszystkie",
+      "selectedFilters": "Wybrane Filtry"
+    },
+    "generateImage": {
+      "label": "Wygeneruj Zdjęcie"
+    },
+    "button": {
+      "creating": "Tworzenie Przepisu...",
+      "create": "Utwórz Przepis"
+    }
   }
 } 

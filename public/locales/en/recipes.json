@@ -163,5 +163,17 @@
       "title": "Are you sure?",
       "description": "This action cannot be undone. This will permanently delete the selected recipes."
     }
+  },
+  "loading": {
+    "preparing": "Preparing your meal...",
+    "gathering": "Gathering ingredients...",
+    "preheating": "Preheating the oven...",
+    "chopping": "Chopping vegetables...",
+    "measuring": "Measuring spices...",
+    "stirring": "Stirring the pot...",
+    "tasting": "Tasting for seasoning...",
+    "plating": "Plating with care...",
+    "finishing": "Adding final touches...",
+    "almostDone": "Almost ready to serve..."
   }
 } 

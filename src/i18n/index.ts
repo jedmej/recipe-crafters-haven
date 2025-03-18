@@ -28,8 +28,8 @@ i18n
     },
 
     // Default namespace
-    defaultNS: 'common',
-    ns: ['common', 'profile', 'recipes'],
+    defaultNS: 'recipes',
+    ns: ['recipes'],
 
     // Add loading callback for debugging
     load: 'languageOnly', // Only load language without region (e.g., 'en' instead of 'en-US')

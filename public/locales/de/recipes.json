@@ -163,5 +163,17 @@
       "title": "Sind Sie sicher?",
       "description": "Diese Aktion kann nicht rückgängig gemacht werden. Die ausgewählten Rezepte werden dauerhaft gelöscht."
     }
+  },
+  "loading": {
+    "preparing": "Mahlzeit wird zubereitet...",
+    "gathering": "Zutaten werden gesammelt...",
+    "preheating": "Ofen wird vorgeheizt...",
+    "chopping": "Gemüse wird geschnitten...",
+    "measuring": "Gewürze werden abgemessen...",
+    "stirring": "Topf wird umgerührt...",
+    "tasting": "Geschmack wird geprüft...",
+    "plating": "Anrichtung mit Sorgfalt...",
+    "finishing": "Letzte Handgriffe...",
+    "almostDone": "Fast fertig zum Servieren..."
   }
 } 

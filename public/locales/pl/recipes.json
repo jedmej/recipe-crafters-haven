@@ -162,5 +162,17 @@
       "title": "Czy jesteś pewien?",
       "description": "Tej akcji nie można cofnąć. Spowoduje to trwałe usunięcie wybranych przepisów."
     }
+  },
+  "loading": {
+    "preparing": "Przygotowywanie posiłku...",
+    "gathering": "Zbieranie składników...",
+    "preheating": "Rozgrzewanie piekarnika...",
+    "chopping": "Krojenie warzyw...",
+    "measuring": "Odmierzanie przypraw...",
+    "stirring": "Mieszanie w garnku...",
+    "tasting": "Próbowanie smaku...",
+    "plating": "Dekorowanie talerza...",
+    "finishing": "Dodawanie ostatnich szczegółów...",
+    "almostDone": "Prawie gotowe do podania..."
   }
 } 

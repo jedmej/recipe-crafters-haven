@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CookingPot } from "@phosphor-icons/react";
+import { useTranslation } from 'react-i18next';
 
-const cookingPhrases = [
-  "Preparing your meal...",
-  "Gathering ingredients...",
-  "Preheating the oven...",
-  "Chopping vegetables...",
-  "Measuring spices...",
-  "Stirring the pot...",
-  "Tasting for seasoning...",
-  "Plating with care...",
-  "Adding final touches...",
-  "Almost ready to serve..."
-];
+const loadingKeys = [
+  'preparing',
+  'gathering',
+  'preheating',
+  'chopping',
+  'measuring',
+  'stirring',
+  'tasting',
+  'plating',
+  'finishing',
+  'almostDone'
+] as const;
 
 interface RecipeLoadingAnimationProps {
   isVisible: boolean;
@@ -21,12 +22,13 @@ interface RecipeLoadingAnimationProps {
 
 export function RecipeLoadingAnimation({ isVisible }: RecipeLoadingAnimationProps) {
   const [currentPhraseIndex, setCurrentPhraseIndex] = useState(0);
+  const { t } = useTranslation("recipes");
 
   useEffect(() => {
     if (!isVisible) return;
 
     const interval = setInterval(() => {
-      setCurrentPhraseIndex((prev) => (prev + 1) % cookingPhrases.length);
+      setCurrentPhraseIndex((prev) => (prev + 1) % loadingKeys.length);
     }, 2000);
 
     return () => clearInterval(interval);
@@ -56,7 +58,9 @@ export function RecipeLoadingAnimation({ isVisible }: RecipeLoadingAnimationProp
               transition={{ duration: 0.5 }}
               className="text-xl font-medium text-gray-800 text-center whitespace-nowrap"
             >
-              {cookingPhrases[currentPhraseIndex]}
+              {t(`loading.${loadingKeys[currentPhraseIndex]}`, {
+                defaultValue: t(`loading.preparing`) // Fallback to first phrase if translation is missing
+              })}
             </motion.p>
           </AnimatePresence>
         </div>

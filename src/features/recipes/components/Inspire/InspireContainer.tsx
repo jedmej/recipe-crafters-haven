@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +13,8 @@ import { SectionDivider } from './components/SectionDivider';
 import { InspireForm } from './InspireForm';
 import { scaleRecipe } from '@/utils/recipe-scaling';
 import { useImageGeneration } from '@/features/recipes/hooks/useImageGeneration';
+import { RecipeLoadingAnimation } from '../UI/RecipeLoadingAnimation';
+import { useRecipeGeneration } from '../../hooks/useRecipeGeneration';
 
 // Constants for language codes
 const LANGUAGE_NAMES = {
@@ -211,13 +212,7 @@ export function InspireContainer() {
   });
   const [language, setLanguage] = useState<string>(preferences.language || 'en');
   const [useIngredients, setUseIngredients] = useState<boolean>(false);
-  
-  // Recipe generation state
-  const [isGenerating, setIsGenerating] = useState<boolean>(false);
-  const [generatedRecipe, setGeneratedRecipe] = useState<RecipeData | null>(null);
-  const [recipeImage, setRecipeImage] = useState<string | null>(null);
   const [shouldGenerateImage, setShouldGenerateImage] = useState<boolean>(generateImageFromUrl);
-  const [isGeneratingImage, setIsGeneratingImage] = useState<boolean>(false);
   
   // Recipe detail view state
   const [desiredServings, setDesiredServings] = useState(4);
@@ -225,8 +220,28 @@ export function InspireContainer() {
     preferences.measurementSystem || 'metric'
   );
 
-  // Image generation hook
-  const { generateImage } = useImageGeneration();
+  const [generatedRecipe, setGeneratedRecipe] = useState<RecipeData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Recipe generation hook
+  const {
+    generateAndSaveRecipe,
+    isGenerating: isGeneratingRecipe,
+    isGeneratingImage,
+    recipeImage
+  } = useRecipeGeneration({
+    onSuccess: () => {
+      setGeneratedRecipe(null);
+      setIsLoading(false);
+    },
+    onError: () => {
+      setIsLoading(false);
+    },
+    shouldGenerateImage
+  });
+  
+  // Combine the local loading state with the hook's loading state
+  const isGenerating = isLoading || isGeneratingRecipe;
 
   // Update language when user preferences change
   useEffect(() => {
@@ -238,10 +253,7 @@ export function InspireContainer() {
     if (queryFromUrl && !generatedRecipe && !isGenerating) {
       // Set a small timeout to ensure component is fully mounted
       const timer = setTimeout(() => {
-        setIsGenerating(true);
-        setGeneratedRecipe(null);
-        setRecipeImage(null);
-        generateRecipe.mutate({ query: queryFromUrl, mode: 'search' });
+        handleSearch(new Event('submit') as React.FormEvent);
       }, 100);
       
       return () => clearTimeout(timer);
@@ -358,50 +370,49 @@ export function InspireContainer() {
     return [...standardFilters, ...customFilters];
   }, [filters]);
 
-  // Recipe generation mutation
-  const generateRecipe = useMutation({
-    mutationFn: async ({ query, mode }: { query?: string; mode: GenerationMode } = { mode: 'inspire' }) => {
+  // Event handlers
+  const handleGenerateRecipe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Set isGenerating to true immediately to show the loading animation
+    // We'll rely on the mutation to handle any state resets on completion
+    setIsLoading(true);
+    
+    // Clear search query when using inspire section
+    setSearchQuery("");
+    
+    // Transform filters into categories object
+    const categoryFilters = {
+      meal_type: filters.mealType?.[0] === "Other" 
+        ? filters.customValues.mealType || null 
+        : filters.mealType?.[0] || null,
+      health_focus: filters.healthFocus?.[0] === "Other"
+        ? filters.customValues.healthFocus || null
+        : filters.healthFocus?.[0] || null,
+      dietary_restrictions: filters.dietaryRestrictions?.[0] === "Other" 
+        ? filters.customValues.dietaryRestrictions || null 
+        : filters.dietaryRestrictions?.[0] || null,
+      difficulty_level: filters.difficultyLevel?.[0] || null,
+      cuisine_type: filters.cuisineType?.[0] === "Other" 
+        ? filters.customValues.cuisineType || null 
+        : filters.cuisineType?.[0] || null,
+      cooking_method: filters.cookingMethod?.[0] === "Other" 
+        ? filters.customValues.cookingMethod || null 
+        : filters.cookingMethod?.[0] || null,
+      occasion: filters.occasion?.[0] === "Other" 
+        ? filters.customValues.occasion || null 
+        : filters.occasion?.[0] || null,
+      course_category: filters.courseCategory?.[0] === "Other" 
+        ? filters.customValues.courseCategory || null 
+        : filters.courseCategory?.[0] || null,
+      taste_profile: filters.tasteProfile?.[0] === "Other" 
+        ? filters.customValues.tasteProfile || null 
+        : filters.tasteProfile?.[0] || null
+    };
+
+    try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("User not authenticated");
-
-      // If in search mode, use the search query directly
-      if (mode === 'search' && query) {
-        const { data, error } = await supabase.functions.invoke('recipe-chat', {
-          body: { query, language }
-        });
-
-        if (error) throw error;
-        return data;
-      }
-
-      // Transform filters into categories object with all required fields
-      const categoryFilters: CategoryFilters = {
-        meal_type: filters.mealType?.[0] === "Other" 
-          ? filters.customValues.mealType || null 
-          : filters.mealType?.[0] || null,
-        health_focus: filters.healthFocus?.[0] === "Other"
-          ? filters.customValues.healthFocus || null
-          : filters.healthFocus?.[0] || null,
-        dietary_restrictions: filters.dietaryRestrictions?.[0] === "Other" 
-          ? filters.customValues.dietaryRestrictions || null 
-          : filters.dietaryRestrictions?.[0] || null,
-        difficulty_level: filters.difficultyLevel?.[0] || null,
-        cuisine_type: filters.cuisineType?.[0] === "Other" 
-          ? filters.customValues.cuisineType || null 
-          : filters.cuisineType?.[0] || null,
-        cooking_method: filters.cookingMethod?.[0] === "Other" 
-          ? filters.customValues.cookingMethod || null 
-          : filters.cookingMethod?.[0] || null,
-        occasion: filters.occasion?.[0] === "Other" 
-          ? filters.customValues.occasion || null 
-          : filters.occasion?.[0] || null,
-        course_category: filters.courseCategory?.[0] === "Other" 
-          ? filters.customValues.courseCategory || null 
-          : filters.courseCategory?.[0] || null,
-        taste_profile: filters.tasteProfile?.[0] === "Other" 
-          ? filters.customValues.tasteProfile || null 
-          : filters.tasteProfile?.[0] || null
-      };
 
       // Prepare input for AI edge function
       const inputData = {
@@ -422,197 +433,20 @@ export function InspireContainer() {
 
       if (error) throw error;
       if (!data) throw new Error('No recipe data returned');
-      
-      return data;
-    },
-    onSuccess: (data) => {
-      // Extract the recipe data from the response
-      console.log('Recipe generation response:', data);
+
+      // Process the generated recipe
       const recipeData = data?.data || data;
+      await generateAndSaveRecipe(recipeData);
+    } catch (error) {
+      // Reset loading state on error
+      setIsLoading(false);
       
-      // Ensure the recipe has a categories object structure
-      if (!recipeData.categories) {
-        recipeData.categories = {};
-      }
-      
-      // If categories are in the recipe root instead of the categories object, move them
-      const categoryFields = ['meal_type', 'dietary_restrictions', 'difficulty_level', 'cuisine_type', 'cooking_method', 'occasion', 'course_category', 'taste_profile'];
-      
-      categoryFields.forEach(field => {
-        if (recipeData[field] && !recipeData.categories[field]) {
-          recipeData.categories[field] = recipeData[field];
-          delete recipeData[field]; // Remove from root to avoid duplication
-        }
-      });
-      
-      // Process each category value and update filter options if needed
-      const categoryMapping: Record<string, string> = {
-        'meal_type': 'mealType',
-        'dietary_restrictions': 'dietaryRestrictions',
-        'difficulty_level': 'difficultyLevel',
-        'cuisine_type': 'cuisineType',
-        'cooking_method': 'cookingMethod',
-        'occasion': 'occasion',
-        'course_category': 'courseCategory',
-        'taste_profile': 'tasteProfile'
-      };
-      
-      // Process each category and check for new values
-      Object.entries(recipeData.categories).forEach(([field, value]) => {
-        const frontendCategory = categoryMapping[field];
-        if (!frontendCategory) return;
-        
-        // Handle both single values and arrays
-        if (Array.isArray(value)) {
-          value.forEach(val => {
-            if (val && typeof val === 'string') {
-              updateFilterCategories(frontendCategory, val);
-            }
-          });
-        } else if (value && typeof value === 'string') {
-          updateFilterCategories(frontendCategory, value);
-        }
-      });
-      
-      // Set default values for any missing categories
-      if (!recipeData.categories.meal_type) recipeData.categories.meal_type = filters.mealType?.[0] || "Main Dish";
-      if (!recipeData.categories.dietary_restrictions) recipeData.categories.dietary_restrictions = filters.dietaryRestrictions?.[0] || "Regular";
-      if (!recipeData.categories.difficulty_level) recipeData.categories.difficulty_level = filters.difficultyLevel?.[0] || "Medium"; 
-      if (!recipeData.categories.cuisine_type) recipeData.categories.cuisine_type = filters.cuisineType?.[0] || "International";
-      if (!recipeData.categories.cooking_method) recipeData.categories.cooking_method = "Various";
-      if (!recipeData.categories.occasion) recipeData.categories.occasion = filters.occasion?.[0] || "Everyday";
-      if (!recipeData.categories.course_category) recipeData.categories.course_category = filters.courseCategory?.[0] || "Main Course";
-      if (!recipeData.categories.taste_profile) recipeData.categories.taste_profile = filters.tasteProfile?.[0] || "Balanced";
-      
-      setGeneratedRecipe(recipeData);
-      toast({
-        title: "Recipe Generated Successfully",
-        description: "Your new recipe is ready to review and save!",
-      });
-    },
-    onError: (error: Error) => {
-      console.error('Generate error:', error);
       toast({
         variant: "destructive",
         title: "Generation Failed",
         description: "We couldn't generate a recipe with these criteria. Please try different options.",
       });
-    },
-    onSettled: () => {
-      setIsGenerating(false);
     }
-  });
-
-  // Recipe saving mutation
-  const saveRecipe = useMutation({
-    mutationFn: async () => {
-      if (!generatedRecipe) throw new Error("No recipe to save");
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("User not authenticated");
-
-      // Format categories for the database using both user-selected filters and recipe data
-      const recipeData = generatedRecipe.data || generatedRecipe;
-      
-      // Use the displayCategories to ensure all category fields are populated
-      const formattedCategories = {
-        meal_type: recipeData.categories?.meal_type || 
-          (filters.mealType?.[0] === "Other" ? filters.customValues.mealType : filters.mealType?.[0]) || 
-          "Main Dish",
-        dietary_restrictions: recipeData.categories?.dietary_restrictions || 
-          (filters.dietaryRestrictions?.[0] === "Other" ? filters.customValues.dietaryRestrictions : filters.dietaryRestrictions?.[0]) || 
-          "Regular",
-        difficulty_level: recipeData.categories?.difficulty_level || 
-          filters.difficultyLevel?.[0] || 
-          "Medium",
-        cuisine_type: recipeData.categories?.cuisine_type || 
-          (filters.cuisineType?.[0] === "Other" ? filters.customValues.cuisineType : filters.cuisineType?.[0]) || 
-          "International",
-        cooking_method: recipeData.categories?.cooking_method || "Various",
-        occasion: recipeData.categories?.occasion || "Everyday",
-        course_category: recipeData.categories?.course_category || "Main Course",
-        taste_profile: recipeData.categories?.taste_profile || 
-          (filters.tasteProfile?.[0] === "Other" ? filters.customValues.tasteProfile : filters.tasteProfile?.[0]) || 
-          "Balanced"
-      };
-      
-      // Handle multiple values for categories that support arrays
-      if (Array.isArray(recipeData.categories?.dietary_restrictions)) {
-        formattedCategories.dietary_restrictions = recipeData.categories.dietary_restrictions;
-      }
-      
-      if (Array.isArray(recipeData.categories?.cooking_method)) {
-        formattedCategories.cooking_method = recipeData.categories.cooking_method;
-      }
-      
-      if (Array.isArray(recipeData.categories?.taste_profile)) {
-        formattedCategories.taste_profile = recipeData.categories.taste_profile;
-      }
-
-      // Log the recipe structure before saving
-      console.log('Saving recipe with structure:', JSON.stringify(generatedRecipe, null, 2));
-      
-      const scaledRecipe = scaleRecipe(
-        generatedRecipe,
-        desiredServings,
-        generatedRecipe.suggested_portions
-      );
-      
-      // Prepare recipe data for saving
-      const recipeToSave = {
-        title: scaledRecipe.title,
-        description: scaledRecipe.description,
-        ingredients: scaledRecipe.ingredients,
-        instructions: scaledRecipe.instructions,
-        cook_time: scaledRecipe.cook_time,
-        prep_time: scaledRecipe.prep_time,
-        estimated_calories: scaledRecipe.estimated_calories,
-        suggested_portions: scaledRecipe.suggested_portions,
-        portion_size: desiredServings,
-        source_url: scaledRecipe.source_url,
-        image_url: recipeImage,
-        categories: formattedCategories,
-        user_id: session.user.id
-      };
-
-      // Save the recipe to the database
-      const { data, error } = await supabase
-        .from('recipes')
-        .insert([recipeToSave])
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['recipes'] });
-      navigate(`/recipes/${data.id}`);
-      toast({
-        title: "Recipe Saved",
-        description: "The recipe has been added to your collection.",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Save Failed",
-        description: error.message || "Failed to save the recipe. Please try again.",
-      });
-    }
-  });
-
-  // Event handlers
-  const handleGenerateRecipe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Clear search query when using inspire section
-    setSearchQuery("");
-    
-    setIsGenerating(true);
-    setGeneratedRecipe(null);
-    setRecipeImage(null);
-    generateRecipe.mutate({ mode: 'inspire' });
   };
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -625,9 +459,9 @@ export function InspireContainer() {
       });
       return;
     }
-    setIsGenerating(true);
-    setGeneratedRecipe(null);
-    setRecipeImage(null);
+    
+    // Set isGenerating to true immediately to show the loading animation
+    setIsLoading(true);
     
     // Clear any inspire section inputs
     setIngredients("");
@@ -648,14 +482,22 @@ export function InspireContainer() {
     setUseIngredients(false);
     
     try {
-      await generateRecipe.mutateAsync({ query: searchQuery, mode: 'search' });
-    } catch (error) {
-      setIsGenerating(false);
-    }
-  };
+      const { data, error } = await supabase.functions.invoke('recipe-chat', {
+        body: { query: searchQuery, language }
+      });
 
-  const handleSaveRecipe = () => {
-    saveRecipe.mutate();
+      if (error) throw error;
+      await generateAndSaveRecipe(data);
+    } catch (error) {
+      // Reset loading state on error
+      setIsLoading(false);
+      
+      toast({
+        variant: "destructive",
+        title: "Search Failed",
+        description: "We couldn't generate a recipe from your search. Please try a different query.",
+      });
+    }
   };
 
   const handleImageSelected = (imageUrl: string) => {
@@ -666,46 +508,9 @@ export function InspireContainer() {
     setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric');
   };
 
-  // Automatically generate image when recipe is generated and shouldGenerateImage is true
-  useEffect(() => {
-    const generateImageForRecipe = async () => {
-      if (generatedRecipe && shouldGenerateImage && !recipeImage) {
-        // Generate image prompt based on recipe title
-        const imagePrompt = `professional food photography: ${generatedRecipe.title.trim()}, appetizing presentation, elegant plating, soft natural lighting, shallow depth of field, bokeh effect, clean background, no text overlay, minimalist style, high resolution, food magazine quality, centered composition, vibrant colors, crisp details, no text, no words, no writing, no labels, no watermarks`;
-        
-        try {
-          setIsGeneratingImage(true);
-          const generatedImageUrl = await generateImage(imagePrompt, 'recipe');
-          
-          if (generatedImageUrl) {
-            setRecipeImage(generatedImageUrl);
-          }
-        } catch (error) {
-          console.error('Error generating image:', error);
-          toast({
-            title: "Image Generation Failed",
-            description: "We couldn't generate an image for this recipe. You can try again manually.",
-            variant: "destructive",
-          });
-        } finally {
-          setIsGeneratingImage(false);
-        }
-      }
-    };
-
-    generateImageForRecipe();
-  }, [generatedRecipe, shouldGenerateImage, recipeImage, generateImage, toast]);
-
   return (
     <PageLayout>
-      <Button
-        variant="ghost"
-        className="mb-6"
-        onClick={() => navigate("/recipes")}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Recipes
-      </Button>
+      <RecipeLoadingAnimation isVisible={isGenerating} />
       
       {/* Search and Inspire sections */}
       {!generatedRecipe && (
@@ -754,21 +559,14 @@ export function InspireContainer() {
           onPortionsChange={setDesiredServings}
           measurementSystem={measurementSystem}
           onMeasurementSystemChange={toggleMeasurementSystem}
-          onSave={handleSaveRecipe}
-          isSaving={saveRecipe.isPending}
+          onSave={() => generateAndSaveRecipe(generatedRecipe)}
+          isSaving={isGenerating}
           onImageUpdate={handleImageSelected}
           onEditOrGenerate={() => {
-            if (!generatedRecipe.id) {
-              setGeneratedRecipe(null);
-              setRecipeImage(null);
-            } else {
-              // Handle edit case if needed
-              console.log("Edit functionality not implemented yet");
-            }
+            setGeneratedRecipe(null);
           }}
           onBack={() => {
             setGeneratedRecipe(null);
-            setRecipeImage(null);
           }}
           isGeneratingImage={isGeneratingImage}
         />

@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, ArrowLeft, Bot, AlertCircle } from "lucide-react";
+import { Loader2, Bot, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SUPPORTED_LANGUAGES } from "@/features/recipes/types";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
@@ -115,20 +115,11 @@ export function ImportAIContainer() {
 
   return (
     <PageLayout>
-      <Button
-        variant="ghost"
-        className="mb-6"
-        onClick={() => navigate("/recipes")}
-      >
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Recipes
-      </Button>
-      
       <div className="space-y-6">
-        <Card className="overflow-hidden rounded-[48px] mb-8">
+        <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Bot className="mr-2 h-5 w-5" />
+            <CardTitle className="flex items-center text-3xl font-bold">
+              <Bot className="mr-2 h-6 w-6" />
               Import Recipe with AI
             </CardTitle>
           </CardHeader>
@@ -148,6 +139,7 @@ export function ImportAIContainer() {
                   value={recipeUrl}
                   onChange={(e) => setRecipeUrl(e.target.value)}
                   disabled={isSearching}
+                  className="bg-white border-gray-200 h-[48px] rounded-[500px]"
                 />
                 <p className="text-sm text-muted-foreground">
                   Enter the URL of any recipe you'd like to import
@@ -161,7 +153,7 @@ export function ImportAIContainer() {
                   onValueChange={setLanguage}
                   disabled={isSearching}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-white border-gray-200 h-[48px] rounded-[500px]">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
@@ -177,7 +169,7 @@ export function ImportAIContainer() {
               
               <Button 
                 type="submit" 
-                className="w-full"
+                className="w-full bg-orange-500 hover:bg-orange-600 text-white h-[48px] rounded-[500px]"
                 disabled={isSearching || !recipeUrl.trim()}
               >
                 {isSearching ? (

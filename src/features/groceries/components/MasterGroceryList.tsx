@@ -426,7 +426,7 @@ export function MasterGroceryList() {
             {viewMode === "category" && (
               <div className="mb-4 overflow-x-auto h-auto">
                 <Tabs value={activeCategory} onValueChange={setActiveCategory}>
-                  <TabsList className="flex w-full overflow-x-auto bg-[#e4e7e0] rounded-[500px] py-3 min-h-[64px]">
+                  <TabsList className="flex w-full justify-start overflow-x-auto bg-[#e4e7e0] rounded-[500px] py-3 px-3 min-h-[64px]">
                     {ITEM_CATEGORIES.map(category => {
                       // Skip categories with 0 items, except "All Items"
                       if (category !== "All Items" && 

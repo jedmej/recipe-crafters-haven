@@ -1,7 +1,6 @@
 import { memo, useCallback, useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { RecipeDisplayProps } from "./types";
-import ActionButtons from "./ActionButtons";
 import RecipeImage from "./RecipeImage";
 import RecipeContent from "./RecipeContent";
 import CookingModeWrapper from "./CookingModeWrapper";
@@ -68,24 +67,16 @@ export function RecipeDisplay({
 
   return (
     <div className="w-full min-h-screen bg-[#f5f5f5] overflow-x-hidden p-0 m-0">
-      {/* Fixed Action Buttons at top of screen */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-white shadow-md">
-        <ActionButtons
-          recipe={recipe}
-          onEditOrGenerate={onEditOrGenerate}
-          onSave={onSave}
-          isSaving={isSaving}
-          onBack={onBack}
-        />
-      </div>
-
-      {/* Add padding to the top to account for the fixed buttons */}
       <div className="relative">
         <RecipeImage
           imageUrl={recipe.imageUrl}
           title={recipe.title}
+          recipe={recipe}
           onImageUpdate={onImageUpdate ? handleImageUpdate : undefined}
           isGeneratingImage={isGeneratingImage}
+          onEditOrGenerate={onEditOrGenerate}
+          onSave={onSave}
+          isSaving={isSaving}
         />
       </div>
 

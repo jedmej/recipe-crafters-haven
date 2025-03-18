@@ -4,18 +4,27 @@ import ImageControls from "./ImageControls";
 import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration";
 import { useToast } from "@/hooks/use-toast";
 import { AsyncHandler, createAsyncHandler } from "./utils";
+import { Heart, PencilSimple, SpinnerGap, Trash } from "@phosphor-icons/react";
+import { useFavorites } from "@/hooks/use-favorites";
+import { RoundButton } from "@/components/ui/round-button";
 
 const RecipeImage = memo(
   ({ 
     imageUrl, 
-    title, 
+    title,
+    recipe,
     onImageUpdate,
-    isGeneratingImage 
+    isGeneratingImage,
+    onEditOrGenerate,
+    onSave,
+    isSaving
   }: RecipeImageProps) => {
     const hasImage = !!imageUrl;
     const { generateImage, isLoading: isGeneratingFromButton } = useImageGeneration();
     const { toast } = useToast();
     const imageRef = useRef<HTMLDivElement>(null);
+    const { isFavorite, toggleFavorite } = useFavorites();
+    const isFavorited = recipe?.id ? isFavorite(recipe.id) : false;
 
     // Combine both loading states
     const isGenerating = isGeneratingFromButton || isGeneratingImage;
@@ -69,6 +78,13 @@ const RecipeImage = memo(
       await onImageUpdate(url);
     };
 
+    // Handle favorite toggle
+    const handleFavoriteClick = async (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!recipe?.id) return;
+      await toggleFavorite.mutateAsync(recipe.id);
+    };
+
     return (
       <div className="relative w-full h-[60vh]">
         {hasImage ? (
@@ -87,6 +103,37 @@ const RecipeImage = memo(
             
             {/* Strong fade effect at the bottom of the image */}
             <div className="absolute bottom-0 left-0 right-0 h-[16rem] bg-gradient-to-t from-[#fff] via-[#fff]/80 to-transparent z-10"></div>
+
+            {/* Action buttons positioned in bottom right */}
+            <div className="absolute bottom-8 right-8 flex gap-2 z-20">
+              <RoundButton
+                onClick={handleFavoriteClick}
+                icon={<Heart weight={isFavorited ? "duotone" : "regular"} size={20} />}
+                label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                disabled={!recipe?.id}
+                active={isFavorited}
+                className="bg-white/90 backdrop-blur-sm hover:bg-white"
+              />
+              <RoundButton
+                onClick={onEditOrGenerate}
+                icon={<PencilSimple weight="duotone" size={20} />}
+                label={recipe?.id ? "Edit Recipe" : "Generate New"}
+                className="bg-white/90 backdrop-blur-sm hover:bg-white"
+              />
+              {recipe?.id && (
+                <RoundButton
+                  onClick={onSave}
+                  icon={isSaving ? (
+                    <SpinnerGap size={20} className="animate-spin" />
+                  ) : (
+                    <Trash weight="duotone" size={20} />
+                  )}
+                  label="Delete Recipe"
+                  disabled={isSaving}
+                  className="bg-white/90 backdrop-blur-sm hover:bg-white"
+                />
+              )}
+            </div>
           </div>
         ) : (
           <div className="w-full h-full bg-[#E4E7DF] flex flex-col justify-center items-center">

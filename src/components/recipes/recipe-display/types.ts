@@ -60,8 +60,12 @@ export interface ImageControlsProps {
 export interface RecipeImageProps {
   imageUrl?: string;
   title: string;
+  recipe?: RecipeData;
   onImageUpdate?: (imageUrl: string) => Promise<void>;
   isGeneratingImage?: boolean;
+  onEditOrGenerate?: () => void;
+  onSave?: () => void;
+  isSaving?: boolean;
 }
 
 export interface RecipeCategoriesProps {

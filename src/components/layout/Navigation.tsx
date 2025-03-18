@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "react-i18next";
 import { User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
@@ -8,6 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 const Navigation = () => {
   const location = useLocation();
+  const { t } = useTranslation("common");
   const [profile, setProfile] = useState<{
     full_name: string | null;
     username: string | null;
@@ -16,8 +18,8 @@ const Navigation = () => {
   const [user, setUser] = useState<any>(null);
   
   const links = [
-    { href: "/recipes", label: "Recipes" },
-    { href: "/grocery-lists", label: "Grocery Lists" },
+    { href: "/recipes", label: t("navigation.recipes") },
+    { href: "/grocery-lists", label: t("navigation.groceries") },
   ];
 
   // Add a refresh trigger state to force profile refresh
@@ -55,7 +57,7 @@ const Navigation = () => {
     };
 
     fetchUserAndProfile();
-  }, [refreshTrigger, location.pathname]); // Re-fetch when location changes or refresh is triggered
+  }, [refreshTrigger, location.pathname]);
 
   const getInitials = () => {
     if (profile?.full_name) {
@@ -78,7 +80,7 @@ const Navigation = () => {
       // Get part before @ in email
       return user.email.split('@')[0];
     }
-    return "there";
+    return t("navigation.greeting");
   };
 
   return (
@@ -113,7 +115,7 @@ const Navigation = () => {
           <div className="flex h-20 items-center justify-between">
             <div className="flex items-center gap-8">
               <Link to="/" className="text-xl font-bold text-gradient hover:opacity-90 transition-opacity">
-                Recipe Crafters Haven
+                {t("navigation.appName")}
               </Link>
               <div className="hidden md:flex gap-6">
                 {links.map((link) => (

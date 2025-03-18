@@ -1,0 +1,69 @@
+{
+  "title": "Ustawienia profilu",
+  "description": "Zarządzaj swoimi ustawieniami i preferencjami",
+  "navigation": {
+    "backToRecipes": "Wróć do przepisów"
+  },
+  "fields": {
+    "email": {
+      "label": "Adres e-mail"
+    },
+    "fullName": {
+      "label": "Imię i nazwisko",
+      "placeholder": "Wprowadź swoje imię i nazwisko"
+    },
+    "username": {
+      "label": "Nazwa użytkownika",
+      "placeholder": "Wybierz nazwę użytkownika"
+    },
+    "avatar": {
+      "label": "Zdjęcie profilowe",
+      "alt": "Zdjęcie profilowe",
+      "change": "Zmień awatar",
+      "upload": "Prześlij zdjęcie",
+      "generate": "Wygeneruj awatar"
+    },
+    "uiLanguage": {
+      "label": "Język aplikacji",
+      "description": "Wybierz preferowany język interfejsu aplikacji",
+      "placeholder": "Wybierz język aplikacji"
+    },
+    "recipeLanguage": {
+      "label": "Język przepisów",
+      "description": "Wybierz preferowany język dla generowanych przepisów",
+      "placeholder": "Wybierz język przepisów"
+    },
+    "measurementSystem": {
+      "label": "System miar",
+      "description": "Wybierz preferowany system miar dla przepisów",
+      "placeholder": "Wybierz system miar",
+      "options": {
+        "metric": "Metryczny",
+        "imperial": "Imperialny"
+      }
+    }
+  },
+  "actions": {
+    "saving": "Zapisywanie...",
+    "saveChanges": "Zapisz",
+    "signOut": "Wyloguj"
+  },
+  "messages": {
+    "updateSuccess": "Profil został zaktualizowany pomyślnie",
+    "updateError": {
+      "generic": "Nie udało się zaktualizować profilu",
+      "schemaCache": "Błąd synchronizacji bazy danych. Spróbuj odświeżyć stronę",
+      "duplicateUsername": "Ta nazwa użytkownika jest już zajęta. Wybierz inną"
+    },
+    "signOut": {
+      "success": {
+        "title": "Sukces",
+        "description": "Zostałeś pomyślnie wylogowany"
+      },
+      "error": {
+        "title": "Błąd",
+        "description": "Nie udało się wylogować"
+      }
+    }
+  }
+} 

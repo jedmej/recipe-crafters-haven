@@ -1,0 +1,44 @@
+{
+  "navigation": {
+    "home": "Strona główna",
+    "recipes": "Przepisy",
+    "groceries": "Lista zakupów",
+    "profile": "Profil",
+    "settings": "Ustawienia",
+    "logout": "Wyloguj",
+    "back": "Wróć",
+    "appName": "Recipe Crafters Haven",
+    "greeting": "witaj"
+  },
+  "actions": {
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "delete": "Usuń",
+    "edit": "Edytuj",
+    "create": "Dodaj przepis",
+    "search": "Szukaj",
+    "filter": "Filtruj",
+    "sort": "Sortuj",
+    "generate": "Wygeneruj przepis",
+    "import": "Importuj z URL",
+    "add": "Dodaj",
+    "close": "Zamknij"
+  },
+  "status": {
+    "loading": "Ładowanie...",
+    "saving": "Zapisywanie...",
+    "success": "Sukces",
+    "error": "Błąd",
+    "deleted": "Usunięto",
+    "updated": "Zaktualizowano",
+    "created": "Utworzono"
+  },
+  "errors": {
+    "generic": "Coś poszło nie tak",
+    "notFound": "Nie znaleziono",
+    "unauthorized": "Brak dostępu",
+    "validation": "Błąd walidacji",
+    "network": "Błąd sieci",
+    "required": "To pole jest wymagane"
+  }
+} 

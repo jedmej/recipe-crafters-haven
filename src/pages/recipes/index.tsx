@@ -209,7 +209,7 @@ export default function RecipesPage() {
   const isUrl = searchTerm ? isValidUrl(searchTerm) : false;
 
   return (
-    <div className="max-w-7xl mx-auto min-h-screen px-0 py-4 md:p-6 lg:p-8">
+    <div className="max-w-7xl mx-auto min-h-screen px-0 py-4 md:p-6 lg:p-8 pb-24">
       <div className="flex justify-between items-center mb-8 px-6">
         <h1 className="text-[48px] font-bold text-[#222222]">Hello, {getDisplayName()}</h1>
         <button 

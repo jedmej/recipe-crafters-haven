@@ -1,0 +1,44 @@
+{
+  "navigation": {
+    "home": "Головна",
+    "recipes": "Рецепти",
+    "groceries": "Список покупок",
+    "profile": "Профіль",
+    "settings": "Налаштування",
+    "logout": "Вийти",
+    "back": "Назад",
+    "appName": "Recipe Crafters Haven",
+    "greeting": "привіт"
+  },
+  "actions": {
+    "save": "Зберегти",
+    "cancel": "Скасувати",
+    "delete": "Видалити",
+    "edit": "Редагувати",
+    "create": "Створити рецепт",
+    "search": "Пошук",
+    "filter": "Фільтр",
+    "sort": "Сортування",
+    "generate": "Згенерувати рецепт",
+    "import": "Імпорт з URL",
+    "add": "Додати",
+    "close": "Закрити"
+  },
+  "status": {
+    "loading": "Завантаження...",
+    "saving": "Збереження...",
+    "success": "Успішно",
+    "error": "Помилка",
+    "deleted": "Видалено",
+    "updated": "Оновлено",
+    "created": "Створено"
+  },
+  "errors": {
+    "generic": "Щось пішло не так",
+    "notFound": "Не знайдено",
+    "unauthorized": "Немає доступу",
+    "validation": "Помилка валідації",
+    "network": "Помилка мережі",
+    "required": "Це поле обов'язкове"
+  }
+} 

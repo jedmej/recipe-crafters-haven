@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { ComponentProps, ReactNode } from "react";
+import { ComponentProps, ReactNode, forwardRef } from "react";
 
 interface RoundButtonProps extends Omit<ComponentProps<typeof Button>, 'className'> {
   icon: ReactNode;
@@ -9,16 +9,17 @@ interface RoundButtonProps extends Omit<ComponentProps<typeof Button>, 'classNam
   className?: string;
 }
 
-export function RoundButton({
+export const RoundButton = forwardRef<HTMLButtonElement, RoundButtonProps>(({
   icon,
   label,
   active,
   className,
   ...props
-}: RoundButtonProps) {
+}, ref) => {
   return (
     <Button
       {...props}
+      ref={ref}
       variant={active ? "default" : "outline"}
       className={cn(
         "group relative w-12 h-12 p-0 rounded-full",
@@ -38,4 +39,4 @@ export function RoundButton({
       )}
     </Button>
   );
-} 
+}); 

@@ -1,0 +1,46 @@
+{
+  "title": "Profile Settings",
+  "description": "Manage your profile settings and preferences",
+  "fields": {
+    "fullName": {
+      "label": "Full Name",
+      "placeholder": "Enter your full name"
+    },
+    "username": {
+      "label": "Username",
+      "placeholder": "Choose a username"
+    },
+    "avatar": {
+      "label": "Profile Picture",
+      "upload": "Upload Picture",
+      "generate": "Generate Avatar"
+    },
+    "uiLanguage": {
+      "label": "Application Language",
+      "description": "Choose your preferred language for the application interface",
+      "placeholder": "Select application language"
+    },
+    "recipeLanguage": {
+      "label": "Recipe Language",
+      "description": "Choose your preferred language for recipe generation",
+      "placeholder": "Select recipe language"
+    },
+    "measurementSystem": {
+      "label": "Measurement System",
+      "description": "Choose your preferred units for recipes",
+      "placeholder": "Select measurement system",
+      "options": {
+        "metric": "Metric",
+        "imperial": "Imperial"
+      }
+    }
+  },
+  "messages": {
+    "updateSuccess": "Profile updated successfully",
+    "updateError": {
+      "generic": "Failed to update profile",
+      "schemaCache": "Database schema sync error. Please try refreshing the page",
+      "duplicateUsername": "Username already taken. Please choose a different one"
+    }
+  }
+} 

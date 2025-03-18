@@ -2,6 +2,7 @@ import * as React from "react"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { useTranslation } from "react-i18next"
 import {
   Popover,
   PopoverContent,
@@ -13,20 +14,21 @@ export function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
   const [open, setOpen] = React.useState(false)
+  const { t } = useTranslation("common")
 
   const addMenuItems = [
     {
-      label: "Inspire Me",
+      label: t("actions.generate"),
       icon: Sparkle,
       onClick: () => navigate("/recipes/inspire"),
     },
     {
-      label: "Import from URL",
+      label: t("actions.import"),
       icon: Robot,
       onClick: () => navigate("/recipes/import-ai"),
     },
     {
-      label: "Add Recipe",
+      label: t("actions.create"),
       icon: TextT,
       onClick: () => navigate("/recipes/new"),
     },
@@ -55,7 +57,7 @@ export function BottomNav() {
               location.pathname.startsWith("/recipes") 
                 ? "text-[#FA8923]" 
                 : "text-muted-foreground group-hover:text-[#FA8923]"
-            )}>Recipes</span>
+            )}>{t("navigation.recipes")}</span>
           </Link>
 
           <Popover open={open} onOpenChange={setOpen}>
@@ -86,7 +88,7 @@ export function BottomNav() {
                     )} 
                   />
                 </div>
-                <span className="sr-only">{open ? 'Close menu' : 'Add'}</span>
+                <span className="sr-only">{open ? t("actions.close") : t("actions.add")}</span>
               </Button>
             </PopoverTrigger>
             <PopoverContent 
@@ -133,7 +135,7 @@ export function BottomNav() {
               location.pathname.startsWith("/grocery-lists") 
                 ? "text-[#FA8923]" 
                 : "text-muted-foreground group-hover:text-[#FA8923]"
-            )}>Groceries</span>
+            )}>{t("navigation.groceries")}</span>
           </Link>
         </div>
       </div>

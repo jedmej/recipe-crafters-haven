@@ -1,0 +1,52 @@
+{
+  "search": {
+    "title": "Search Recipes",
+    "placeholder": "Search by name, ingredients, or cuisine...",
+    "noResults": "No recipes found",
+    "filters": {
+      "title": "Filters",
+      "mealType": "Meal Type",
+      "cuisine": "Cuisine",
+      "diet": "Dietary Restrictions",
+      "difficulty": "Difficulty Level",
+      "time": "Cooking Time"
+    }
+  },
+  "create": {
+    "title": "Create Recipe",
+    "generate": "Generate Recipe",
+    "import": "Import Recipe",
+    "manual": "Create Manually"
+  },
+  "details": {
+    "ingredients": "Ingredients",
+    "instructions": "Instructions",
+    "prepTime": "Prep Time",
+    "cookTime": "Cook Time",
+    "totalTime": "Total Time",
+    "servings": "Servings",
+    "difficulty": "Difficulty",
+    "cuisine": "Cuisine"
+  },
+  "actions": {
+    "save": "Save Recipe",
+    "edit": "Edit Recipe",
+    "delete": "Delete Recipe",
+    "share": "Share Recipe",
+    "print": "Print Recipe",
+    "addToCollection": "Add to Collection",
+    "generateImage": "Generate Image"
+  },
+  "messages": {
+    "saveSuccess": "Recipe saved successfully",
+    "deleteSuccess": "Recipe deleted successfully",
+    "generateSuccess": "Recipe generated successfully",
+    "importSuccess": "Recipe imported successfully",
+    "error": {
+      "save": "Failed to save recipe",
+      "delete": "Failed to delete recipe",
+      "generate": "Failed to generate recipe",
+      "import": "Failed to import recipe"
+    }
+  }
+} 

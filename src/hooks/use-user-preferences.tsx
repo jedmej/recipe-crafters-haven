@@ -2,11 +2,12 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { supabase } from '@/integrations/supabase/client';
 
 // Define language codes type
-export type LanguageCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pt' | 'zh' | 'ja' | 'ko' | 'pl' | 'ru' | 'uk';
+export type LanguageCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pl' | 'ru' | 'uk';
 
 // Define the structure of user preferences
 interface UserPreferences {
-  language: LanguageCode;
+  uiLanguage: LanguageCode;
+  recipeLanguage: LanguageCode;
   theme: 'light' | 'dark' | 'system';
   unitSystem: 'metric' | 'imperial';
   autoGenerateImages: boolean;
@@ -14,7 +15,8 @@ interface UserPreferences {
 
 // Default preferences
 const defaultPreferences: UserPreferences = {
-  language: 'en',
+  uiLanguage: 'en',
+  recipeLanguage: 'en',
   theme: 'light',
   unitSystem: 'metric',
   autoGenerateImages: true,
@@ -34,7 +36,7 @@ const UserPreferencesContext = createContext<UserPreferencesContextType | undefi
 
 // Helper function to check if language code is valid
 const isValidLanguage = (lang: string): lang is LanguageCode => {
-  return ['en', 'es', 'fr', 'de', 'it', 'pt', 'zh', 'ja', 'ko', 'pl', 'ru', 'uk'].includes(lang);
+  return ['en', 'es', 'fr', 'de', 'it', 'pl', 'ru', 'uk'].includes(lang);
 };
 
 // Provider component
@@ -69,7 +71,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         // Get user's profile
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('language, measurement_system')
+          .select('ui_language, recipe_language, measurement_system')
           .eq('id', user.id)
           .single();
 
@@ -83,9 +85,14 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
           // Map profile values to user preferences
           const updatedPreferences: Partial<UserPreferences> = {};
 
-          // Map language
-          if (profile.language && isValidLanguage(profile.language)) {
-            updatedPreferences.language = profile.language as LanguageCode;
+          // Map UI language
+          if (profile.ui_language && isValidLanguage(profile.ui_language)) {
+            updatedPreferences.uiLanguage = profile.ui_language;
+          }
+
+          // Map recipe language
+          if (profile.recipe_language && isValidLanguage(profile.recipe_language)) {
+            updatedPreferences.recipeLanguage = profile.recipe_language;
           }
 
           // Map measurement system
@@ -137,8 +144,12 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
         const updateData: Record<string, any> = {};
         
         // Map preferences to profile fields
-        if (newPreferences.language) {
-          updateData.language = newPreferences.language;
+        if (newPreferences.uiLanguage) {
+          updateData.ui_language = newPreferences.uiLanguage;
+        }
+        
+        if (newPreferences.recipeLanguage) {
+          updateData.recipe_language = newPreferences.recipeLanguage;
         }
         
         if (newPreferences.unitSystem) {
@@ -165,7 +176,7 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
   // Apply preferences globally
   useEffect(() => {
     // Apply language preference
-    document.documentElement.lang = preferences.language;
+    document.documentElement.lang = preferences.uiLanguage;
     
     // Always use light theme for now
     document.documentElement.classList.remove('dark');
@@ -180,11 +191,11 @@ export function UserPreferencesProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook to use user preferences
-export function useUserPreferences() {
+// Hook for using preferences
+export const useUserPreferences = () => {
   const context = useContext(UserPreferencesContext);
   if (context === undefined) {
     throw new Error('useUserPreferences must be used within a UserPreferencesProvider');
   }
   return context;
-} 
+}; 

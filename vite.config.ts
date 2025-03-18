@@ -14,7 +14,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'og-image.png'],
+      includeAssets: ['favicon.ico', 'og-image.png', 'locales/**/*'],
       manifest: {
         name: 'Recipe Crafters Haven',
         short_name: 'RecipeCrafters',
@@ -46,7 +46,7 @@ export default defineConfig({
       strategies: 'generateSW',
       workbox: {
         globDirectory: process.env.NODE_ENV === 'development' ? 'public' : 'dist',
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}', 'locales/**/*.json'],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/api\.*/i,
@@ -54,6 +54,16 @@ export default defineConfig({
             options: {
               cacheName: 'api-cache',
               networkTimeoutSeconds: 10,
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          {
+            urlPattern: /\/locales\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'locale-cache',
               cacheableResponse: {
                 statuses: [0, 200]
               }
@@ -85,4 +95,5 @@ export default defineConfig({
       ],
     },
   },
+  publicDir: 'public',
 });

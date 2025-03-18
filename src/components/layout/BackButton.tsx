@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { CaretLeft } from "@phosphor-icons/react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface BackButtonProps {
   onClick?: () => void;
@@ -9,6 +10,7 @@ interface BackButtonProps {
 
 export function BackButton({ onClick, className = "" }: BackButtonProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation("common");
   
   const handleClick = () => {
     if (onClick) {
@@ -26,7 +28,7 @@ export function BackButton({ onClick, className = "" }: BackButtonProps) {
       onClick={handleClick}
     >
       <CaretLeft size={16} weight="duotone" className="mr-1" />
-      <span className="text-sm">Back</span>
+      <span className="text-sm">{t("navigation.back")}</span>
     </Button>
   );
 } 

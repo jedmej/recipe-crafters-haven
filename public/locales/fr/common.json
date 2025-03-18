@@ -1,0 +1,38 @@
+{
+  "navigation": {
+    "home": "Home",
+    "recipes": "Recipes",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Log Out"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "generate": "Generate",
+    "import": "Import"
+  },
+  "status": {
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "success": "Success",
+    "error": "Error",
+    "deleted": "Deleted",
+    "updated": "Updated",
+    "created": "Created"
+  },
+  "errors": {
+    "generic": "Something went wrong",
+    "notFound": "Not found",
+    "unauthorized": "Unauthorized",
+    "validation": "Validation error",
+    "network": "Network error",
+    "required": "This field is required"
+  }
+} 

@@ -1,0 +1,91 @@
+{
+  "search": {
+    "title": "Search Recipes",
+    "placeholder": "Search by name, ingredients, or cuisine...",
+    "noResults": "No recipes found",
+    "filters": {
+      "title": "Filters",
+      "mealType": "Meal Type",
+      "cuisine": "Cuisine",
+      "diet": "Dietary Restrictions",
+      "difficulty": "Difficulty Level",
+      "time": "Cooking Time"
+    }
+  },
+  "create": {
+    "title": "Stwórz nowy przepis",
+    "description": "Wprowadź szczegóły swojego przepisu",
+    "generateButton": "Wygeneruj przepis",
+    "saveButton": "Zapisz przepis",
+    "discardButton": "Odrzuć zmiany"
+  },
+  "details": {
+    "ingredients": "Ingredients",
+    "instructions": "Instructions",
+    "prepTime": "Czas przygotowania",
+    "cookTime": "Czas gotowania",
+    "totalTime": "Całkowity czas",
+    "servings": "Porcje",
+    "difficulty": {
+      "label": "Poziom trudności",
+      "easy": "Łatwy",
+      "medium": "Średni",
+      "hard": "Trudny"
+    },
+    "cuisine": "Kuchnia",
+    "category": "Kategoria",
+    "dietary": {
+      "label": "Preferencje dietetyczne",
+      "vegetarian": "Wegetariańskie",
+      "vegan": "Wegańskie",
+      "glutenFree": "Bezglutenowe",
+      "dairyFree": "Bez nabiału",
+      "nutFree": "Bez orzechów"
+    }
+  },
+  "actions": {
+    "save": "Save Recipe",
+    "edit": "Edit Recipe",
+    "delete": "Delete Recipe",
+    "share": "Share Recipe",
+    "print": "Print Recipe",
+    "addToCollection": "Add to Collection",
+    "generateImage": "Generate Image"
+  },
+  "messages": {
+    "saveSuccess": "Przepis został zapisany pomyślnie",
+    "saveError": "Nie udało się zapisać przepisu",
+    "deleteSuccess": "Przepis został usunięty",
+    "deleteError": "Nie udało się usunąć przepisu",
+    "generateError": "Nie udało się wygenerować przepisu"
+  },
+  "ingredients": {
+    "title": "Składniki",
+    "addButton": "Dodaj składnik",
+    "removeButton": "Usuń",
+    "quantity": "Ilość",
+    "unit": "Jednostka",
+    "name": "Nazwa składnika"
+  },
+  "instructions": {
+    "title": "Instrukcje",
+    "addStepButton": "Dodaj krok",
+    "removeStepButton": "Usuń krok",
+    "stepLabel": "Krok {{number}}"
+  },
+  "filters": {
+    "searchPlaceholder": "Szukaj przepisów...",
+    "sortBy": {
+      "label": "Sortuj według",
+      "newest": "Najnowsze",
+      "popular": "Popularne",
+      "difficulty": "Trudność"
+    },
+    "filterBy": {
+      "label": "Filtruj według",
+      "all": "Wszystkie",
+      "favorites": "Ulubione",
+      "myRecipes": "Moje przepisy"
+    }
+  }
+} 

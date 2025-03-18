@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { MeasurementSystem } from "@/lib/types";
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -38,6 +39,7 @@ const LANGUAGE_OPTIONS = {
 type LanguageCode = keyof typeof LANGUAGE_OPTIONS;
 
 export default function ProfilePage() {
+  const { t } = useTranslation('profile');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [profile, setProfile] = useState<{
@@ -45,7 +47,8 @@ export default function ProfilePage() {
     username: string | null;
     avatar_url: string | null;
     measurement_system: MeasurementSystem;
-    language: LanguageCode;
+    ui_language: LanguageCode;
+    recipe_language: LanguageCode;
   } | null>(null);
   const [user, setUser] = useState<any>(null);
   const [isAvatarDialogOpen, setIsAvatarDialogOpen] = useState(false);
@@ -101,7 +104,8 @@ export default function ProfilePage() {
           username: profile.username,
           avatar_url: avatarUrl,
           measurement_system: profile.measurement_system,
-          language: profile.language,
+          ui_language: profile.ui_language,
+          recipe_language: profile.recipe_language,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -118,7 +122,8 @@ export default function ProfilePage() {
 
       // Update in-memory user preferences to match profile settings
       updatePreferences({
-        language: profile.language,
+        uiLanguage: profile.ui_language,
+        recipeLanguage: profile.recipe_language,
         unitSystem: profile.measurement_system === 'metric' ? 'metric' : 'imperial',
       });
 
@@ -234,17 +239,17 @@ export default function ProfilePage() {
         <Button
           variant="ghost"
           className="mb-6 pl-0 text-gray-600 hover:text-gray-900 hover:bg-transparent"
-          aria-label="Back to recipes"
+          aria-label={t('navigation.backToRecipes')}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          <span className="hidden sm:inline">Back to recipes</span>
+          <span className="hidden sm:inline">{t('navigation.backToRecipes')}</span>
         </Button>
 
         <Card className="border-0 bg-[#F5F5F5] rounded-[48px] overflow-hidden shadow-none">
           <CardHeader className="pb-6 border-b border-gray-100 p-6 sm:p-8">
-            <CardTitle className="text-2xl sm:text-3xl font-bold">Profile Settings</CardTitle>
+            <CardTitle className="text-2xl sm:text-3xl font-bold">{t('title')}</CardTitle>
             <CardDescription className="mt-2 text-base">
-              Manage your profile information and preferences
+              {t('description')}
             </CardDescription>
           </CardHeader>
 
@@ -252,7 +257,7 @@ export default function ProfilePage() {
             {/* Avatar section */}
             <div className="flex flex-col sm:flex-row items-center gap-4">
               <Avatar className="h-24 w-24 border-2 border-white">
-                <AvatarImage src={profile?.avatar_url || undefined} alt="Profile picture" />
+                <AvatarImage src={profile?.avatar_url || undefined} alt={t('fields.avatar.alt')} />
                 <AvatarFallback>
                   {profile?.full_name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase()}
                 </AvatarFallback>
@@ -262,7 +267,7 @@ export default function ProfilePage() {
                 className="w-full sm:w-auto rounded-full px-6 py-2 text-sm font-medium border border-gray-200 hover:bg-gray-50 shadow-none"
                 onClick={() => setIsAvatarDialogOpen(true)}
               >
-                Change Avatar
+                {t('fields.avatar.change')}
               </Button>
             </div>
 
@@ -270,7 +275,7 @@ export default function ProfilePage() {
             <form onSubmit={handleUpdateProfile} className="space-y-6">
               <div className="space-y-2">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                  Email
+                  {t('fields.email.label')}
                 </label>
                 <Input
                   id="email"
@@ -284,34 +289,89 @@ export default function ProfilePage() {
 
               <div className="space-y-2">
                 <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                  Username
+                  {t('fields.username.label')}
                 </label>
                 <Input
                   id="username"
                   value={profile?.username || ''}
                   onChange={(e) => setProfile(prev => prev ? { ...prev, username: e.target.value } : null)}
                   className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
+                  placeholder={t('fields.username.placeholder')}
                   aria-describedby="username-description"
                 />
               </div>
 
               <div className="space-y-2">
                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                  Full Name
+                  {t('fields.fullName.label')}
                 </label>
                 <Input
                   id="fullName"
                   value={profile?.full_name || ''}
                   onChange={(e) => setProfile(prev => prev ? { ...prev, full_name: e.target.value } : null)}
                   className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
-                  placeholder="Enter your full name"
+                  placeholder={t('fields.fullName.placeholder')}
                   aria-describedby="fullname-description"
                 />
               </div>
 
               <div className="space-y-2">
+                <label htmlFor="ui-language" className="block text-sm font-medium text-gray-700">
+                  {t('fields.uiLanguage.label')}
+                </label>
+                <Select 
+                  value={profile?.ui_language}
+                  onValueChange={(value: LanguageCode) => 
+                    setProfile(prev => prev ? { ...prev, ui_language: value } : null)
+                  }
+                >
+                  <SelectTrigger
+                    id="ui-language"
+                    className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
+                  >
+                    <SelectValue placeholder={t('fields.uiLanguage.placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent className="shadow-none">
+                    {Object.entries(LANGUAGE_OPTIONS).map(([code, name]) => (
+                      <SelectItem key={code} value={code}>
+                        <LanguageFlag languageCode={code} languageName={name} />
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-500">{t('fields.uiLanguage.description')}</p>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="recipe-language" className="block text-sm font-medium text-gray-700">
+                  {t('fields.recipeLanguage.label')}
+                </label>
+                <Select 
+                  value={profile?.recipe_language}
+                  onValueChange={(value: LanguageCode) => 
+                    setProfile(prev => prev ? { ...prev, recipe_language: value } : null)
+                  }
+                >
+                  <SelectTrigger
+                    id="recipe-language"
+                    className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
+                  >
+                    <SelectValue placeholder={t('fields.recipeLanguage.placeholder')} />
+                  </SelectTrigger>
+                  <SelectContent className="shadow-none">
+                    {Object.entries(LANGUAGE_OPTIONS).map(([code, name]) => (
+                      <SelectItem key={code} value={code}>
+                        <LanguageFlag languageCode={code} languageName={name} />
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-gray-500">{t('fields.recipeLanguage.description')}</p>
+              </div>
+
+              <div className="space-y-2">
                 <label htmlFor="measurement" className="block text-sm font-medium text-gray-700">
-                  Measurement System
+                  {t('fields.measurementSystem.label')}
                 </label>
                 <Select 
                   value={profile?.measurement_system} 
@@ -323,41 +383,14 @@ export default function ProfilePage() {
                     id="measurement"
                     className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
                   >
-                    <SelectValue placeholder="Select measurement system" />
+                    <SelectValue placeholder={t('fields.measurementSystem.placeholder')} />
                   </SelectTrigger>
                   <SelectContent className="shadow-none">
-                    <SelectItem value="metric">Metric</SelectItem>
-                    <SelectItem value="imperial">Imperial</SelectItem>
+                    <SelectItem value="metric">{t('fields.measurementSystem.options.metric')}</SelectItem>
+                    <SelectItem value="imperial">{t('fields.measurementSystem.options.imperial')}</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-gray-500">Choose your preferred units for recipes.</p>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="language" className="block text-sm font-medium text-gray-700">
-                  Language
-                </label>
-                <Select 
-                  value={profile?.language}
-                  onValueChange={(value: LanguageCode) => 
-                    setProfile(prev => prev ? { ...prev, language: value } : null)
-                  }
-                >
-                  <SelectTrigger
-                    id="language"
-                    className="w-full rounded-xl border-gray-200 focus:border-gray-300 shadow-none"
-                  >
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent className="shadow-none">
-                    {Object.entries(LANGUAGE_OPTIONS).map(([code, name]) => (
-                      <SelectItem key={code} value={code}>
-                        <LanguageFlag languageCode={code} languageName={name} />
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-gray-500">Choose your preferred language for recipe generation.</p>
+                <p className="text-sm text-gray-500">{t('fields.measurementSystem.description')}</p>
               </div>
             </form>
           </CardContent>
@@ -371,10 +404,10 @@ export default function ProfilePage() {
               {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  {t('actions.saving')}
                 </>
               ) : (
-                'Save Changes'
+                t('actions.saveChanges')
               )}
             </Button>
             <Button
@@ -384,21 +417,21 @@ export default function ProfilePage() {
                 try {
                   await supabase.auth.signOut();
                   toast({
-                    title: "Success",
-                    description: "You have been logged out successfully",
+                    title: t('messages.signOut.success.title'),
+                    description: t('messages.signOut.success.description'),
                   });
                 } catch (error) {
                   console.error('Error signing out:', error);
                   toast({
-                    title: "Error",
-                    description: "Failed to sign out",
+                    title: t('messages.signOut.error.title'),
+                    description: t('messages.signOut.error.description'),
                     variant: "destructive",
                   });
                 }
               }}
             >
               <LogOut className="mr-2 h-5 w-5" />
-              Sign Out
+              {t('actions.signOut')}
             </Button>
           </CardFooter>
         </Card>

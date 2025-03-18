@@ -1,10 +1,11 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Sparkle } from "@phosphor-icons/react/dist/ssr";
 
 interface SearchSectionProps {
   searchQuery: string;
@@ -58,12 +59,12 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
             {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Searching...
+                Creating Recipe...
               </>
             ) : (
               <>
-                <Search className="mr-2 h-4 w-4" />
-                Search
+                <Sparkle className="mr-2 h-4 w-4" weight="duotone" />
+                Create Recipe
               </>
             )}
           </Button>

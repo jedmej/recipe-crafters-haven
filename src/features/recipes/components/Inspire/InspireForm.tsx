@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Sparkle } from "@phosphor-icons/react/dist/ssr";
 
 interface FilterState {
   mealType: string[];
@@ -196,10 +197,13 @@ export const InspireForm: React.FC<InspireFormProps> = ({
             {isGenerating ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Generating Recipe...
+                Creating Recipe...
               </>
             ) : (
-              "Generate Recipe"
+              <>
+                <Sparkle className="mr-2 h-4 w-4" weight="duotone" />
+                Create Recipe
+              </>
             )}
           </Button>
         </form>

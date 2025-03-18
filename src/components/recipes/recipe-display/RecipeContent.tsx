@@ -6,6 +6,7 @@ import IngredientsSection from "./IngredientsSection";
 import InstructionsSection from "./InstructionsSection";
 import RecipeCategories from "./RecipeCategories";
 import { RecipeContentProps } from "./types";
+import { useTranslation } from "react-i18next";
 
 const RecipeContent = memo(
   ({
@@ -23,6 +24,7 @@ const RecipeContent = memo(
     onDelete,
     setShowCookingMode
   }: RecipeContentProps) => {
+    const { t } = useTranslation("recipes");
     const showOriginal = chosenPortions !== recipe.suggested_portions;
     
     return (

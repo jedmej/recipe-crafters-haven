@@ -3,9 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alarm, Oven, Fire } from "@phosphor-icons/react";
 import TimeNutritionItem from "./TimeNutritionItem";
 import { TimeNutritionProps } from "./types";
+import { useTranslation } from "react-i18next";
 
 const TimeNutrition = memo(
   ({ recipe, scaledRecipe, showOriginal }: TimeNutritionProps) => {
+    const { t } = useTranslation("recipes");
+    
     // Only render if we have time or nutrition data
     const hasTimeOrNutrition = useMemo(() => {
       return scaledRecipe?.prep_time || 
@@ -26,7 +29,7 @@ const TimeNutrition = memo(
             {scaledRecipe?.prep_time && (
               <TimeNutritionItem
                 icon={<Alarm className="h-6 w-6 text-primary" weight="duotone" />}
-                label="Prep Time"
+                label={t("details.prepTime")}
                 value={scaledRecipe.prep_time}
                 originalValue={recipe.prep_time}
                 showOriginal={showOriginal}
@@ -37,7 +40,7 @@ const TimeNutrition = memo(
             {scaledRecipe?.cook_time && (
               <TimeNutritionItem
                 icon={<Oven className="h-6 w-6 text-primary" weight="duotone" />}
-                label="Cook Time"
+                label={t("details.cookTime")}
                 value={scaledRecipe.cook_time}
                 originalValue={recipe.cook_time}
                 showOriginal={showOriginal}
@@ -48,11 +51,11 @@ const TimeNutrition = memo(
             {scaledRecipe?.estimated_calories && (
               <TimeNutritionItem
                 icon={<Fire className="h-6 w-6 text-primary" weight="duotone" />}
-                label="Calories"
+                label={t("details.calories")}
                 value={scaledRecipe.estimated_calories}
                 originalValue={recipe.estimated_calories}
                 showOriginal={showOriginal}
-                unit="total"
+                unit="cal"
               />
             )}
           </div>

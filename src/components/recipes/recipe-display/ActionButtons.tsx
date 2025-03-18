@@ -5,6 +5,7 @@ import { useFavorites } from "@/hooks/use-favorites";
 import { useToast } from "@/hooks/use-toast";
 import { ActionButtonsAction, ActionButtonsState, RecipeDisplayProps } from "./types";
 import { AsyncHandler, SyncHandler, handleError } from "./utils";
+import { useTranslation } from "react-i18next";
 
 // Constants
 const PRIMARY_BUTTON_CLASSES = "flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 h-12 px-4 py-2 rounded-full";
@@ -31,6 +32,7 @@ const ActionButtons = memo(({
 }: Pick<RecipeDisplayProps, 'recipe' | 'onEditOrGenerate' | 'onSave' | 'isSaving' | 'onBack'>) => {
   const { isFavorite, toggleFavorite } = useFavorites();
   const { toast } = useToast();
+  const { t } = useTranslation("recipes");
   const [favoriteState, dispatch] = useReducer(actionButtonsReducer, {
     isToggling: false,
     error: null
@@ -72,7 +74,7 @@ const ActionButtons = memo(({
       <button
         onClick={handleBackClick}
         className="h-12 w-12 rounded-full bg-[#F5F5F5] hover:bg-gray-200 flex items-center justify-center transition-colors shadow-sm"
-        aria-label="Go Back"
+        aria-label={t("actions.back")}
       >
         <CaretLeft weight="duotone" size={20} className="text-gray-700" />
       </button>
@@ -81,7 +83,7 @@ const ActionButtons = memo(({
           onClick={handleFavoriteClick}
           disabled={!recipe.id || favoriteState.isToggling}
           className="group relative h-12 w-12 rounded-full bg-[#F5F5F5] hover:bg-[#FA8923]/10 hover:scale-110 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-all duration-300 ease-in-out hover:shadow-xl"
-          aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+          aria-label={t(isFavorited ? "actions.unfavorite" : "actions.favorite")}
         >
           <Heart 
             weight={isFavorited ? "duotone" : "regular"}
@@ -92,7 +94,7 @@ const ActionButtons = memo(({
         <button
           onClick={onEditOrGenerate}
           className="h-12 w-12 rounded-full bg-[#F5F5F5] hover:bg-gray-200 flex items-center justify-center transition-colors"
-          aria-label={recipe.id ? "Edit Recipe" : "Generate New"}
+          aria-label={t(recipe.id ? "actions.edit" : "actions.generateRecipe")}
         >
           <PencilSimple weight="duotone" size={20} className="text-gray-700" />
         </button>
@@ -101,7 +103,7 @@ const ActionButtons = memo(({
             onClick={onSave}
             disabled={isSaving}
             className="h-12 w-12 rounded-full bg-[#F5F5F5] hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-            aria-label="Delete Recipe"
+            aria-label={t("actions.delete")}
           >
             {isSaving ? (
               <SpinnerGap size={20} className="text-gray-700 animate-spin" />
@@ -114,17 +116,17 @@ const ActionButtons = memo(({
             onClick={onSave}
             disabled={isSaving}
             className={`${PRIMARY_BUTTON_CLASSES} w-[200px]`}
-            aria-label="Save Recipe"
+            aria-label={t("actions.save")}
           >
             {isSaving ? (
               <>
                 <SpinnerGap weight="bold" size={16} className="animate-spin" />
-                <span>Saving...</span>
+                <span>{t("actions.saving")}</span>
               </>
             ) : (
               <>
                 <FloppyDisk weight="bold" size={16} />
-                <span>Save</span>
+                <span>{t("actions.save")}</span>
               </>
             )}
           </Button>

@@ -7,6 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Button } from "@/components/ui/button";
 import { ViewToggle } from "./ViewToggle";
 import { RoundButton } from "@/components/ui/round-button";
+import { useTranslation } from "react-i18next";
 
 interface SearchAndActionsProps {
   searchTerm: string;
@@ -35,11 +36,13 @@ export function SearchAndActions({
   view,
   onViewChange
 }: SearchAndActionsProps) {
+  const { t } = useTranslation("recipes");
+
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <h1 className="text-[32px] font-bold font-judson text-[#222222]">My recipes</h1>
+        <h1 className="text-[32px] font-bold font-judson text-[#222222]">{t("myRecipes.title")}</h1>
         
         {/* Action Buttons */}
         <div className="flex gap-2">
@@ -48,7 +51,7 @@ export function SearchAndActions({
           <RoundButton
             onClick={() => setIsFiltersVisible(!isFiltersVisible)}
             icon={<Sliders size={20} weight="regular" />}
-            label="Filters"
+            label={t("filters.title")}
             active={isFiltersVisible}
           />
 
@@ -59,7 +62,7 @@ export function SearchAndActions({
             ) : (
               <Checks size={20} weight="regular" />
             )}
-            label="Select Multiple"
+            label={t("actions.selectMultiple")}
             active={isSelectionMode}
           />
 
@@ -68,20 +71,20 @@ export function SearchAndActions({
               <AlertDialogTrigger asChild>
                 <RoundButton
                   icon={<Trash className="h-5 w-5" />}
-                  label="Delete"
+                  label={t("actions.delete")}
                   active={true}
                 />
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("dialogs.delete.title")}</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the selected recipes.
+                    {t("dialogs.delete.description")}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDeleteSelected}>Delete</AlertDialogAction>
+                  <AlertDialogCancel>{t("actions.cancel")}</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteSelected}>{t("actions.delete")}</AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
@@ -95,7 +98,7 @@ export function SearchAndActions({
           <Search className="absolute left-4 h-5 w-5 text-[#222222] opacity-30" />
           <Input
             type="search"
-            placeholder="Search"
+            placeholder={t("search.placeholder")}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-full pl-12 pr-4 border-none rounded-full text-sm font-archivo placeholder:text-[#222222] placeholder:opacity-30 focus-visible:ring-0 focus-visible:ring-offset-0"

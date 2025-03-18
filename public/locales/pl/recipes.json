@@ -1,91 +1,166 @@
 {
   "search": {
-    "title": "Search Recipes",
-    "placeholder": "Search by name, ingredients, or cuisine...",
-    "noResults": "No recipes found",
+    "title": "Szukaj przepisów",
+    "placeholder": "Szukaj po nazwie, składnikach lub kuchni...",
+    "noResults": "Nie znaleziono przepisów",
     "filters": {
-      "title": "Filters",
-      "mealType": "Meal Type",
-      "cuisine": "Cuisine",
-      "diet": "Dietary Restrictions",
-      "difficulty": "Difficulty Level",
-      "time": "Cooking Time"
+      "title": "Filtry",
+      "mealType": "Rodzaj posiłku",
+      "cuisine": "Kuchnia",
+      "diet": "Ograniczenia dietetyczne",
+      "difficulty": "Poziom trudności",
+      "time": "Czas przygotowania"
     }
   },
+  "myRecipes": {
+    "title": "Moje przepisy",
+    "description": "Zarządzaj i organizuj swoją kolekcję przepisów"
+  },
   "create": {
-    "title": "Stwórz nowy przepis",
-    "description": "Wprowadź szczegóły swojego przepisu",
-    "generateButton": "Wygeneruj przepis",
-    "saveButton": "Zapisz przepis",
-    "discardButton": "Odrzuć zmiany"
+    "title": "Utwórz przepis",
+    "generate": "Wygeneruj przepis",
+    "import": "Importuj przepis",
+    "manual": "Utwórz ręcznie"
   },
   "details": {
-    "ingredients": "Ingredients",
-    "instructions": "Instructions",
+    "ingredients": "Składniki",
+    "instructions": "Instrukcje",
     "prepTime": "Czas przygotowania",
     "cookTime": "Czas gotowania",
     "totalTime": "Całkowity czas",
     "servings": "Porcje",
-    "difficulty": {
-      "label": "Poziom trudności",
-      "easy": "Łatwy",
-      "medium": "Średni",
-      "hard": "Trudny"
-    },
+    "difficulty": "Trudność",
     "cuisine": "Kuchnia",
-    "category": "Kategoria",
-    "dietary": {
-      "label": "Preferencje dietetyczne",
-      "vegetarian": "Wegetariańskie",
-      "vegan": "Wegańskie",
-      "glutenFree": "Bezglutenowe",
-      "dairyFree": "Bez nabiału",
-      "nutFree": "Bez orzechów"
-    }
+    "calories": "Kalorie",
+    "metric": "Metryczne",
+    "imperial": "Imperialne",
+    "suggested": "Sugerowane"
   },
   "actions": {
-    "save": "Save Recipe",
-    "edit": "Edit Recipe",
-    "delete": "Delete Recipe",
-    "share": "Share Recipe",
-    "print": "Print Recipe",
-    "addToCollection": "Add to Collection",
-    "generateImage": "Generate Image"
+    "back": "Wróć",
+    "saving": "Zapisywanie...",
+    "favorite": "Dodaj do ulubionych",
+    "unfavorite": "Usuń z ulubionych",
+    "save": "Zapisz przepis",
+    "edit": "Edytuj przepis",
+    "delete": "Usuń przepis",
+    "share": "Udostępnij przepis",
+    "print": "Drukuj przepis",
+    "addToCollection": "Dodaj do kolekcji",
+    "generateImage": "Wygeneruj zdjęcie",
+    "generateRecipe": "Wygeneruj przepis",
+    "importWithAI": "Importuj z AI",
+    "addRecipe": "Dodaj przepis",
+    "generateNow": "Wygeneruj przepis teraz",
+    "clearSearch": "Wyczyść wyszukiwanie",
+    "clearFilters": "Wyczyść filtry",
+    "selectMultiple": "Wybierz wiele",
+    "cancel": "Anuluj",
+    "startCooking": "Rozpocznij gotowanie",
+    "addToGroceryList": "Dodaj składniki do listy zakupów"
   },
   "messages": {
-    "saveSuccess": "Przepis został zapisany pomyślnie",
-    "saveError": "Nie udało się zapisać przepisu",
-    "deleteSuccess": "Przepis został usunięty",
-    "deleteError": "Nie udało się usunąć przepisu",
-    "generateError": "Nie udało się wygenerować przepisu"
+    "saveSuccess": "Przepis został pomyślnie zapisany",
+    "deleteSuccess": "Przepis został pomyślnie usunięty",
+    "generateSuccess": "Przepis został pomyślnie wygenerowany",
+    "importSuccess": "Przepis został pomyślnie zaimportowany",
+    "error": {
+      "save": "Nie udało się zapisać przepisu",
+      "delete": "Nie udało się usunąć przepisu",
+      "generate": "Nie udało się wygenerować przepisu",
+      "import": "Nie udało się zaimportować przepisu",
+      "load": "Błąd podczas wczytywania przepisu"
+    }
   },
-  "ingredients": {
-    "title": "Składniki",
-    "addButton": "Dodaj składnik",
-    "removeButton": "Usuń",
-    "quantity": "Ilość",
-    "unit": "Jednostka",
-    "name": "Nazwa składnika"
-  },
-  "instructions": {
-    "title": "Instrukcje",
-    "addStepButton": "Dodaj krok",
-    "removeStepButton": "Usuń krok",
-    "stepLabel": "Krok {{number}}"
+  "greeting": {
+    "hello": "Cześć, {{name}}"
   },
   "filters": {
-    "searchPlaceholder": "Szukaj przepisów...",
-    "sortBy": {
-      "label": "Sortuj według",
-      "newest": "Najnowsze",
-      "popular": "Popularne",
-      "difficulty": "Trudność"
+    "title": "Filtry",
+    "all": "Wszystkie",
+    "mealType": "Rodzaj posiłku",
+    "dietary": "Ograniczenia dietetyczne",
+    "difficulty": "Poziom trudności",
+    "cuisine": "Rodzaj kuchni",
+    "cookingMethod": "Metoda gotowania",
+    "cookTime": "Całkowity czas",
+    "calories": "Kalorie na porcję",
+    "mealTypes": {
+      "breakfast": "Śniadanie",
+      "lunch": "Obiad",
+      "dinner": "Kolacja",
+      "snack": "Przekąska",
+      "dessert": "Deser",
+      "appetizer": "Przystawka",
+      "sidedish": "Dodatek",
+      "drink": "Napój"
     },
-    "filterBy": {
-      "label": "Filtruj według",
-      "all": "Wszystkie",
-      "favorites": "Ulubione",
-      "myRecipes": "Moje przepisy"
+    "dietaryTypes": {
+      "vegetarian": "Wegetariańskie",
+      "vegan": "Wegańskie",
+      "gluten-free": "Bezglutenowe",
+      "dairyfree": "Bez nabiału",
+      "nutfree": "Bez orzechów",
+      "lowcarb": "Niskowęglowodanowe",
+      "keto": "Ketogeniczne",
+      "paleo": "Paleo"
+    },
+    "difficultyLevels": {
+      "easy": "Łatwe",
+      "medium": "Średnie",
+      "hard": "Trudne",
+      "expert": "Eksperckie"
+    },
+    "cuisineTypes": {
+      "italian": "Włoska",
+      "mexican": "Meksykańska",
+      "chinese": "Chińska",
+      "japanese": "Japońska",
+      "indian": "Indyjska",
+      "french": "Francuska",
+      "mediterranean": "Śródziemnomorska",
+      "american": "Amerykańska",
+      "thai": "Tajska",
+      "vietnamese": "Wietnamska",
+      "korean": "Koreańska",
+      "spanish": "Hiszpańska",
+      "greek": "Grecka",
+      "middle eastern": "Bliskowschodnia"
+    },
+    "cookingMethods": {
+      "baked": "Pieczone",
+      "baking": "Pieczenie",
+      "fried": "Smażone",
+      "frying": "Smażenie",
+      "steaming": "Gotowanie na parze",
+      "boiling": "Gotowanie",
+      "roasting": "Pieczenie",
+      "slowcooking": "Wolne gotowanie",
+      "pressure cooking": "Gotowanie ciśnieniowe",
+      "sous vide": "Sous vide",
+      "smoking": "Wędzenie",
+      "braising": "Duszenie"
+    }
+  },
+  "empty": {
+    "title": "Nie znaleziono przepisów",
+    "description": "Spróbuj dostosować wyszukiwanie lub filtry, lub utwórz nowy przepis",
+    "searchDescription": "Nie znaleziono przepisów dla \"{{searchTerm}}\". Spróbuj innego hasła lub wygeneruj przepis."
+  },
+  "recipeCount": {
+    "from": "z",
+    "total": "przepisów",
+    "totalFiltered": "przepisów (przefiltrowane)"
+  },
+  "generation": {
+    "title": "Wygeneruj nowy przepis",
+    "description": "Wpisz, co chcesz ugotować, a ja pomogę Ci stworzyć przepis",
+    "withImage": "Wygeneruj zdjęcie przepisu"
+  },
+  "dialogs": {
+    "delete": {
+      "title": "Czy jesteś pewien?",
+      "description": "Tej akcji nie można cofnąć. Spowoduje to trwałe usunięcie wybranych przepisów."
     }
   }
 } 

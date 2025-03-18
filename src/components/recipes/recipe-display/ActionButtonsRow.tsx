@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Basket, SpinnerGap } from "@phosphor-icons/react";
 import { ChefHat } from "lucide-react";
 import { ActionButtonsRowProps } from "./types";
+import { useTranslation } from "react-i18next";
 
 // Constants
 const PRIMARY_BUTTON_CLASSES = "flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 h-[48px] px-4 py-2 rounded-full";
@@ -16,6 +17,8 @@ const ActionButtonsRow = memo(
     onEditOrGenerate,
     setShowCookingMode
   }: ActionButtonsRowProps) => {
+    const { t } = useTranslation("recipes");
+    
     if (!onAddToGroceryList) return null;
     
     const handleStartCooking = () => {
@@ -29,7 +32,7 @@ const ActionButtonsRow = memo(
           className="flex items-center justify-center gap-2 bg-[#FA8923] text-white hover:bg-[#FA8923]/90 h-[48px] px-4 py-2 rounded-full"
         >
           <ChefHat className="h-4 w-4" />
-          Start Cooking
+          {t("actions.startCooking")}
         </Button>
         
         <Button
@@ -42,7 +45,7 @@ const ActionButtonsRow = memo(
           ) : (
             <Basket className="h-4 w-4" weight="duotone" />
           )}
-          Add ingredients to grocery list
+          {t("actions.addToGroceryList")}
         </Button>
       </div>
     );

@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { useTranslation } from "react-i18next";
 import {
   ALL_MEAL_TYPES,
   ALL_DIETARY_RESTRICTIONS,
@@ -47,12 +48,14 @@ export function FilterPanel({
   setCookTimeRange,
   setCaloriesRange,
 }: FilterPanelProps) {
+  const { t } = useTranslation("recipes");
+
   return (
     <div className="bg-white shadow-sm rounded-2xl p-6 space-y-6">
       {/* Time Range Slider */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium text-base text-gray-900">Total Time</h3>
+          <h3 className="font-medium text-base text-gray-900">{t("filters.cookTime")}</h3>
           <span className="text-base text-gray-500">
             {formatTime(cookTimeRange[0])} - {formatTime(cookTimeRange[1])}
           </span>
@@ -83,7 +86,7 @@ export function FilterPanel({
       {/* Calories Range Slider */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="font-medium text-base text-gray-900">Calories per Serving</h3>
+          <h3 className="font-medium text-base text-gray-900">{t("filters.calories")}</h3>
           <span className="text-base text-gray-500">
             {formatCalories(caloriesRange[0])} - {formatCalories(caloriesRange[1])}
           </span>
@@ -113,7 +116,7 @@ export function FilterPanel({
 
       {/* Meal Types */}
       <div className="space-y-3">
-        <h3 className="font-medium text-sm text-gray-500">Meal Type</h3>
+        <h3 className="font-medium text-sm text-gray-500">{t("filters.mealType")}</h3>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={mealTypeFilters.length === 0 ? "default" : "outline"}
@@ -121,7 +124,7 @@ export function FilterPanel({
             className="rounded-full h-8"
             onClick={() => setMealTypeFilters([])}
           >
-            All
+            {t("filters.all")}
           </Button>
           {ALL_MEAL_TYPES.map((type) => (
             <Button
@@ -131,7 +134,7 @@ export function FilterPanel({
               className="rounded-full h-8"
               onClick={() => toggleFilter(type, mealTypeFilters, setMealTypeFilters)}
             >
-              {type}
+              {t(`filters.mealTypes.${type.toLowerCase()}`)}
             </Button>
           ))}
         </div>
@@ -139,7 +142,7 @@ export function FilterPanel({
 
       {/* Dietary Restrictions */}
       <div className="space-y-3">
-        <h3 className="font-medium text-sm text-gray-500">Dietary Restrictions</h3>
+        <h3 className="font-medium text-sm text-gray-500">{t("filters.dietary")}</h3>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={dietaryFilters.length === 0 ? "default" : "outline"}
@@ -147,7 +150,7 @@ export function FilterPanel({
             className="rounded-full h-8"
             onClick={() => setDietaryFilters([])}
           >
-            All
+            {t("filters.all")}
           </Button>
           {ALL_DIETARY_RESTRICTIONS.map((restriction) => (
             <Button
@@ -157,7 +160,7 @@ export function FilterPanel({
               className="rounded-full h-8"
               onClick={() => toggleFilter(restriction, dietaryFilters, setDietaryFilters)}
             >
-              {restriction}
+              {t(`filters.dietaryTypes.${restriction.toLowerCase()}`)}
             </Button>
           ))}
         </div>
@@ -165,7 +168,7 @@ export function FilterPanel({
 
       {/* Difficulty Level */}
       <div className="space-y-3">
-        <h3 className="font-medium text-sm text-gray-500">Difficulty Level</h3>
+        <h3 className="font-medium text-sm text-gray-500">{t("filters.difficulty")}</h3>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={difficultyFilters.length === 0 ? "default" : "outline"}
@@ -173,7 +176,7 @@ export function FilterPanel({
             className="rounded-full h-8"
             onClick={() => setDifficultyFilters([])}
           >
-            All
+            {t("filters.all")}
           </Button>
           {ALL_DIFFICULTY_LEVELS.map((level) => (
             <Button
@@ -183,7 +186,7 @@ export function FilterPanel({
               className="rounded-full h-8"
               onClick={() => toggleFilter(level, difficultyFilters, setDifficultyFilters)}
             >
-              {level}
+              {t(`filters.difficultyLevels.${level.toLowerCase()}`)}
             </Button>
           ))}
         </div>
@@ -191,7 +194,7 @@ export function FilterPanel({
 
       {/* Cuisine Type */}
       <div className="space-y-3">
-        <h3 className="font-medium text-sm text-gray-500">Cuisine Type</h3>
+        <h3 className="font-medium text-sm text-gray-500">{t("filters.cuisine")}</h3>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={cuisineFilters.length === 0 ? "default" : "outline"}
@@ -199,7 +202,7 @@ export function FilterPanel({
             className="rounded-full h-8"
             onClick={() => setCuisineFilters([])}
           >
-            All
+            {t("filters.all")}
           </Button>
           {ALL_CUISINE_TYPES.map((cuisine) => (
             <Button
@@ -209,7 +212,7 @@ export function FilterPanel({
               className="rounded-full h-8"
               onClick={() => toggleFilter(cuisine, cuisineFilters, setCuisineFilters)}
             >
-              {cuisine}
+              {t(`filters.cuisineTypes.${cuisine.toLowerCase()}`)}
             </Button>
           ))}
         </div>
@@ -217,7 +220,7 @@ export function FilterPanel({
 
       {/* Cooking Method */}
       <div className="space-y-3">
-        <h3 className="font-medium text-sm text-gray-500">Cooking Method</h3>
+        <h3 className="font-medium text-sm text-gray-500">{t("filters.cookingMethod")}</h3>
         <div className="flex flex-wrap gap-2">
           <Button
             variant={cookingMethodFilters.length === 0 ? "default" : "outline"}
@@ -225,7 +228,7 @@ export function FilterPanel({
             className="rounded-full h-8"
             onClick={() => setCookingMethodFilters([])}
           >
-            All
+            {t("filters.all")}
           </Button>
           {ALL_COOKING_METHODS.map((method) => (
             <Button
@@ -235,7 +238,7 @@ export function FilterPanel({
               className="rounded-full h-8"
               onClick={() => toggleFilter(method, cookingMethodFilters, setCookingMethodFilters)}
             >
-              {method}
+              {t(`filters.cookingMethods.${method.toLowerCase()}`)}
             </Button>
           ))}
         </div>

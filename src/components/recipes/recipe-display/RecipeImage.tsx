@@ -7,6 +7,7 @@ import { AsyncHandler, createAsyncHandler } from "./utils";
 import { Heart, PencilSimple, SpinnerGap, Trash } from "@phosphor-icons/react";
 import { useFavorites } from "@/hooks/use-favorites";
 import { RoundButton } from "@/components/ui/round-button";
+import { useTranslation } from "react-i18next";
 
 const RecipeImage = memo(
   ({ 
@@ -25,6 +26,7 @@ const RecipeImage = memo(
     const imageRef = useRef<HTMLDivElement>(null);
     const { isFavorite, toggleFavorite } = useFavorites();
     const isFavorited = recipe?.id ? isFavorite(recipe.id) : false;
+    const { t } = useTranslation("recipes");
 
     // Combine both loading states
     const isGenerating = isGeneratingFromButton || isGeneratingImage;
@@ -113,7 +115,7 @@ const RecipeImage = memo(
                   size={20}
                   className={isFavorited ? "text-[#eb8f3f]" : ""} 
                 />}
-                label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+                label={t(isFavorited ? "actions.unfavorite" : "actions.favorite")}
                 disabled={!recipe?.id}
                 active={isFavorited}
                 className="bg-white/90 backdrop-blur-sm hover:bg-white"
@@ -121,7 +123,7 @@ const RecipeImage = memo(
               <RoundButton
                 onClick={onEditOrGenerate}
                 icon={<PencilSimple weight="duotone" size={20} />}
-                label={recipe?.id ? "Edit Recipe" : "Generate New"}
+                label={t(recipe?.id ? "actions.edit" : "actions.generateRecipe")}
                 className="bg-white/90 backdrop-blur-sm hover:bg-white"
               />
               {recipe?.id && (
@@ -132,7 +134,7 @@ const RecipeImage = memo(
                   ) : (
                     <Trash weight="duotone" size={20} />
                   )}
-                  label="Delete Recipe"
+                  label={t("actions.delete")}
                   disabled={isSaving}
                   className="bg-white/90 backdrop-blur-sm hover:bg-white"
                 />

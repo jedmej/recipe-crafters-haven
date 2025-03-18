@@ -1,52 +1,167 @@
 {
   "search": {
-    "title": "Search Recipes",
-    "placeholder": "Search by name, ingredients, or cuisine...",
-    "noResults": "No recipes found",
+    "title": "Rezepte suchen",
+    "placeholder": "Nach Name, Zutaten oder Küche suchen...",
+    "noResults": "Keine Rezepte gefunden",
     "filters": {
-      "title": "Filters",
-      "mealType": "Meal Type",
-      "cuisine": "Cuisine",
-      "diet": "Dietary Restrictions",
-      "difficulty": "Difficulty Level",
-      "time": "Cooking Time"
+      "title": "Filter",
+      "mealType": "Mahlzeitenart",
+      "cuisine": "Küche",
+      "diet": "Ernährungseinschränkungen",
+      "difficulty": "Schwierigkeitsgrad",
+      "time": "Zubereitungszeit"
     }
   },
+  "myRecipes": {
+    "title": "Meine Rezepte",
+    "description": "Verwalten und organisieren Sie Ihre Rezeptsammlung"
+  },
   "create": {
-    "title": "Create Recipe",
-    "generate": "Generate Recipe",
-    "import": "Import Recipe",
-    "manual": "Create Manually"
+    "title": "Rezept erstellen",
+    "generate": "Rezept generieren",
+    "import": "Rezept importieren",
+    "manual": "Manuell erstellen"
   },
   "details": {
-    "ingredients": "Ingredients",
-    "instructions": "Instructions",
-    "prepTime": "Prep Time",
-    "cookTime": "Cook Time",
-    "totalTime": "Total Time",
-    "servings": "Servings",
-    "difficulty": "Difficulty",
-    "cuisine": "Cuisine"
+    "ingredients": "Zutaten",
+    "instructions": "Anleitung",
+    "prepTime": "Vorbereitungszeit",
+    "cookTime": "Kochzeit",
+    "totalTime": "Gesamtzeit",
+    "servings": "Portionen",
+    "difficulty": "Schwierigkeit",
+    "cuisine": "Küche",
+    "calories": "Kalorien",
+    "metric": "Metrisch",
+    "imperial": "Imperial",
+    "suggested": "Empfohlen"
   },
   "actions": {
-    "save": "Save Recipe",
-    "edit": "Edit Recipe",
-    "delete": "Delete Recipe",
-    "share": "Share Recipe",
-    "print": "Print Recipe",
-    "addToCollection": "Add to Collection",
-    "generateImage": "Generate Image"
+    "back": "Zurück",
+    "saving": "Speichern...",
+    "favorite": "Als Favorit markieren",
+    "unfavorite": "Aus Favoriten entfernen",
+    "save": "Rezept speichern",
+    "edit": "Rezept bearbeiten",
+    "delete": "Rezept löschen",
+    "share": "Rezept teilen",
+    "print": "Rezept drucken",
+    "addToCollection": "Zur Sammlung hinzufügen",
+    "generateImage": "Bild generieren",
+    "generateRecipe": "Rezept generieren",
+    "importWithAI": "Mit KI importieren",
+    "addRecipe": "Rezept hinzufügen",
+    "generateNow": "Jetzt generieren",
+    "clearSearch": "Suche löschen",
+    "clearFilters": "Filter löschen",
+    "selectMultiple": "Mehrere auswählen",
+    "cancel": "Abbrechen",
+    "startCooking": "Kochen starten",
+    "addToGroceryList": "Zutaten zur Einkaufsliste hinzufügen"
   },
   "messages": {
-    "saveSuccess": "Recipe saved successfully",
-    "deleteSuccess": "Recipe deleted successfully",
-    "generateSuccess": "Recipe generated successfully",
-    "importSuccess": "Recipe imported successfully",
+    "saveSuccess": "Rezept erfolgreich gespeichert",
+    "deleteSuccess": "Rezept erfolgreich gelöscht",
+    "generateSuccess": "Rezept erfolgreich generiert",
+    "importSuccess": "Rezept erfolgreich importiert",
     "error": {
-      "save": "Failed to save recipe",
-      "delete": "Failed to delete recipe",
-      "generate": "Failed to generate recipe",
-      "import": "Failed to import recipe"
+      "save": "Fehler beim Speichern des Rezepts",
+      "delete": "Fehler beim Löschen des Rezepts",
+      "generate": "Fehler beim Generieren des Rezepts",
+      "import": "Fehler beim Importieren des Rezepts",
+      "load": "Fehler beim Laden des Rezepts"
+    }
+  },
+  "greeting": {
+    "hello": "Hallo, {{name}}"
+  },
+  "filters": {
+    "title": "Filter",
+    "all": "Alle",
+    "mealType": "Mahlzeitenart",
+    "dietary": "Ernährungseinschränkungen",
+    "difficulty": "Schwierigkeitsgrad",
+    "cuisine": "Küche",
+    "cookingMethod": "Zubereitungsmethode",
+    "cookTime": "Gesamtzeit",
+    "calories": "Kalorien pro Portion",
+    "mealTypes": {
+      "breakfast": "Frühstück",
+      "lunch": "Mittagessen",
+      "dinner": "Abendessen",
+      "snack": "Snack",
+      "dessert": "Dessert",
+      "appetizer": "Vorspeise",
+      "sidedish": "Beilage",
+      "drink": "Getränk"
+    },
+    "dietaryTypes": {
+      "vegetarian": "Vegetarisch",
+      "vegan": "Vegan",
+      "gluten-free": "Glutenfrei",
+      "glutenfree": "Glutenfrei",
+      "dairyfree": "Laktosefrei",
+      "nutfree": "Nussfrei",
+      "lowcarb": "Low Carb",
+      "keto": "Keto",
+      "paleo": "Paleo"
+    },
+    "difficultyLevels": {
+      "easy": "Einfach",
+      "medium": "Mittel",
+      "hard": "Schwer",
+      "expert": "Experte"
+    },
+    "cuisineTypes": {
+      "italian": "Italienisch",
+      "mexican": "Mexikanisch",
+      "chinese": "Chinesisch",
+      "japanese": "Japanisch",
+      "indian": "Indisch",
+      "french": "Französisch",
+      "mediterranean": "Mediterran",
+      "american": "Amerikanisch",
+      "thai": "Thailändisch",
+      "vietnamese": "Vietnamesisch",
+      "korean": "Koreanisch",
+      "spanish": "Spanisch",
+      "greek": "Griechisch",
+      "middle eastern": "Nahöstlich"
+    },
+    "cookingMethods": {
+      "baked": "Gebacken",
+      "baking": "Backen",
+      "fried": "Gebraten",
+      "frying": "Braten",
+      "steaming": "Dampfgaren",
+      "boiling": "Kochen",
+      "roasting": "Rösten",
+      "slowcooking": "Schongaren",
+      "pressure cooking": "Dampfdruckgaren",
+      "sous vide": "Sous-vide",
+      "smoking": "Räuchern",
+      "braising": "Schmoren"
+    }
+  },
+  "empty": {
+    "title": "Keine Rezepte gefunden",
+    "description": "Passen Sie Ihre Suche oder Filter an, oder erstellen Sie ein neues Rezept",
+    "searchDescription": "Keine Rezepte für \"{{searchTerm}}\" gefunden. Versuchen Sie einen anderen Suchbegriff oder generieren Sie ein Rezept."
+  },
+  "recipeCount": {
+    "from": "von",
+    "total": "Rezepten",
+    "totalFiltered": "Rezepten (gefiltert)"
+  },
+  "generation": {
+    "title": "Neues Rezept generieren",
+    "description": "Geben Sie ein, was Sie kochen möchten, und ich helfe Ihnen, ein Rezept zu erstellen",
+    "withImage": "Rezeptbild generieren"
+  },
+  "dialogs": {
+    "delete": {
+      "title": "Sind Sie sicher?",
+      "description": "Diese Aktion kann nicht rückgängig gemacht werden. Die ausgewählten Rezepte werden dauerhaft gelöscht."
     }
   }
 } 

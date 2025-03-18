@@ -1,9 +1,11 @@
 import { memo, useMemo } from "react";
 import CategoryItem from "./CategoryItem";
 import { RecipeCategoriesProps } from "./types";
+import { useTranslation } from "react-i18next";
 
 const RecipeCategories = memo(
   ({ recipe }: RecipeCategoriesProps) => {
+    const { t } = useTranslation("recipes");
     const categories = recipe.categories;
     
     if (!categories) return null;
@@ -24,6 +26,15 @@ const RecipeCategories = memo(
     ]);
     
     if (!hasCategories) return null;
+
+    // Helper function to normalize category value
+    const normalizeCategory = (value: string | string[] | undefined | null): string | string[] | null => {
+      if (!value) return null;
+      if (Array.isArray(value)) {
+        return value.map(v => v.toLowerCase());
+      }
+      return value.toLowerCase();
+    };
     
     return (
       <div className="overflow-hidden px-4">
@@ -31,8 +42,8 @@ const RecipeCategories = memo(
           {categories.meal_type && (
             <CategoryItem 
               icon={null}
-              label="Meal Type"
-              value={categories.meal_type}
+              label={t("filters.mealType")}
+              value={t(`filters.mealTypes.${normalizeCategory(categories.meal_type)}`)}
               variant="meal"
             />
           )}
@@ -40,8 +51,8 @@ const RecipeCategories = memo(
           {categories.difficulty_level && (
             <CategoryItem 
               icon={null}
-              label="Difficulty Level"
-              value={categories.difficulty_level}
+              label={t("filters.difficulty")}
+              value={t(`filters.difficultyLevels.${normalizeCategory(categories.difficulty_level)}`)}
               variant="difficulty"
             />
           )}
@@ -49,8 +60,8 @@ const RecipeCategories = memo(
           {categories.cuisine_type && (
             <CategoryItem 
               icon={null}
-              label="Cuisine Type"
-              value={categories.cuisine_type}
+              label={t("filters.cuisine")}
+              value={t(`filters.cuisineTypes.${normalizeCategory(categories.cuisine_type)}`)}
               variant="cuisine"
             />
           )}
@@ -58,8 +69,10 @@ const RecipeCategories = memo(
           {categories.cooking_method && (
             <CategoryItem 
               icon={null}
-              label="Cooking Method"
-              value={categories.cooking_method}
+              label={t("filters.cookingMethod")}
+              value={Array.isArray(categories.cooking_method)
+                ? categories.cooking_method.map(method => t(`filters.cookingMethods.${method.toLowerCase()}`))
+                : t(`filters.cookingMethods.${categories.cooking_method.toLowerCase()}`)}
               variant="cooking"
             />
           )}
@@ -67,8 +80,10 @@ const RecipeCategories = memo(
           {categories.dietary_restrictions && (
             <CategoryItem 
               icon={null}
-              label="Dietary Restrictions"
-              value={categories.dietary_restrictions}
+              label={t("filters.dietary")}
+              value={Array.isArray(categories.dietary_restrictions)
+                ? categories.dietary_restrictions.map(diet => t(`filters.dietaryTypes.${diet.toLowerCase()}`))
+                : t(`filters.dietaryTypes.${categories.dietary_restrictions.toLowerCase()}`)}
               variant="dietary"
             />
           )}

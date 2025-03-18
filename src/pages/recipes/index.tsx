@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { RecipeCard } from "@/components/recipes/RecipeCard";
 import { SearchAndActions } from "@/components/recipes/SearchAndActions";
 import { FilterPanel } from "@/components/recipes/FilterPanel";
@@ -22,6 +23,7 @@ import {
 
 export default function RecipesPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation("recipes");
   const { data: recipes, isLoading } = useRecipes();
   const { favorites, favoritesData } = useFavorites();
   const [profile, setProfile] = useState<{
@@ -67,7 +69,7 @@ export default function RecipesPage() {
     } else if (user?.email) {
       return user.email.split('@')[0];
     }
-    return "there";
+    return t("navigation.greeting");
   };
 
   const getInitials = () => {
@@ -211,7 +213,9 @@ export default function RecipesPage() {
   return (
     <div className="max-w-7xl mx-auto min-h-screen px-0 py-4 md:p-6 lg:p-8 pb-24">
       <div className="flex justify-between items-center mb-8 px-6">
-        <h1 className="text-[48px] font-bold text-[#222222]">Hello, {getDisplayName()}</h1>
+        <h1 className="text-[48px] font-bold text-[#222222]">
+          {t("greeting.hello", { name: getDisplayName() })}
+        </h1>
         <button 
           onClick={() => navigate('/profile')}
           className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center hover:bg-gray-50 transition-colors"
@@ -233,7 +237,7 @@ export default function RecipesPage() {
               weight="duotone" 
               className="w-6 h-6 text-purple-600 group-hover:scale-110 transition-transform" 
             />
-            <span className="font-medium">Generate Recipe</span>
+            <span className="font-medium">{t("actions.generateRecipe")}</span>
           </button>
           <button
             onClick={handleNavigateToImport}
@@ -243,7 +247,7 @@ export default function RecipesPage() {
               weight="duotone" 
               className="w-6 h-6 text-blue-600 group-hover:scale-110 transition-transform" 
             />
-            <span className="font-medium">Import with AI</span>
+            <span className="font-medium">{t("actions.importWithAI")}</span>
           </button>
           <button
             onClick={handleNavigateToCreate}
@@ -253,7 +257,7 @@ export default function RecipesPage() {
               weight="duotone" 
               className="w-6 h-6 text-green-600 group-hover:scale-110 transition-transform" 
             />
-            <span className="font-medium">Add Recipe</span>
+            <span className="font-medium">{t("actions.addRecipe")}</span>
           </button>
         </div>
         {/* Divider */}
@@ -342,7 +346,7 @@ export default function RecipesPage() {
             <RecipeGenerationCard 
               searchTerm={searchTerm}
               onGenerateRecipe={handleGenerateRecipe}
-              generateButtonText={isUrl ? "Import with AI" : "Generate Recipe Now"}
+              generateButtonText={isUrl ? t("actions.importWithAI") : t("actions.generateNow")}
               isUrl={isUrl}
               shouldGenerateImage={shouldGenerateImage}
               setShouldGenerateImage={setShouldGenerateImage}
@@ -353,7 +357,7 @@ export default function RecipesPage() {
             searchTerm={searchTerm}
             onGenerateRecipe={handleGenerateRecipe}
             onClearSearch={handleClearSearch}
-            generateButtonText={isUrl ? "Import with AI" : "Generate Recipe Now"}
+            generateButtonText={isUrl ? t("actions.importWithAI") : t("actions.generateNow")}
             shouldGenerateImage={shouldGenerateImage}
             setShouldGenerateImage={setShouldGenerateImage}
           />

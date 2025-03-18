@@ -12,6 +12,10 @@
       "time": "Cooking Time"
     }
   },
+  "myRecipes": {
+    "title": "My recipes",
+    "description": "Manage and organize your recipe collection"
+  },
   "create": {
     "title": "Create Recipe",
     "generate": "Generate Recipe",
@@ -26,16 +30,34 @@
     "totalTime": "Total Time",
     "servings": "Servings",
     "difficulty": "Difficulty",
-    "cuisine": "Cuisine"
+    "cuisine": "Cuisine",
+    "calories": "Calories",
+    "metric": "Metric",
+    "imperial": "Imperial",
+    "suggested": "Suggested"
   },
   "actions": {
+    "back": "Go Back",
+    "saving": "Saving...",
+    "favorite": "Add to Favorites",
+    "unfavorite": "Remove from Favorites",
     "save": "Save Recipe",
     "edit": "Edit Recipe",
     "delete": "Delete Recipe",
     "share": "Share Recipe",
     "print": "Print Recipe",
     "addToCollection": "Add to Collection",
-    "generateImage": "Generate Image"
+    "generateImage": "Generate Image",
+    "generateRecipe": "Generate Recipe",
+    "importWithAI": "Import with AI",
+    "addRecipe": "Add Recipe",
+    "generateNow": "Generate Recipe Now",
+    "clearSearch": "Clear Search",
+    "clearFilters": "Clear Filters",
+    "selectMultiple": "Select Multiple",
+    "cancel": "Cancel",
+    "startCooking": "Start Cooking",
+    "addToGroceryList": "Add ingredients to grocery list"
   },
   "messages": {
     "saveSuccess": "Recipe saved successfully",
@@ -46,7 +68,100 @@
       "save": "Failed to save recipe",
       "delete": "Failed to delete recipe",
       "generate": "Failed to generate recipe",
-      "import": "Failed to import recipe"
+      "import": "Failed to import recipe",
+      "load": "Error loading recipe"
+    }
+  },
+  "greeting": {
+    "hello": "Hello, {{name}}"
+  },
+  "filters": {
+    "title": "Filters",
+    "all": "All",
+    "mealType": "Meal Type",
+    "dietary": "Dietary Restrictions",
+    "difficulty": "Difficulty Level",
+    "cuisine": "Cuisine Type",
+    "cookingMethod": "Cooking Method",
+    "cookTime": "Total Time",
+    "calories": "Calories per Serving",
+    "mealTypes": {
+      "breakfast": "Breakfast",
+      "lunch": "Lunch",
+      "dinner": "Dinner",
+      "snack": "Snack",
+      "dessert": "Dessert",
+      "appetizer": "Appetizer",
+      "sidedish": "Side Dish",
+      "drink": "Drink"
+    },
+    "dietaryTypes": {
+      "vegetarian": "Vegetarian",
+      "vegan": "Vegan",
+      "gluten-free": "Gluten Free",
+      "dairyfree": "Dairy Free",
+      "nutfree": "Nut Free",
+      "lowcarb": "Low Carb",
+      "keto": "Keto",
+      "paleo": "Paleo"
+    },
+    "difficultyLevels": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard",
+      "expert": "Expert"
+    },
+    "cuisineTypes": {
+      "italian": "Italian",
+      "mexican": "Mexican",
+      "chinese": "Chinese",
+      "japanese": "Japanese",
+      "indian": "Indian",
+      "french": "French",
+      "mediterranean": "Mediterranean",
+      "american": "American",
+      "thai": "Thai",
+      "vietnamese": "Vietnamese",
+      "korean": "Korean",
+      "spanish": "Spanish",
+      "greek": "Greek",
+      "middle eastern": "Middle Eastern"
+    },
+    "cookingMethods": {
+      "baked": "Baked",
+      "baking": "Baking",
+      "fried": "Fried",
+      "frying": "Frying",
+      "grilling": "Grilling",
+      "steaming": "Steaming",
+      "boiling": "Boiling",
+      "roasting": "Roasting",
+      "slowcooking": "Slow Cooking",
+      "pressure cooking": "Pressure Cooking",
+      "sous vide": "Sous Vide",
+      "smoking": "Smoking",
+      "braising": "Braising"
+    }
+  },
+  "empty": {
+    "title": "No recipes found",
+    "description": "Try adjusting your search or filters, or create a new recipe",
+    "searchDescription": "No recipes found for \"{{searchTerm}}\". Try a different search term or generate a recipe."
+  },
+  "recipeCount": {
+    "from": "from",
+    "total": "total recipes",
+    "totalFiltered": "total recipes (filtered)"
+  },
+  "generation": {
+    "title": "Generate a new recipe",
+    "description": "Enter what you'd like to cook, and I'll help you create a recipe",
+    "withImage": "Generate recipe image"
+  },
+  "dialogs": {
+    "delete": {
+      "title": "Are you sure?",
+      "description": "This action cannot be undone. This will permanently delete the selected recipes."
     }
   }
 } 

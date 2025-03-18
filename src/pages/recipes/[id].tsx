@@ -4,6 +4,7 @@ import { useRecipeActions } from '@/features/recipes/hooks/useRecipeActions';
 import { RecipeDisplay } from '@/components/recipes/RecipeDisplay';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 // Special routes that should not be treated as recipe IDs
 const SPECIAL_ROUTES = ['inspire', 'ai-search', 'import-ai', 'import', 'edit', 'new', 'generate-image'];
@@ -57,6 +58,7 @@ function scaleIngredient(ingredient: string, scaleFactor: number): string {
 }
 
 export default function RecipeDetailRoute() {
+  const { t } = useTranslation("recipes");
   const { id } = useParams();
   const navigate = useNavigate();
   
@@ -105,7 +107,7 @@ export default function RecipeDetailRoute() {
   if (error || !recipe) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] gap-4">
-        <p className="text-lg text-red-500">Error loading recipe</p>
+        <p className="text-lg text-red-500">{t("messages.error.load")}</p>
       </div>
     );
   }

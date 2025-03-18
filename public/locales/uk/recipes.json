@@ -1,52 +1,166 @@
 {
   "search": {
-    "title": "Search Recipes",
-    "placeholder": "Search by name, ingredients, or cuisine...",
-    "noResults": "No recipes found",
+    "title": "Пошук рецептів",
+    "placeholder": "Шукати за назвою, інгредієнтами або кухнею...",
+    "noResults": "Рецептів не знайдено",
     "filters": {
-      "title": "Filters",
-      "mealType": "Meal Type",
-      "cuisine": "Cuisine",
-      "diet": "Dietary Restrictions",
-      "difficulty": "Difficulty Level",
-      "time": "Cooking Time"
+      "title": "Фільтри",
+      "mealType": "Тип страви",
+      "cuisine": "Кухня",
+      "diet": "Дієтичні обмеження",
+      "difficulty": "Рівень складності",
+      "time": "Час приготування"
     }
   },
+  "myRecipes": {
+    "title": "Мої рецепти",
+    "description": "Керуйте та організовуйте свою колекцію рецептів"
+  },
   "create": {
-    "title": "Create Recipe",
-    "generate": "Generate Recipe",
-    "import": "Import Recipe",
-    "manual": "Create Manually"
+    "title": "Створити рецепт",
+    "generate": "Згенерувати рецепт",
+    "import": "Імпортувати рецепт",
+    "manual": "Створити вручну"
   },
   "details": {
-    "ingredients": "Ingredients",
-    "instructions": "Instructions",
-    "prepTime": "Prep Time",
-    "cookTime": "Cook Time",
-    "totalTime": "Total Time",
-    "servings": "Servings",
-    "difficulty": "Difficulty",
-    "cuisine": "Cuisine"
+    "ingredients": "Інгредієнти",
+    "instructions": "Інструкції",
+    "prepTime": "Час підготовки",
+    "cookTime": "Час приготування",
+    "totalTime": "Загальний час",
+    "servings": "Порції",
+    "difficulty": "Складність",
+    "cuisine": "Кухня",
+    "calories": "Калорії",
+    "metric": "Метричні",
+    "imperial": "Імперські",
+    "suggested": "Рекомендовано"
   },
   "actions": {
-    "save": "Save Recipe",
-    "edit": "Edit Recipe",
-    "delete": "Delete Recipe",
-    "share": "Share Recipe",
-    "print": "Print Recipe",
-    "addToCollection": "Add to Collection",
-    "generateImage": "Generate Image"
+    "back": "Назад",
+    "saving": "Збереження...",
+    "favorite": "Додати до обраного",
+    "unfavorite": "Видалити з обраного",
+    "save": "Зберегти рецепт",
+    "edit": "Редагувати рецепт",
+    "delete": "Видалити рецепт",
+    "share": "Поділитися рецептом",
+    "print": "Друкувати рецепт",
+    "addToCollection": "Додати до колекції",
+    "generateImage": "Згенерувати зображення",
+    "generateRecipe": "Згенерувати рецепт",
+    "importWithAI": "Імпортувати з ШІ",
+    "addRecipe": "Додати рецепт",
+    "generateNow": "Згенерувати зараз",
+    "clearSearch": "Очистити пошук",
+    "clearFilters": "Очистити фільтри",
+    "selectMultiple": "Вибрати декілька",
+    "cancel": "Скасувати",
+    "startCooking": "Почати готувати",
+    "addToGroceryList": "Додати інгредієнти до списку покупок"
   },
   "messages": {
-    "saveSuccess": "Recipe saved successfully",
-    "deleteSuccess": "Recipe deleted successfully",
-    "generateSuccess": "Recipe generated successfully",
-    "importSuccess": "Recipe imported successfully",
+    "saveSuccess": "Рецепт успішно збережено",
+    "deleteSuccess": "Рецепт успішно видалено",
+    "generateSuccess": "Рецепт успішно згенеровано",
+    "importSuccess": "Рецепт успішно імпортовано",
     "error": {
-      "save": "Failed to save recipe",
-      "delete": "Failed to delete recipe",
-      "generate": "Failed to generate recipe",
-      "import": "Failed to import recipe"
+      "save": "Не вдалося зберегти рецепт",
+      "delete": "Не вдалося видалити рецепт",
+      "generate": "Не вдалося згенерувати рецепт",
+      "import": "Не вдалося імпортувати рецепт",
+      "load": "Помилка завантаження рецепту"
+    }
+  },
+  "greeting": {
+    "hello": "Привіт, {{name}}"
+  },
+  "filters": {
+    "title": "Фільтри",
+    "all": "Усі",
+    "mealType": "Тип страви",
+    "dietary": "Дієтичні обмеження",
+    "difficulty": "Рівень складності",
+    "cuisine": "Тип кухні",
+    "cookingMethod": "Метод приготування",
+    "cookTime": "Загальний час",
+    "calories": "Калорії на порцію",
+    "mealTypes": {
+      "breakfast": "Сніданок",
+      "lunch": "Обід",
+      "dinner": "Вечеря",
+      "snack": "Перекуска",
+      "dessert": "Десерт",
+      "appetizer": "Закуска",
+      "sidedish": "Гарнір",
+      "drink": "Напій"
+    },
+    "dietaryTypes": {
+      "vegetarian": "Вегетаріанське",
+      "vegan": "Веганське",
+      "gluten-free": "Без глютену",
+      "dairyfree": "Без молочних продуктів",
+      "nutfree": "Без горіхів",
+      "lowcarb": "Низьковуглеводне",
+      "keto": "Кето",
+      "paleo": "Палео"
+    },
+    "difficultyLevels": {
+      "easy": "Легкий",
+      "medium": "Середній",
+      "hard": "Складний",
+      "expert": "Експертний"
+    },
+    "cuisineTypes": {
+      "italian": "Італійська",
+      "mexican": "Мексиканська",
+      "chinese": "Китайська",
+      "japanese": "Японська",
+      "indian": "Індійська",
+      "french": "Французька",
+      "mediterranean": "Середземноморська",
+      "american": "Американська",
+      "thai": "Тайська",
+      "vietnamese": "В'єтнамська",
+      "korean": "Корейська",
+      "spanish": "Іспанська",
+      "greek": "Грецька",
+      "middle eastern": "Близькосхідна"
+    },
+    "cookingMethods": {
+      "baked": "Запечене",
+      "baking": "Випікання",
+      "fried": "Смажене",
+      "frying": "Смаження",
+      "steaming": "На пару",
+      "boiling": "Варіння",
+      "roasting": "Запікання",
+      "slowcooking": "Повільне приготування",
+      "pressure cooking": "У скороварці",
+      "sous vide": "Су-від",
+      "smoking": "Копчення",
+      "braising": "Тушкування"
+    }
+  },
+  "empty": {
+    "title": "Рецептів не знайдено",
+    "description": "Спробуйте змінити пошук або фільтри, або створіть новий рецепт",
+    "searchDescription": "Не знайдено рецептів для \"{{searchTerm}}\". Спробуйте інший пошуковий запит або згенеруйте рецепт."
+  },
+  "recipeCount": {
+    "from": "із",
+    "total": "рецептів",
+    "totalFiltered": "рецептів (відфільтровано)"
+  },
+  "generation": {
+    "title": "Згенерувати новий рецепт",
+    "description": "Введіть, що ви хочете приготувати, і я допоможу вам створити рецепт",
+    "withImage": "Згенерувати зображення рецепту"
+  },
+  "dialogs": {
+    "delete": {
+      "title": "Ви впевнені?",
+      "description": "Цю дію неможливо скасувати. Це назавжди видалить вибрані рецепти."
     }
   }
 } 

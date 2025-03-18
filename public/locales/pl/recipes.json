@@ -154,14 +154,14 @@
     "dietaryTypes": {
       "vegetarian": "Wegetariańskie",
       "vegan": "Wegańskie",
-      "glutenFree": "Bezglutenowe",
-      "dairyFree": "Bez Nabiału",
+      "gluten-free": "Bezglutenowe",
+      "dairy-free": "Bez Nabiału",
       "keto": "Ketogeniczne",
       "paleo": "Paleo",
       "halal": "Halal",
       "kosher": "Koszerne",
-      "nutFree": "Bez Orzechów",
-      "lowSodium": "Niskosodowe",
+      "nut-free": "Bez Orzechów",
+      "low-sodium": "Niskosodowe",
       "none": "Brak"
     },
     "cuisineTypes": {
@@ -180,15 +180,20 @@
       "spanish": "Hiszpańska",
       "other": "Inne"
     },
-    "cookingMethods": {
-      "baking": "Pieczenie",
-      "frying": "Smażenie",
-      "grilling": "Grillowanie",
-      "roasting": "Pieczenie",
-      "steaming": "Gotowanie na Parze",
-      "boiling": "Gotowanie",
-      "slowCooking": "Wolne Gotowanie",
-      "sousVide": "Sous Vide",
+   "cookingMethods": {
+      "baked": "Pieczenie",
+      "fried": "Smażenie",
+      "grill": "Grillowanie",
+      "roast": "Pieczenie",
+      "steam": "Gotowanie na Parze",
+      "boil": "Gotowanie",
+      "slow cooker": "Wolne Gotowanie",
+      "sous-vide": "Sous Vide",
+      "oven-baked": "Pieczenie w piekarniku",
+      "stovetop": "Gotowanie na gazie",
+      "air fryer": "Gotowanie w frytkownicy",
+      "instant pot": "Gotowanie w mikserze",
+      "microwave": "Gotowanie w mikrofalówce",
       "other": "Inne"
     },
     "difficultyLevels": {
@@ -257,6 +262,50 @@
     "button": {
       "creating": "Tworzenie Przepisu...",
       "create": "Utwórz Przepis"
+    }
+  },
+  "import": {
+    "url": {
+      "label": "URL Przepisu",
+      "placeholder": "https://przyklad.pl/twoj-przepis",
+      "description": "Wprowadź URL dowolnego przepisu, który chcesz zaimportować"
+    },
+    "language": {
+      "label": "Język Importu",
+      "placeholder": "Wybierz język",
+      "description": "AI przetłumaczy przepis na ten język"
+    }
+  },
+  "errors": {
+    "validation": {
+      "url": "Wprowadź prawidłowy adres URL"
+    },
+    "aiOverloaded": "Usługa AI jest obecnie przeciążona. Spróbuj ponownie za kilka chwil.",
+    "generic": "Wystąpił błąd podczas przetwarzania Twojego żądania. Spróbuj ponownie.",
+    "import": {
+      "failed": "Przepraszamy, nie mogliśmy pobrać przepisu z tego adresu URL. Spróbuj innego adresu URL lub wprowadź przepis ręcznie."
+    }
+  },
+  "status": {
+    "importing": "Importowanie Przepisu..."
+  },
+  "cookingMode": {
+    "stepCounter": "Krok {{current}} z {{total}}",
+    "timer": {
+      "setTimer": "Ustaw minutnik ({{time}})",
+      "resetToSuggested": "Przywróć sugerowany czas ({{time}})",
+      "pause": "Pauza",
+      "resume": "Wznów",
+      "cancel": "Anuluj"
+    },
+    "preview": {
+      "button": "Podgląd następnego kroku",
+      "title": "Następny krok",
+      "timerInfo": "Zawiera minutnik: {{time}}"
+    },
+    "navigation": {
+      "previous": "Poprzedni",
+      "next": "Następny"
     }
   }
 } 

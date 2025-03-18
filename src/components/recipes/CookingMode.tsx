@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { X, ArrowLeft, ArrowRight, Timer, ChevronLeft, ChevronRight, Eye, Clock, Plus, Minus } from "lucide-react";
 import { RecipeData } from "@/types/recipe";
+import { useTranslation } from "react-i18next";
 
 interface CookingModeProps {
   recipe: RecipeData;
@@ -28,6 +29,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
   const [showNextPreview, setShowNextPreview] = useState(false);
   const [customTimerDuration, setCustomTimerDuration] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation("recipes");
   
   // Check if current instruction has a time reference
   const currentInstruction = recipe.instructions[currentStep];
@@ -270,7 +272,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
         <div className="flex flex-col items-center gap-4 sm:gap-6 md:gap-8 lg:gap-[48px] w-full">
           <div className="bg-[#F5F5F5]/50 px-3 py-1 sm:px-4 sm:py-2 rounded-full">
             <p className="text-sm sm:text-base font-semibold">
-              Step {currentStep + 1} of {recipe.instructions.length}
+              {t("cookingMode.stepCounter", { current: currentStep + 1, total: recipe.instructions.length })}
             </p>
           </div>
           
@@ -292,13 +294,13 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
                       onClick={toggleTimer}
                       className="bg-[#FA8922] hover:bg-[#FA8922]/90 text-white px-4 sm:px-6 py-1 sm:py-2 text-sm sm:text-base rounded-full transition-all duration-300 ease-in-out"
                     >
-                      {timer.isActive ? 'Pause' : 'Resume'}
+                      {timer.isActive ? t("cookingMode.timer.pause") : t("cookingMode.timer.resume")}
                     </Button>
                     <Button 
                       onClick={() => setTimer(null)}
                       className="bg-white border border-gray-300 hover:bg-gray-100 text-black px-4 sm:px-6 py-1 sm:py-2 text-sm sm:text-base rounded-full transition-all duration-300 ease-in-out"
                     >
-                      Cancel
+                      {t("cookingMode.timer.cancel")}
                     </Button>
                   </div>
                 </div>
@@ -319,7 +321,9 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
                       className="flex gap-2 sm:gap-3 bg-[#FA8922] hover:bg-[#FA8922]/90 text-white px-5 sm:px-7 md:px-8 h-12 sm:h-14 md:h-16 text-base sm:text-lg md:text-xl rounded-full transition-all duration-300 ease-in-out shadow-sm"
                     >
                       <Timer className="h-5 w-5 sm:h-6 sm:w-6 md:h-7 md:w-7" />
-                      <span className="whitespace-nowrap font-medium">Set Timer ({formatTime(displayTimerDuration || 60)})</span>
+                      <span className="whitespace-nowrap font-medium">
+                        {t("cookingMode.timer.setTimer", { time: formatTime(displayTimerDuration || 60) })}
+                      </span>
                     </Button>
                     
                     <Button
@@ -340,7 +344,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
                         onClick={() => setCustomTimerDuration(timeInSeconds)}
                         className="text-xs text-gray-700 h-auto p-0 underline"
                       >
-                        Reset to suggested time ({formatTime(timeInSeconds)})
+                        {t("cookingMode.timer.resetToSuggested", { time: formatTime(timeInSeconds) })}
                       </Button>
                     </div>
                   )}
@@ -364,7 +368,9 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
         >
           <div className="translate-x-[30%] -translate-y-[30%] flex flex-col items-center transition-all duration-300 ease-in-out group-hover:translate-y-[-32%]">
             <ChevronLeft className="h-10 w-10 md:h-14 md:w-14 lg:h-16 lg:w-16 xl:h-20 xl:w-20 transition-transform duration-300 ease-in-out group-hover:scale-110" />
-            <span className="font-bold transition-all duration-300 ease-in-out group-hover:scale-110">Previous</span>
+            <span className="font-bold transition-all duration-300 ease-in-out group-hover:scale-110">
+              {t("cookingMode.navigation.previous")}
+            </span>
           </div>
         </Button>
       </div>
@@ -422,7 +428,9 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
               style={{ transformOrigin: 'center bottom' }}
             >
               <div className="flex justify-between items-center mb-2 sm:mb-4">
-                <h3 className="font-archivo font-semibold text-base sm:text-lg text-[#333333]">Next Step</h3>
+                <h3 className="font-archivo font-semibold text-base sm:text-lg text-[#333333]">
+                  {t("cookingMode.preview.title")}
+                </h3>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -439,7 +447,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
                 <div className="mt-3 sm:mt-4 flex items-center gap-2 bg-[#F5F5F5] p-2 sm:p-3 rounded-xl text-[#333333]">
                   <Timer className="h-3 w-3 sm:h-4 sm:w-4 text-[#FA8922]" />
                   <span className="font-archivo text-xs sm:text-sm">
-                    Contains timer: <span className="font-semibold">{formatTime(extractTimeFromInstruction(nextInstruction)!)}</span>
+                    {t("cookingMode.preview.timerInfo", { time: formatTime(extractTimeFromInstruction(nextInstruction)!) })}
                   </span>
                 </div>
               )}
@@ -455,7 +463,7 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
                 className="bg-white hover:bg-white/90 text-[#333333] rounded-full px-4 sm:px-6 py-2 sm:py-3 h-auto shadow-md transform transition-all duration-500 ease-in-out animate-scale-in flex items-center font-archivo border border-gray-100"
               >
                 <Eye className="h-4 w-4 sm:h-5 sm:w-5 mr-2 text-[#FA8922]" />
-                Preview next step
+                {t("cookingMode.preview.button")}
               </Button>
             </div>
           )}
@@ -471,7 +479,9 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
         >
           <div className="-translate-x-[30%] -translate-y-[30%] flex flex-col items-center transition-all duration-300 ease-in-out group-hover:translate-y-[-32%]">
             <ChevronRight className="h-10 w-10 md:h-14 md:w-14 lg:h-16 lg:w-16 xl:h-20 xl:w-20 transition-transform duration-300 ease-in-out group-hover:scale-110" />
-            <span className="font-bold transition-all duration-300 ease-in-out group-hover:scale-110">Next</span>
+            <span className="font-bold transition-all duration-300 ease-in-out group-hover:scale-110">
+              {t("cookingMode.navigation.next")}
+            </span>
           </div>
         </Button>
       </div>

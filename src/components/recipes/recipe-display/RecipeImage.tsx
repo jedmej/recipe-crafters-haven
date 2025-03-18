@@ -108,7 +108,11 @@ const RecipeImage = memo(
             <div className="absolute bottom-8 right-8 flex gap-2 z-20">
               <RoundButton
                 onClick={handleFavoriteClick}
-                icon={<Heart weight={isFavorited ? "duotone" : "regular"} size={20} />}
+                icon={<Heart 
+                  weight={isFavorited ? "fill" : "regular"} 
+                  size={20}
+                  className={isFavorited ? "text-[#eb8f3f]" : ""} 
+                />}
                 label={isFavorited ? "Remove from favorites" : "Add to favorites"}
                 disabled={!recipe?.id}
                 active={isFavorited}

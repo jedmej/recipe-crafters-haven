@@ -482,12 +482,32 @@ export function InspireContainer() {
     setUseIngredients(false);
     
     try {
-      const { data, error } = await supabase.functions.invoke('recipe-chat', {
-        body: { query: searchQuery, language }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("User not authenticated");
+
+      // Prepare input for AI edge function - similar to handleGenerateRecipe but with search query
+      const inputData = {
+        searchQuery: searchQuery.trim(),
+        targetLanguage: language,
+        cookingTime: cookingTime,
+        filters: [],
+        categoryFilters: {},
+        measurementSystem: measurementSystem,
+        useIngredients: false,
+        generateAllCategories: true
+      };
+
+      // Call the AI edge function
+      const { data, error } = await supabase.functions.invoke('ai-recipe-generate', {
+        body: inputData
       });
 
       if (error) throw error;
-      await generateAndSaveRecipe(data);
+      if (!data) throw new Error('No recipe data returned');
+
+      // Process the generated recipe
+      const recipeData = data?.data || data;
+      await generateAndSaveRecipe(recipeData);
     } catch (error) {
       // Reset loading state on error
       setIsLoading(false);

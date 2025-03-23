@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,40 +24,42 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
   shouldGenerateImage,
   setShouldGenerateImage,
 }) => {
+  const { t } = useTranslation('recipes');
+
   return (
     <Card className="overflow-hidden rounded-[48px] bg-[#F5F5F5] border-none">
       <CardContent className="p-6">
         <form onSubmit={handleSearch} className="space-y-6">
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold">Search for Recipes</h1>
+            <h1 className="text-3xl font-bold">{t('search.title')}</h1>
             <p className="text-muted-foreground">
-              Describe what kind of recipe you're looking for
+              {t('search.description')}
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2">
             <Input
-              placeholder="e.g., healthy vegetarian dinner under 30 minutes"
+              placeholder={t('search.placeholder')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
+              className="w-full"
               disabled={isGenerating}
             />
             <Button
               type="submit"
               disabled={isGenerating}
-              className="rounded-[500px] bg-[#FA8923] hover:bg-[#FA8923]/90 text-white"
+              className="w-full rounded-[500px] bg-[#FA8923] hover:bg-[#FA8923]/90 text-white h-12"
               variant="primary"
             >
               {isGenerating ? (
                 <>
                   <CircleNotch className="mr-2 h-4 w-4 animate-spin" weight="duotone" />
-                  Searching...
+                  {t('search.button.searching')}
                 </>
               ) : (
                 <>
                   <MagnifyingGlass className="mr-2 h-4 w-4" weight="duotone" />
-                  Search
+                  {t('search.button.search')}
                 </>
               )}
             </Button>
@@ -69,7 +72,9 @@ export const SearchSection: React.FC<SearchSectionProps> = ({
               onCheckedChange={setShouldGenerateImage}
               disabled={isGenerating}
             />
-            <Label htmlFor="generate-image-search" className="font-medium">Generate Image</Label>
+            <Label htmlFor="generate-image-search" className="font-medium">
+              {t('search.generateImage.label')}
+            </Label>
           </div>
         </form>
       </CardContent>

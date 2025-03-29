@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { profileService, authService, avatarService } from "@/services";
 import { useUserPreferences } from '@/hooks/use-user-preferences';
 import { MeasurementSystem } from "@/lib/types";
 import { useTranslation } from 'react-i18next';
@@ -61,19 +61,10 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchUserAndProfile = async () => {
       try {
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error('No user found');
+        // Get current user and profile using profileService
+        const { user, profile } = await profileService.getUserAndProfile();
+        
         setUser(user);
-
-        // Get user's profile
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
         setProfile(profile);
         setAvatarUrl(profile.avatar_url);
       } catch (error) {
@@ -97,34 +88,20 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: profile.full_name,
-          username: profile.username,
-          avatar_url: avatarUrl,
-          measurement_system: profile.measurement_system,
-          ui_language: profile.ui_language,
-          recipe_language: profile.recipe_language,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-
-      if (error) {
-        console.error('Supabase error details:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint
-        });
-        throw error;
-      }
+      const updatedProfile = await profileService.updateProfile({
+        full_name: profile.full_name,
+        username: profile.username,
+        avatar_url: avatarUrl,
+        measurement_system: profile.measurement_system,
+        ui_language: profile.ui_language,
+        recipe_language: profile.recipe_language
+      });
 
       // Update in-memory user preferences to match profile settings
       updatePreferences({
-        uiLanguage: profile.ui_language,
-        recipeLanguage: profile.recipe_language,
-        unitSystem: profile.measurement_system === 'metric' ? 'metric' : 'imperial',
+        uiLanguage: updatedProfile.ui_language,
+        recipeLanguage: updatedProfile.recipe_language,
+        unitSystem: updatedProfile.measurement_system === 'metric' ? 'metric' : 'imperial',
       });
 
       toast({
@@ -165,20 +142,11 @@ export default function ProfilePage() {
     setIsSaving(true);
     
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          avatar_url: url,
-        })
-        .eq('id', user.id);
-      
-      if (error) throw error;
+      // Update the user's avatar using avatarService
+      const updatedProfile = await avatarService.updateUserAvatar(user.id, url);
       
       // Update the local profile state
-      setProfile({
-        ...profile,
-        avatar_url: url,
-      });
+      setProfile(updatedProfile);
       
       toast({
         title: "Avatar updated",
@@ -196,28 +164,38 @@ export default function ProfilePage() {
     }
   };
 
-  const handleGenerateAvatar = async (attributes: CharacterAttributes) => {
+  const handleGenerateAvatar = async (attributes: any) => {
     setIsGenerating(true);
     try {
-      // Call your character generation API here
-      // For now, we'll just simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Generate avatar using avatarService
+      const generatedUrl = await avatarService.generateAvatar(
+        attributes, 
+        profile?.username || profile?.full_name || user?.email,
+        (message) => {
+          toast({
+            title: "Generating Avatar",
+            description: message,
+            duration: 2000,
+          });
+        }
+      );
       
-      // Once you have the generated URL, update it
-      // const generatedUrl = await generateCharacterAvatar(attributes);
-      // setAvatarUrl(generatedUrl);
-      // handleSaveAvatar(generatedUrl);
+      if (generatedUrl) {
+        setAvatarUrl(generatedUrl);
+        await handleSaveAvatar(generatedUrl);
+        
+        toast({
+          title: "Success",
+          description: "Character avatar generated successfully",
+        });
+      }
       
-      toast({
-        title: "Success",
-        description: "Character avatar generated successfully",
-      });
       setIsAvatarDialogOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating avatar:', error);
       toast({
         title: "Error",
-        description: "Failed to generate character avatar. Please try again.",
+        description: error.message || "Failed to generate character avatar. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -415,7 +393,7 @@ export default function ProfilePage() {
               className="w-full sm:w-auto text-[#1a1d2b] border-gray-200 hover:bg-gray-50 rounded-[500px] px-8 py-3 font-medium shadow-none text-base"
               onClick={async () => {
                 try {
-                  await supabase.auth.signOut();
+                  await authService.signOut();
                   toast({
                     title: t('messages.signOut.success.title'),
                     description: t('messages.signOut.success.description'),

@@ -3,9 +3,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import { User } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { authService, profileService } from "@/services";
 
 const Navigation = () => {
   const location = useLocation();
@@ -37,20 +37,17 @@ const Navigation = () => {
   useEffect(() => {
     const fetchUserAndProfile = async () => {
       try {
-        // Get current user
-        const { data: { user } } = await supabase.auth.getUser();
+        // Use profileService to get both user and profile
+        const { user, profile } = await profileService.getUserAndProfile();
+        
         if (!user) return;
+        
         setUser(user);
-
-        // Get user's profile
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('full_name, username, avatar_url')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-        setProfile(profile);
+        setProfile({
+          full_name: profile.full_name,
+          username: profile.username,
+          avatar_url: profile.avatar_url
+        });
       } catch (error) {
         console.error('Error fetching profile for navigation:', error);
       }

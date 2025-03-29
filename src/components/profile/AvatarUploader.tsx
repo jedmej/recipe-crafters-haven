@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Upload, Link, Loader2, Trash } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { v4 as uuidv4 } from "uuid";
+import { avatarService } from "@/services";
 
 interface AvatarUploaderProps {
   onImageSelected: (imageUrl: string) => void;
@@ -40,74 +39,55 @@ export function AvatarUploader({ onImageSelected, initialImage }: AvatarUploader
     onImageSelected(urlInput);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     // Validate file type
-    const validTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
-    if (!validTypes.includes(file.type)) {
+    if (!file.type.startsWith('image/')) {
       toast({
+        variant: "destructive",
         title: "Invalid file type",
-        description: "Please upload a JPEG, PNG, GIF, or WebP image.",
-        variant: "destructive",
+        description: "Please upload an image file."
       });
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (max 2MB)
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    if (file.size > MAX_SIZE) {
       toast({
-        title: "File too large",
-        description: "Please upload an image smaller than 5MB.",
         variant: "destructive",
+        title: "File too large",
+        description: "Please upload an image smaller than 2MB."
       });
       return;
     }
 
+    setIsUploading(true);
+    
     try {
-      setIsUploading(true);
-
-      // Create a local preview
-      const objectUrl = URL.createObjectURL(file);
-      setPreviewUrl(objectUrl);
-
-      // Upload to Supabase
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${uuidv4()}.${fileExt}`;
-      const { data, error } = await supabase.storage
-        .from('avatar-images')
-        .upload(`public/${fileName}`, file);
-
-      if (error) {
-        throw error;
-      }
-
-      // Get the public URL
-      const { data: urlData } = supabase.storage
-        .from('avatar-images')
-        .getPublicUrl(`public/${fileName}`);
-
-      const uploadedUrl = urlData.publicUrl;
-      setImageUrl(uploadedUrl);
-      onImageSelected(uploadedUrl);
-
+      // Upload the file to storage using the new avatarService
+      const publicUrl = await avatarService.uploadAvatarImage(file, file.name);
+      
+      // Update the image URL state and trigger the onImageSelected callback
+      setIsUploading(false);
+      setImageUrl(publicUrl);
+      setPreviewUrl(publicUrl);
+      onImageSelected(publicUrl);
+      
       toast({
         title: "Success",
-        description: "Avatar uploaded successfully",
+        description: "Avatar uploaded successfully"
       });
     } catch (error: any) {
-      console.error('Error uploading avatar:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to upload avatar. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
       setIsUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      console.error('Upload error:', error);
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error.message || "Failed to upload image"
+      });
     }
   };
 

@@ -11,7 +11,7 @@ import { useRecipes } from "@/hooks/use-recipes";
 import { useRecipeFilters } from "@/hooks/use-recipe-filters";
 import { useRecipeSelection } from "@/hooks/use-recipe-selection";
 import { useFavorites } from "@/hooks/use-favorites";
-import { supabase } from "@/integrations/supabase/client";
+import { profileService } from "@/services";
 import { useEffect, useState, useMemo } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,18 +41,20 @@ export default function RecipesPage() {
   useEffect(() => {
     const fetchUserAndProfile = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { user, profile } = await profileService.getUserAndProfile();
+        
         if (!user) return;
-        setUser(user);
-
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('full_name, username, avatar_url')
-          .eq('id', user.id)
-          .single();
-
-        if (error) throw error;
-        setProfile(profile);
+        
+        setUser({
+          id: user.id,
+          email: user.email || ''
+        });
+        
+        setProfile({
+          full_name: profile.full_name,
+          username: profile.username,
+          avatar_url: profile.avatar_url
+        });
       } catch (error) {
         console.error('Error fetching profile:', error);
       }

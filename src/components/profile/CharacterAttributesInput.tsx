@@ -5,16 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Wand2, Loader2, Trash, Pencil } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration";
-
-export interface CharacterAttributes {
-  gender?: string;
-  hairColor?: string;
-  eyeColor?: string;
-  style?: string;
-  accessories?: string;
-  additionalDetails?: string;
-}
+import { avatarService, CharacterAttributes } from "@/services/avatarService";
 
 interface CharacterAttributesInputProps {
   initialAttributes?: CharacterAttributes;
@@ -39,8 +30,8 @@ export function CharacterAttributesInput({
   const [attributes, setAttributes] = useState<CharacterAttributes>(initialAttributes);
   const [generatedImage, setGeneratedImage] = useState<string | null>(initialImage || null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
-  const { generateImage, isLoading: isGeneratingImage } = useImageGeneration();
   const generationInProgressRef = useRef(false);
 
   useEffect(() => {
@@ -61,37 +52,29 @@ export function CharacterAttributesInput({
     onAttributesChange(updatedAttributes);
   };
 
-  const generatePrompt = () => {
-    const { gender, hairColor, eyeColor, style, accessories, additionalDetails } = attributes;
-    
-    let prompt = `professional profile avatar: ${userName || 'person'}`;
-    
-    if (gender) prompt += `, ${gender.toLowerCase()}`;
-    if (hairColor) prompt += `, ${hairColor.toLowerCase()} hair`;
-    if (eyeColor) prompt += `, ${eyeColor.toLowerCase()} eyes`;
-    if (accessories) prompt += `, wearing ${accessories}`;
-    if (additionalDetails) prompt += `, ${additionalDetails}`;
-    
-    prompt += `, stylized character portrait, friendly expression, clean background, high quality, detailed`;
-    
-    if (style) prompt += `, ${style.toLowerCase()} style`;
-    
-    // Add instructions to ensure no text in the image
-    prompt += `, no text, no words, no writing, no labels, no watermarks`;
-    
-    return prompt;
-  };
-
   const handleGenerateAvatar = async () => {
     if (generationInProgressRef.current) {
       return; // Prevent double generation
     }
 
+    setIsGenerating(true);
+    generationInProgressRef.current = true;
+
     try {
-      generationInProgressRef.current = true;
-      const prompt = generatePrompt();
+      const onProgressUpdate = (message: string) => {
+        toast({
+          title: "Generating Avatar",
+          description: message,
+          duration: 2000,
+        });
+      };
       
-      const imageUrl = await generateImage(prompt, 'avatar');
+      const imageUrl = await avatarService.generateAvatar(
+        attributes,
+        userName,
+        onProgressUpdate
+      );
+      
       if (imageUrl) {
         setGeneratedImage(imageUrl);
         onImageSelected(imageUrl);
@@ -105,6 +88,7 @@ export function CharacterAttributesInput({
       });
     } finally {
       generationInProgressRef.current = false;
+      setIsGenerating(false);
     }
   };
 
@@ -149,7 +133,7 @@ export function CharacterAttributesInput({
   };
 
   const renderLoadingState = () => {
-    if (!isGeneratingImage) return null;
+    if (!isGenerating) return null;
     
     return (
       <div className="flex flex-col items-center gap-2 my-4">
@@ -198,8 +182,7 @@ export function CharacterAttributesInput({
           className="w-full"
           variant="outline"
         >
-          <Pencil className="mr-2 h-4 w-4" />
-          Edit Character Attributes
+          Edit Character
         </Button>
       </div>
     );
@@ -207,16 +190,18 @@ export function CharacterAttributesInput({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-medium">Character Attributes</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
+      {renderImagePreview()}
+      {renderLoadingState()}
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="space-y-2">
           <Label htmlFor="gender">Gender</Label>
-          <Select
-            value={attributes.gender}
-            onValueChange={(value) => handleChange("gender", value)}
+          <Select 
+            value={attributes.gender || ""} 
+            onValueChange={(value) => handleChange('gender', value)}
           >
             <SelectTrigger id="gender">
-              <SelectValue placeholder="Select gender" />
+              <SelectValue placeholder="Select Gender" />
             </SelectTrigger>
             <SelectContent>
               {GENDER_OPTIONS.map((option) => (
@@ -227,15 +212,15 @@ export function CharacterAttributesInput({
             </SelectContent>
           </Select>
         </div>
-        
-        <div>
+
+        <div className="space-y-2">
           <Label htmlFor="hairColor">Hair Color</Label>
-          <Select
-            value={attributes.hairColor}
-            onValueChange={(value) => handleChange("hairColor", value)}
+          <Select 
+            value={attributes.hairColor || ""} 
+            onValueChange={(value) => handleChange('hairColor', value)}
           >
             <SelectTrigger id="hairColor">
-              <SelectValue placeholder="Select hair color" />
+              <SelectValue placeholder="Select Hair Color" />
             </SelectTrigger>
             <SelectContent>
               {HAIR_COLOR_OPTIONS.map((option) => (
@@ -246,15 +231,15 @@ export function CharacterAttributesInput({
             </SelectContent>
           </Select>
         </div>
-        
-        <div>
+
+        <div className="space-y-2">
           <Label htmlFor="eyeColor">Eye Color</Label>
-          <Select
-            value={attributes.eyeColor}
-            onValueChange={(value) => handleChange("eyeColor", value)}
+          <Select 
+            value={attributes.eyeColor || ""} 
+            onValueChange={(value) => handleChange('eyeColor', value)}
           >
             <SelectTrigger id="eyeColor">
-              <SelectValue placeholder="Select eye color" />
+              <SelectValue placeholder="Select Eye Color" />
             </SelectTrigger>
             <SelectContent>
               {EYE_COLOR_OPTIONS.map((option) => (
@@ -265,15 +250,15 @@ export function CharacterAttributesInput({
             </SelectContent>
           </Select>
         </div>
-        
-        <div>
-          <Label htmlFor="style">Art Style</Label>
-          <Select
-            value={attributes.style}
-            onValueChange={(value) => handleChange("style", value)}
+
+        <div className="space-y-2">
+          <Label htmlFor="style">Style</Label>
+          <Select 
+            value={attributes.style || ""} 
+            onValueChange={(value) => handleChange('style', value)}
           >
             <SelectTrigger id="style">
-              <SelectValue placeholder="Select art style" />
+              <SelectValue placeholder="Select Style" />
             </SelectTrigger>
             <SelectContent>
               {STYLE_OPTIONS.map((option) => (
@@ -284,42 +269,46 @@ export function CharacterAttributesInput({
             </SelectContent>
           </Select>
         </div>
-        
-        <div className="sm:col-span-2">
+
+        <div className="space-y-2 md:col-span-2">
           <Label htmlFor="accessories">Accessories/Clothing</Label>
           <Input
             id="accessories"
-            placeholder="E.g., glasses, hat, suit, etc."
+            placeholder="e.g. glasses, suit, hat"
             value={attributes.accessories || ""}
-            onChange={(e) => handleChange("accessories", e.target.value)}
+            onChange={(e) => handleChange('accessories', e.target.value)}
           />
         </div>
-        
-        <div className="sm:col-span-2">
+
+        <div className="space-y-2 md:col-span-2">
           <Label htmlFor="additionalDetails">Additional Details</Label>
           <Input
             id="additionalDetails"
-            placeholder="Any other details you'd like to include"
+            placeholder="Any other details"
             value={attributes.additionalDetails || ""}
-            onChange={(e) => handleChange("additionalDetails", e.target.value)}
+            onChange={(e) => handleChange('additionalDetails', e.target.value)}
           />
         </div>
       </div>
-      
-      {renderLoadingState() || (
-        <Button 
-          type="button" 
-          onClick={handleGenerateAvatar}
-          className="w-full"
-          variant="secondary"
-          disabled={isGeneratingImage}
-        >
-          <Wand2 className="mr-2 h-4 w-4" />
-          Generate Avatar with These Attributes
-        </Button>
-      )}
-      
-      {generatedImage && renderImagePreview()}
+
+      <Button 
+        type="button" 
+        onClick={handleGenerateAvatar}
+        className="w-full"
+        disabled={isGenerating}
+      >
+        {isGenerating ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Generating...
+          </>
+        ) : (
+          <>
+            <Wand2 className="mr-2 h-4 w-4" />
+            Generate Character
+          </>
+        )}
+      </Button>
     </div>
   );
 } 

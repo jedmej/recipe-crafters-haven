@@ -217,7 +217,7 @@ export function InspireContainer() {
   // Recipe detail view state
   const [desiredServings, setDesiredServings] = useState(4);
   const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'imperial'>(
-    preferences.measurementSystem || 'metric'
+    preferences.unitSystem || 'metric'
   );
 
   const [generatedRecipe, setGeneratedRecipe] = useState<RecipeData | null>(null);
@@ -482,20 +482,98 @@ export function InspireContainer() {
     setUseIngredients(false);
     
     try {
-      const { data, error } = await supabase.functions.invoke('recipe-chat', {
-        body: { query: searchQuery, language }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("User not authenticated");
+
+      console.log('Sending search request with query:', searchQuery);
+
+      const response = await supabase.functions.invoke('recipe-chat', {
+        body: { 
+          query: searchQuery, 
+          language,
+          generateAllCategories: true 
+        }
       });
 
-      if (error) throw error;
-      await generateAndSaveRecipe(data);
+      console.log('Raw Edge Function response:', response);
+
+      if (response.error) {
+        console.error('Edge Function error:', response.error);
+        throw response.error;
+      }
+
+      // Handle different response formats
+      let recipeData;
+      if (response.data?.success && response.data?.data) {
+        // Standard format: { success: true, data: { ... } }
+        recipeData = response.data.data;
+      } else if (response.data?.recipe) {
+        // Alternative format: { recipe: { ... } }
+        recipeData = response.data.recipe;
+      } else if (typeof response.data === 'object' && response.data !== null) {
+        // Direct format: { title: ..., description: ..., etc }
+        recipeData = response.data;
+      } else {
+        console.error('Unexpected response format:', response);
+        throw new Error('Unexpected response format from recipe generation');
+      }
+
+      console.log('Extracted recipe data:', recipeData);
+
+      // Validate required fields
+      if (!recipeData) {
+        throw new Error('No recipe data returned');
+      }
+
+      if (!recipeData.title) {
+        console.error('Recipe data missing title:', recipeData);
+        throw new Error('Recipe title is required but was not provided');
+      }
+
+      // Ensure the recipe data is properly formatted before saving
+      const formattedRecipe = {
+        title: recipeData.title.trim(),
+        description: recipeData.description?.trim() || null,
+        ingredients: Array.isArray(recipeData.ingredients) 
+          ? recipeData.ingredients.filter(Boolean).map(i => i.trim()) 
+          : [],
+        instructions: Array.isArray(recipeData.instructions) 
+          ? recipeData.instructions.filter(Boolean).map(i => i.trim()) 
+          : [],
+        cook_time: typeof recipeData.cook_time === 'number' ? recipeData.cook_time : null,
+        prep_time: typeof recipeData.prep_time === 'number' ? recipeData.prep_time : null,
+        estimated_calories: typeof recipeData.estimated_calories === 'number' ? recipeData.estimated_calories : null,
+        suggested_portions: typeof recipeData.suggested_portions === 'number' ? recipeData.suggested_portions : 4,
+        portion_size: typeof recipeData.portion_size === 'number' ? recipeData.portion_size : 4,
+        portion_description: recipeData.portion_description?.trim() || 'serving',
+        source_url: recipeData.source_url || null,
+        image_url: recipeData.image_url || null,
+        language: recipeData.language || language || 'en',
+        categories: {
+          meal_type: recipeData.categories?.meal_type || null,
+          dietary_restrictions: Array.isArray(recipeData.categories?.dietary_restrictions) 
+            ? recipeData.categories.dietary_restrictions[0] 
+            : recipeData.categories?.dietary_restrictions || null,
+          difficulty_level: recipeData.categories?.difficulty_level || null,
+          cuisine_type: recipeData.categories?.cuisine_type || null,
+          cooking_method: Array.isArray(recipeData.categories?.cooking_method)
+            ? recipeData.categories.cooking_method[0]
+            : recipeData.categories?.cooking_method || null
+        }
+      };
+
+      console.log('Formatted recipe:', formattedRecipe);
+
+      await generateAndSaveRecipe(formattedRecipe);
     } catch (error) {
       // Reset loading state on error
       setIsLoading(false);
       
+      console.error('Search error:', error);
       toast({
         variant: "destructive",
         title: "Search Failed",
-        description: "We couldn't generate a recipe from your search. Please try a different query.",
+        description: error instanceof Error ? error.message : "We couldn't generate a recipe from your search. Please try a different query.",
       });
     }
   };

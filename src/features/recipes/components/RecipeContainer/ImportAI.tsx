@@ -28,8 +28,8 @@ export function ImportAIContainer() {
   const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'imperial'>(
     preferences.measurementSystem || 'metric'
   );
-  const [language, setLanguage] = useState<keyof typeof SUPPORTED_LANGUAGES>(
-    (preferences.recipe_language as keyof typeof SUPPORTED_LANGUAGES) || 'en'
+  const [language, setLanguage] = useState<string>(
+    preferences.language || 'en'
   );
   const [mealType, setMealType] = useState('dinner');
   const [dietaryRestrictions, setDietaryRestrictions] = useState<string>('none');
@@ -103,7 +103,7 @@ export function ImportAIContainer() {
       servings: portions,
       suggested_portions: portions,
       portion_description: 'servings',
-      language,
+      language: language as string,
       categories,
     };
     
@@ -127,10 +127,11 @@ export function ImportAIContainer() {
 
   // Function to handle language selection
   const handleLanguageChange = (value: string) => {
-    setLanguage(value as keyof typeof SUPPORTED_LANGUAGES);
+    setLanguage(value);
   };
 
   const handleImageUpdate = async (imageUrl: string): Promise<void> => {
+    // This is a placeholder function that returns a resolved promise
     return Promise.resolve();
   };
 
@@ -184,7 +185,6 @@ export function ImportAIContainer() {
             onEditOrGenerate={() => console.log("Edit or generate")}
             onBack={() => navigate('/recipes')}
             isGeneratingImage={isGeneratingImage}
-            onRegenerate={() => console.log("Regenerate recipe")}
           />
         </CardContent>
       </Card>

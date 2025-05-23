@@ -1,127 +1,125 @@
-import { memo, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { RecipeCard } from "./RecipeCard";
-import { SearchAndActions } from "./SearchAndActions";
 import { FilterPanel } from "./FilterPanel";
-import { Database } from "@/integrations/supabase/types";
-
-type Recipe = Database['public']['Tables']['recipes']['Row'];
+import { RecipeCount } from "./RecipeCount";
+import { ViewToggle } from "./ViewToggle";
+import { useRecipeFilters } from "@/hooks/use-recipe-filters";
+import { Recipe } from "@/types/recipe";
 
 interface RecipeGridProps {
   recipes: Recipe[];
-  selectedRecipes: string[];
-  onRecipeClick: (recipeId: string) => void;
-  onRecipeLongPress: (recipeId: string) => void;
-  isSelectionMode: boolean;
-  toggleSelectionMode: () => void;
-  handleDeleteSelected: () => void;
+  isLoading: boolean;
+  isSearching: boolean;
+  searchQuery: string;
+  onSelectRecipe: (recipeId: string) => void;
 }
 
-export const RecipeGrid = memo(function RecipeGrid({
-  recipes,
-  selectedRecipes,
-  onRecipeClick,
-  onRecipeLongPress,
-  isSelectionMode,
-  toggleSelectionMode,
-  handleDeleteSelected,
-}: RecipeGridProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isFiltersVisible, setIsFiltersVisible] = useState(false);
+export function RecipeGrid({ recipes, isLoading, isSearching, searchQuery, onSelectRecipe }) {
   const [view, setView] = useState<"grid" | "list">("grid");
-  
-  // Filter handling state
-  const [mealTypeFilters, setMealTypeFilters] = useState<string[]>([]);
-  const [dietaryFilters, setDietaryFilters] = useState<string[]>([]);
-  const [difficultyFilters, setDifficultyFilters] = useState<string[]>([]);
-  const [cuisineFilters, setCuisineFilters] = useState<string[]>([]);
-  const [cookingMethodFilters, setCookingMethodFilters] = useState<string[]>([]);
-  const [cookTimeRange, setCookTimeRange] = useState<number[]>([0, 180]);
-  const [caloriesRange, setCaloriesRange] = useState<number[]>([0, 2000]);
+  const {
+    filteredRecipes,
+    mealTypeFilters,
+    dietaryFilters,
+    difficultyFilters,
+    cuisineFilters,
+    cookingMethodFilters,
+    cookTimeRange,
+    caloriesRange,
+    activeFilters,
+    isFiltered,
+    setMealTypeFilters,
+    setDietaryFilters,
+    setDifficultyFilters,
+    setCuisineFilters,
+    setCookingMethodFilters,
+    setCookTimeRange,
+    setCaloriesRange,
+  } = useRecipeFilters(recipes);
 
-  const activeFilterCount = [
-    mealTypeFilters.length,
-    dietaryFilters.length,
-    difficultyFilters.length,
-    cuisineFilters.length,
-    cookingMethodFilters.length,
-    cookTimeRange[0] > 0 || cookTimeRange[1] < 180 ? 1 : 0,
-    caloriesRange[0] > 0 || caloriesRange[1] < 2000 ? 1 : 0,
-  ].reduce((a, b) => a + b, 0);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
-  const toggleFilter = (value: string, currentFilters: string[], setFilters: (filters: string[]) => void) => {
+  const isGrid = view === "grid";
+
+  const renderEmptyState = () => {
+    if (isLoading) {
+      return <div className="text-center">Loading recipes...</div>;
+    }
+
+    if (isSearching && searchQuery && recipes.length === 0) {
+      return (
+        <div className="text-center">
+          No recipes found for "{searchQuery}".
+        </div>
+      );
+    }
+
+    if (recipes.length === 0) {
+      return <div className="text-center">No recipes found.</div>;
+    }
+
+    return null;
+  };
+
+  // Format time from minutes to hours and minutes
+  const formatTime = useCallback((minutes: number) => {
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  }, []);
+
+  // Update this function to match the FilterPanel props
+  const toggleFilter = (category: string, value: string, currentFilters: string[], setFilters: (filters: string[]) => void) => {
     if (currentFilters.includes(value)) {
-      setFilters(currentFilters.filter((f) => f !== value));
+      setFilters(currentFilters.filter((filter) => filter !== value));
     } else {
       setFilters([...currentFilters, value]);
     }
   };
 
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours}h${mins > 0 ? ` ${mins}m` : ""}`;
-  };
-
-  const formatCalories = (cal: number) => `${cal} cal`;
-
   return (
-    <div className="flex flex-col gap-6">
-      <SearchAndActions
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        isSelectionMode={isSelectionMode}
-        toggleSelectionMode={toggleSelectionMode}
-        selectedRecipes={selectedRecipes}
-        handleDeleteSelected={handleDeleteSelected}
-        isFiltersVisible={isFiltersVisible}
-        setIsFiltersVisible={setIsFiltersVisible}
-        activeFilterCount={activeFilterCount}
-        view={view}
-        onViewChange={setView}
-      />
-
-      {isFiltersVisible && (
-        <FilterPanel
-          mealTypeFilters={mealTypeFilters}
-          dietaryFilters={dietaryFilters}
-          difficultyFilters={difficultyFilters}
-          cuisineFilters={cuisineFilters}
-          cookingMethodFilters={cookingMethodFilters}
-          cookTimeRange={cookTimeRange}
-          caloriesRange={caloriesRange}
-          formatTime={formatTime}
-          formatCalories={formatCalories}
-          toggleFilter={toggleFilter}
-          setMealTypeFilters={setMealTypeFilters}
-          setDietaryFilters={setDietaryFilters}
-          setDifficultyFilters={setDifficultyFilters}
-          setCuisineFilters={setCuisineFilters}
-          setCookingMethodFilters={setCookingMethodFilters}
-          setCookTimeRange={setCookTimeRange}
-          setCaloriesRange={setCaloriesRange}
-        />
-      )}
-
-      <div 
-        className={
-          view === "grid"
-            ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
-            : "flex flex-col gap-2"
-        }
-      >
-        {recipes.map((recipe) => (
-          <RecipeCard
-            key={recipe.id}
-            recipe={recipe}
-            isSelected={selectedRecipes.includes(recipe.id)}
-            isSelectionMode={isSelectionMode}
-            onClick={onRecipeClick}
-            onLongPress={onRecipeLongPress}
-            variant={view === "list" ? "compact" : "default"}
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <RecipeCount count={filteredRecipes.length} total={recipes.length} isFiltered={isFiltered} />
+        
+        <div className="flex items-center gap-4">
+          <FilterPanel
+            mealTypeFilters={mealTypeFilters}
+            dietaryFilters={dietaryFilters}
+            difficultyFilters={difficultyFilters}
+            cuisineFilters={cuisineFilters}
+            cookingMethodFilters={cookingMethodFilters}
+            cookTimeRange={cookTimeRange}
+            caloriesRange={caloriesRange}
+            formatTime={formatTime}
+            activeFilters={activeFilters}
+            setMealTypeFilters={setMealTypeFilters}
+            setDietaryFilters={setDietaryFilters}
+            setDifficultyFilters={setDifficultyFilters}
+            setCuisineFilters={setCuisineFilters}
+            setCookingMethodFilters={setCookingMethodFilters}
+            setCookTimeRange={setCookTimeRange}
+            setCaloriesRange={setCaloriesRange}
+            toggleFilter={toggleFilter}
           />
-        ))}
+          <ViewToggle view={view} onViewChange={setView} />
+        </div>
       </div>
+
+      {renderEmptyState() || (
+        <div className={isGrid ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" : "flex flex-col gap-4"}>
+          {filteredRecipes.map((recipe) => (
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              isGrid={isGrid}
+              onSelect={() => onSelectRecipe(recipe.id)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
-}); 
+}

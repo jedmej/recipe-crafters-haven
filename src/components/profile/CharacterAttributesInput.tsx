@@ -40,7 +40,7 @@ export function CharacterAttributesInput({
   const [generatedImage, setGeneratedImage] = useState<string | null>(initialImage || null);
   const [isEditMode, setIsEditMode] = useState(false);
   const { toast } = useToast();
-  const { generateImage, isLoading: isGeneratingImage } = useImageGeneration();
+  const { generateImage, isGenerating } = useImageGeneration();
   const generationInProgressRef = useRef(false);
 
   useEffect(() => {
@@ -91,7 +91,7 @@ export function CharacterAttributesInput({
       generationInProgressRef.current = true;
       const prompt = generatePrompt();
       
-      const imageUrl = await generateImage(prompt, 'avatar');
+      const imageUrl = await generateImage(prompt, 'profile');
       if (imageUrl) {
         setGeneratedImage(imageUrl);
         onImageSelected(imageUrl);
@@ -149,7 +149,7 @@ export function CharacterAttributesInput({
   };
 
   const renderLoadingState = () => {
-    if (!isGeneratingImage) return null;
+    if (!isGenerating) return null;
     
     return (
       <div className="flex flex-col items-center gap-2 my-4">
@@ -165,33 +165,7 @@ export function CharacterAttributesInput({
   if (generatedImage && !isEditMode) {
     return (
       <div className="space-y-4">
-        <div className="relative w-full max-w-md mx-auto rounded-lg overflow-hidden shadow-lg">
-          <img
-            src={generatedImage}
-            alt="Generated avatar"
-            className="w-full rounded-lg"
-          />
-          <div className="absolute top-2 right-2 flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsEditMode(true)}
-              type="button"
-              className="bg-white/80 backdrop-blur-sm hover:bg-white"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRemoveImage}
-              type="button"
-              className="bg-white/80 backdrop-blur-sm hover:bg-white"
-            >
-              <Trash className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
+        {renderImagePreview()}
         <Button 
           type="button" 
           onClick={() => setIsEditMode(true)}
@@ -312,7 +286,7 @@ export function CharacterAttributesInput({
           onClick={handleGenerateAvatar}
           className="w-full"
           variant="secondary"
-          disabled={isGeneratingImage}
+          disabled={isGenerating}
         >
           <Wand2 className="mr-2 h-4 w-4" />
           Generate Avatar with These Attributes
@@ -322,4 +296,4 @@ export function CharacterAttributesInput({
       {generatedImage && renderImagePreview()}
     </div>
   );
-} 
+}

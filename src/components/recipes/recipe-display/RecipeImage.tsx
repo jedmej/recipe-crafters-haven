@@ -1,3 +1,4 @@
+
 import { memo, useMemo, useRef } from "react";
 import { RecipeImageProps } from "./types";
 import ImageControls from "./ImageControls";
@@ -20,14 +21,14 @@ const RecipeImage = memo(
     isSaving
   }: RecipeImageProps) => {
     const hasImage = !!imageUrl;
-    const { generateImage, isLoading: isGeneratingFromButton } = useImageGeneration();
+    const { generateImage, isGenerating: isGeneratingFromHook } = useImageGeneration();
     const { toast } = useToast();
     const imageRef = useRef<HTMLDivElement>(null);
     const { isFavorite, toggleFavorite } = useFavorites();
     const isFavorited = recipe?.id ? isFavorite(recipe.id) : false;
 
     // Combine both loading states
-    const isGenerating = isGeneratingFromButton || isGeneratingImage;
+    const isGenerating = isGeneratingFromHook || isGeneratingImage;
 
     // Generate image prompt based on recipe title
     const generateImagePrompt = (title: string): string => {
@@ -154,4 +155,4 @@ const RecipeImage = memo(
   }
 );
 
-export default RecipeImage; 
+export default RecipeImage;

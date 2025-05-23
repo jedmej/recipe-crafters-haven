@@ -1,174 +1,190 @@
 
-import { useState } from "react";
-import { Database } from "@/integrations/supabase/types";
+import { useState, useMemo, useCallback } from 'react';
+import { Recipe } from '@/types/recipe';
 
-type Recipe = Database['public']['Tables']['recipes']['Row'];
-
-interface UseRecipeFiltersProps {
-  recipes: Recipe[] | undefined;
-}
-
-export function useRecipeFilters({ recipes }: UseRecipeFiltersProps) {
-  const [searchTerm, setSearchTerm] = useState("");
+export function useRecipeFilters(recipes: Recipe[]) {
   const [mealTypeFilters, setMealTypeFilters] = useState<string[]>([]);
   const [dietaryFilters, setDietaryFilters] = useState<string[]>([]);
   const [difficultyFilters, setDifficultyFilters] = useState<string[]>([]);
   const [cuisineFilters, setCuisineFilters] = useState<string[]>([]);
   const [cookingMethodFilters, setCookingMethodFilters] = useState<string[]>([]);
-  const [cookTimeRange, setCookTimeRange] = useState<number[]>([0, 180]); // 0-180 minutes
-  const [caloriesRange, setCaloriesRange] = useState<number[]>([0, 2000]); // 0-2000 calories
-  const [isFiltersVisible, setIsFiltersVisible] = useState(false);
+  const [cookTimeRange, setCookTimeRange] = useState<number[]>([15, 120]);
+  const [caloriesRange, setCaloriesRange] = useState<number>(1000);
 
-  // Helper function to normalize category values
-  const normalizeCategory = (value: any): string[] => {
-    if (!value) return [];
-    return Array.isArray(value) ? value : [value];
-  };
+  // Compute all active filters for display
+  const activeFilters = useMemo(() => {
+    return [
+      ...mealTypeFilters,
+      ...dietaryFilters,
+      ...difficultyFilters,
+      ...cuisineFilters,
+      ...cookingMethodFilters,
+    ];
+  }, [
+    mealTypeFilters,
+    dietaryFilters,
+    difficultyFilters,
+    cuisineFilters,
+    cookingMethodFilters,
+  ]);
 
-  // Helper function to safely access categories
-  const getCategory = (recipe: Recipe, path: string): any => {
-    if (!recipe.categories) return null;
-    const categories = typeof recipe.categories === 'object' ? recipe.categories : {};
-    return (categories as any)[path];
-  };
+  // Determine if any filter is active
+  const isFiltered = useMemo(() => {
+    return (
+      activeFilters.length > 0 ||
+      cookTimeRange[0] !== 15 ||
+      cookTimeRange[1] !== 120 ||
+      caloriesRange !== 1000
+    );
+  }, [activeFilters, cookTimeRange, caloriesRange]);
 
   // Apply all filters to recipes
-  const filteredRecipes = recipes?.filter((recipe) => {
-    if (!recipe) return false;
-
-    // Text search filter
-    const matchesSearch = 
-      recipe.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      recipe.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      false;
-
-    // Category filters - if no filters selected, show all
-    const matchesMealType = mealTypeFilters.length === 0 || 
-      mealTypeFilters.some(f => {
-        const mealType = getCategory(recipe, 'meal_type');
-        return mealType && mealType.toString().toLowerCase() === f.toLowerCase();
-      });
-
-    const matchesDietary = dietaryFilters.length === 0 || 
-      dietaryFilters.some(f => {
-        const restrictions = getCategory(recipe, 'dietary_restrictions');
-        return restrictions && normalizeCategory(restrictions)
-          .some(r => r.toString().toLowerCase() === f.toLowerCase());
-      });
-
-    const matchesDifficulty = difficultyFilters.length === 0 || 
-      difficultyFilters.some(f => {
-        const difficulty = getCategory(recipe, 'difficulty_level');
-        return difficulty && difficulty.toString().toLowerCase() === f.toLowerCase();
-      });
-
-    const matchesCuisine = cuisineFilters.length === 0 || 
-      cuisineFilters.some(f => {
-        const cuisine = getCategory(recipe, 'cuisine_type');
-        return cuisine && cuisine.toString().toLowerCase() === f.toLowerCase();
-      });
-
-    const matchesCookingMethod = cookingMethodFilters.length === 0 || 
-      cookingMethodFilters.some(f => {
-        const method = getCategory(recipe, 'cooking_method');
-        return method && normalizeCategory(method)
-          .some(m => m.toString().toLowerCase() === f.toLowerCase());
-      });
-
-    // Time and calories filters
-    const cookTime = (recipe.prep_time || 0) + (recipe.cook_time || 0);
-    const matchesCookTime = cookTime >= cookTimeRange[0] && cookTime <= cookTimeRange[1];
-
-    const calories = recipe.estimated_calories || 0;
-    const matchesCalories = calories >= caloriesRange[0] && calories <= caloriesRange[1];
-
-    return matchesSearch && 
-           matchesMealType && 
-           matchesDietary && 
-           matchesDifficulty && 
-           matchesCuisine && 
-           matchesCookingMethod &&
-           matchesCookTime &&
-           matchesCalories;
-  }) || [];
-
-  // Helper function to toggle a filter value
-  const toggleFilter = (value: string, currentFilters: string[], setFilters: (filters: string[]) => void) => {
-    if (value === "all") {
-      setFilters([]);
-      return;
-    }
-    
-    setFilters(prev => {
-      if (prev.includes(value)) {
-        return prev.filter(f => f !== value);
+  const filteredRecipes = useMemo(() => {
+    return recipes.filter((recipe) => {
+      // Get categories safely
+      const categories = typeof recipe.categories === 'object' && recipe.categories 
+        ? recipe.categories 
+        : {};
+      
+      // Filter by meal type
+      if (
+        mealTypeFilters.length > 0 &&
+        (!categories || !hasMealType(categories, mealTypeFilters))
+      ) {
+        return false;
       }
-      return [...prev, value];
+
+      // Filter by dietary restrictions
+      if (
+        dietaryFilters.length > 0 &&
+        (!categories || !hasDietaryRestrictions(categories, dietaryFilters))
+      ) {
+        return false;
+      }
+
+      // Filter by difficulty level
+      if (
+        difficultyFilters.length > 0 &&
+        (!categories || !hasDifficultyLevel(categories, difficultyFilters))
+      ) {
+        return false;
+      }
+
+      // Filter by cuisine type
+      if (
+        cuisineFilters.length > 0 &&
+        (!categories || !hasCuisineType(categories, cuisineFilters))
+      ) {
+        return false;
+      }
+
+      // Filter by cooking method
+      if (
+        cookingMethodFilters.length > 0 &&
+        (!categories || !hasCookingMethod(categories, cookingMethodFilters))
+      ) {
+        return false;
+      }
+
+      // Filter by cook time
+      const totalTime = (recipe.prep_time || 0) + (recipe.cook_time || 0);
+      if (totalTime < cookTimeRange[0] || totalTime > cookTimeRange[1]) {
+        return false;
+      }
+
+      // Filter by calories
+      if (recipe.estimated_calories && recipe.estimated_calories > caloriesRange) {
+        return false;
+      }
+
+      // If it passes all filters, include it
+      return true;
     });
-  };
+  }, [
+    recipes,
+    mealTypeFilters,
+    dietaryFilters,
+    difficultyFilters,
+    cuisineFilters,
+    cookingMethodFilters,
+    cookTimeRange,
+    caloriesRange,
+  ]);
 
-  // Helper function to count active filters
-  const getActiveFilterCount = () => {
-    return mealTypeFilters.length + 
-           dietaryFilters.length + 
-           difficultyFilters.length + 
-           cuisineFilters.length + 
-           cookingMethodFilters.length +
-           // Add 1 if time range is not default
-           (cookTimeRange[0] !== 0 || cookTimeRange[1] !== 180 ? 1 : 0) +
-           // Add 1 if calories range is not default
-           (caloriesRange[0] !== 0 || caloriesRange[1] !== 2000 ? 1 : 0);
-  };
+  // Helper functions to safely check categories
+  function hasMealType(categories: any, filters: string[]): boolean {
+    if (!categories) return false;
+    if (typeof categories !== 'object') return false;
+    
+    const mealType = categories.meal_type;
+    if (!mealType) return false;
+    
+    return filters.includes(String(mealType));
+  }
 
-  // Reset all filters
-  const resetFilters = () => {
-    setMealTypeFilters([]);
-    setDietaryFilters([]);
-    setDifficultyFilters([]);
-    setCuisineFilters([]);
-    setCookingMethodFilters([]);
-    setCookTimeRange([0, 180]);
-    setCaloriesRange([0, 2000]);
-    setSearchTerm("");
-  };
+  function hasDietaryRestrictions(categories: any, filters: string[]): boolean {
+    if (!categories) return false;
+    if (typeof categories !== 'object') return false;
+    
+    const restrictions = categories.dietary_restrictions;
+    if (!restrictions) return false;
+    
+    if (Array.isArray(restrictions)) {
+      return restrictions.some(r => filters.includes(String(r)));
+    }
+    return filters.includes(String(restrictions));
+  }
 
-  // Format time helper
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
-  };
+  function hasDifficultyLevel(categories: any, filters: string[]): boolean {
+    if (!categories) return false;
+    if (typeof categories !== 'object') return false;
+    
+    const level = categories.difficulty_level;
+    if (!level) return false;
+    
+    return filters.includes(String(level));
+  }
 
-  // Format calories helper
-  const formatCalories = (cal: number) => {
-    return `${cal} cal`;
-  };
+  function hasCuisineType(categories: any, filters: string[]): boolean {
+    if (!categories) return false;
+    if (typeof categories !== 'object') return false;
+    
+    const cuisine = categories.cuisine_type;
+    if (!cuisine) return false;
+    
+    return filters.includes(String(cuisine));
+  }
+
+  function hasCookingMethod(categories: any, filters: string[]): boolean {
+    if (!categories) return false;
+    if (typeof categories !== 'object') return false;
+    
+    const method = categories.cooking_method;
+    if (!method) return false;
+    
+    if (Array.isArray(method)) {
+      return method.some(m => filters.includes(String(m)));
+    }
+    return filters.includes(String(method));
+  }
 
   return {
-    searchTerm,
-    setSearchTerm,
-    mealTypeFilters,
-    setMealTypeFilters,
-    dietaryFilters,
-    setDietaryFilters,
-    difficultyFilters,
-    setDifficultyFilters,
-    cuisineFilters,
-    setCuisineFilters,
-    cookingMethodFilters,
-    setCookingMethodFilters,
-    cookTimeRange,
-    setCookTimeRange,
-    caloriesRange,
-    setCaloriesRange,
-    isFiltersVisible,
-    setIsFiltersVisible,
     filteredRecipes,
-    toggleFilter,
-    getActiveFilterCount,
-    resetFilters,
-    formatTime,
-    formatCalories
+    mealTypeFilters,
+    dietaryFilters,
+    difficultyFilters,
+    cuisineFilters,
+    cookingMethodFilters,
+    cookTimeRange,
+    caloriesRange,
+    activeFilters,
+    isFiltered,
+    setMealTypeFilters,
+    setDietaryFilters,
+    setDifficultyFilters,
+    setCuisineFilters,
+    setCookingMethodFilters,
+    setCookTimeRange,
+    setCaloriesRange,
   };
 }

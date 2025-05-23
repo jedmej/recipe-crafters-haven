@@ -84,7 +84,7 @@ export function useImageGeneration() {
         console.error('Error uploading image:', error);
         throw error;
       } finally {
-        setIsLoading(true);
+        setIsLoading(false);
       }
     },
     onError: (error: Error) => {
@@ -99,13 +99,15 @@ export function useImageGeneration() {
   // Callable function to generate an image
   const generateImage = async (
     prompt: string, 
-    type: 'recipe' | 'profile' = 'recipe'
+    type: 'recipe' | 'profile' | 'avatar' = 'recipe'
   ): Promise<string> => {
     try {
       // Enhance prompt based on type
       let enhancedPrompt = prompt;
       if (type === 'recipe') {
         enhancedPrompt = `Professional food photography: ${prompt}, appetizing presentation, soft natural lighting`;
+      } else if (type === 'avatar' || type === 'profile') {
+        enhancedPrompt = `Professional profile avatar: ${prompt}, friendly expression, clean background, high quality`;
       }
       
       const imageUrl = await generateImageMutation.mutateAsync({ prompt: enhancedPrompt });
@@ -127,5 +129,6 @@ export function useImageGeneration() {
     uploadImage: uploadImageMutation.mutate,
     isGenerating: isGenerating || generateImageMutation.isPending,
     isUploading: isLoading || uploadImageMutation.isPending,
+    isLoading: isLoading || isGenerating || generateImageMutation.isPending || uploadImageMutation.isPending
   };
 }

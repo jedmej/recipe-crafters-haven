@@ -40,10 +40,10 @@ export function EditRecipeContainer() {
         title: data.title,
         description: data.description || '',
         ingredients: Array.isArray(data.ingredients) 
-          ? data.ingredients.map(item => typeof item === 'string' ? item : String(item))
+          ? data.ingredients.map((item: any) => typeof item === 'string' ? item : String(item))
           : [],
         instructions: Array.isArray(data.instructions)
-          ? data.instructions.map(item => typeof item === 'string' ? item : String(item))
+          ? data.instructions.map((item: any) => typeof item === 'string' ? item : String(item))
           : [],
         prep_time: data.prep_time || 0,
         cook_time: data.cook_time || 0,
@@ -52,7 +52,7 @@ export function EditRecipeContainer() {
         image_url: data.image_url,
         source_url: data.source_url,
         language: data.language,
-        categories: data.categories ? {
+        categories: typeof data.categories === 'object' && data.categories ? {
           meal_type: data.categories.meal_type as string,
           dietary_restrictions: data.categories.dietary_restrictions as string | string[],
           difficulty_level: data.categories.difficulty_level as string,

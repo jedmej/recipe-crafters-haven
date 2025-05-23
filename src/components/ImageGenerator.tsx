@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +24,7 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   const generationStartedRef = useRef(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { generateImage, isLoading } = useImageGeneration();
+  const { generateImage, isGenerating } = useImageGeneration();
 
   const handleGenerateImage = useCallback(async (promptToUse = promptText) => {
     if (!promptToUse.trim()) {
@@ -89,20 +90,20 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
             value={promptText}
             onChange={(e) => setPromptText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && !isLoading) {
+              if (e.key === 'Enter' && !isGenerating) {
                 handleGenerateImage();
               }
             }}
-            disabled={isLoading}
+            disabled={isGenerating}
           />
           
           <Button 
             onClick={() => handleGenerateImage()}
-            disabled={isLoading || !promptText.trim()}
+            disabled={isGenerating || !promptText.trim()}
             className="w-full"
           >
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isLoading ? 'Generating...' : 'Generate Image'}
+            {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isGenerating ? 'Generating...' : 'Generate Image'}
           </Button>
         </div>
 
@@ -125,4 +126,4 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
   );
 };
 
-export default ImageGenerator; 
+export default ImageGenerator;

@@ -1,4 +1,6 @@
 
+// This is a partial update to fix the most critical type errors in this file
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,37 +68,42 @@ export default function RecipeDetailPage() {
 
   const getMealType = () => {
     if (!categories) return 'Other';
-    return typeof categories === 'object' && 'meal_type' in categories 
-      ? categories.meal_type 
-      : 'Other';
+    if (typeof categories === 'object' && categories !== null) {
+      return categories.meal_type || 'Other';
+    }
+    return 'Other';
   };
 
   const getDietaryRestrictions = () => {
     if (!categories) return 'None';
-    return typeof categories === 'object' && 'dietary_restrictions' in categories 
-      ? categories.dietary_restrictions 
-      : 'None';
+    if (typeof categories === 'object' && categories !== null) {
+      return categories.dietary_restrictions || 'None';
+    }
+    return 'None';
   };
 
   const getDifficultyLevel = () => {
     if (!categories) return 'Medium';
-    return typeof categories === 'object' && 'difficulty_level' in categories 
-      ? categories.difficulty_level 
-      : 'Medium';
+    if (typeof categories === 'object' && categories !== null) {
+      return categories.difficulty_level || 'Medium';
+    }
+    return 'Medium';
   };
 
   const getCuisineType = () => {
     if (!categories) return 'Other';
-    return typeof categories === 'object' && 'cuisine_type' in categories 
-      ? categories.cuisine_type 
-      : 'Other';
+    if (typeof categories === 'object' && categories !== null) {
+      return categories.cuisine_type || 'Other';
+    }
+    return 'Other';
   };
 
   const getCookingMethod = () => {
     if (!categories) return 'Other';
-    return typeof categories === 'object' && 'cooking_method' in categories 
-      ? categories.cooking_method 
-      : 'Other';
+    if (typeof categories === 'object' && categories !== null) {
+      return categories.cooking_method || 'Other';
+    }
+    return 'Other';
   };
 
   // Ensure ingredients and instructions are arrays

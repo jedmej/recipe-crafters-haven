@@ -27,7 +27,7 @@ export function ImportRecipeContainer() {
   const { preferences } = useUserPreferences();
 
   const [preparedRecipe, setPreparedRecipe] = useState<RecipeFormData | null>(null);
-  const [language, setLanguage] = useState<string>(preferences.recipe_language || 'en');
+  const [language, setLanguage] = useState<string>(preferences.language || 'en');
 
   const {
     formData,
@@ -81,12 +81,12 @@ export function ImportRecipeContainer() {
           meal_type: data.categories?.meal_type || 'dinner',
           dietary_restrictions: Array.isArray(dietaryRestrictions) 
             ? dietaryRestrictions 
-            : dietaryRestrictions ? [dietaryRestrictions] : ['none'],
+            : dietaryRestrictions ? [String(dietaryRestrictions)] : ['none'],
           difficulty_level: data.categories?.difficulty_level || 'medium',
           cuisine_type: data.categories?.cuisine_type || 'Other',
           cooking_method: Array.isArray(cookingMethod)
             ? cookingMethod
-            : cookingMethod ? [cookingMethod] : ['baking']
+            : cookingMethod ? [String(cookingMethod)] : ['baking']
         }
       };
 
@@ -274,7 +274,7 @@ export function ImportRecipeContainer() {
                 >
                   {isProcessing ? (
                     <>
-                      <LoadingSpinner size={16} className="mr-2" />
+                      <LoadingSpinner className="mr-2" />
                       Importing...
                     </>
                   ) : (

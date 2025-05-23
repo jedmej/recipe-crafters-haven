@@ -3,7 +3,7 @@ import { SpinnerGap, Sparkle, UploadSimple, Link } from "@phosphor-icons/react";
 import { memo, useCallback, useRef, useState } from "react";
 import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration";
 import { useToast } from "@/hooks/use-toast";
-import { AsyncHandler, SyncHandler, createAsyncHandler, validateImageUrl } from "./utils";
+import { AsyncHandler, SyncHandler, ValidateImageUrlOptions } from "./utils";
 import { ImageControlsProps } from "./types";
 
 const ImageControls = memo(({ 
@@ -35,12 +35,51 @@ const ImageControls = memo(({
     }));
   }, []);
 
+  // Validate image URL
+  const validateImageUrl = async (url: string): Promise<boolean> => {
+    try {
+      // Check if URL is valid
+      new URL(url);
+      
+      // Check if image exists and can be loaded
+      const response = await fetch(url, { method: 'HEAD' });
+      
+      if (!response.ok) {
+        toast({
+          variant: "destructive",
+          title: "Invalid Image URL",
+          description: "The URL does not point to a valid image. Please check and try again.",
+        });
+        return false;
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.startsWith('image/')) {
+        toast({
+          variant: "destructive",
+          title: "Invalid Image URL",
+          description: "The URL does not point to an image. Please provide a direct link to an image file.",
+        });
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Invalid URL",
+        description: "Please enter a valid URL.",
+      });
+      return false;
+    }
+  };
+
   // File upload handler
   const handleFileUpload: SyncHandler<[React.ChangeEvent<HTMLInputElement>]> = useCallback((event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const processFile: AsyncHandler<[]> = async () => {
+    const processFile = async (): Promise<void> => {
       return new Promise<void>((resolve, reject) => {
         const reader = new FileReader();
         
@@ -63,19 +102,22 @@ const ImageControls = memo(({
       });
     };
 
-    createAsyncHandler(processFile, {
-      title: "Error",
-      description: "Failed to upload image. Please try again.",
-      toast
-    })();
+    processFile().catch(error => {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to upload image. Please try again.",
+      });
+    });
   }, [onFileUpload, toast]);
 
   // URL submission handler
   const handleUrlSubmit: SyncHandler<[React.MouseEvent]> = useCallback((e) => {
     if (!imageState.urlInput.trim()) return;
 
-    const processUrl: AsyncHandler<[]> = async () => {
-      const isValid = await validateImageUrl(imageState.urlInput, { toast });
+    const processUrl = async (): Promise<void> => {
+      const isValid = await validateImageUrl(imageState.urlInput);
       
       if (isValid) {
         await onUrlUpload(imageState.urlInput);
@@ -87,11 +129,14 @@ const ImageControls = memo(({
       }
     };
 
-    createAsyncHandler(processUrl, {
-      title: "Error",
-      description: "Failed to add image from URL. Please try again.",
-      toast
-    })();
+    processUrl().catch(error => {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add image from URL. Please try again.",
+      });
+    });
   }, [imageState.urlInput, onUrlUpload, toast]);
 
   return (

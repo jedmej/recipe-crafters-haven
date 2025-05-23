@@ -1,136 +1,77 @@
-import React from "react";
-import { motion, AnimatePresence, useMotionValue, animate } from "framer-motion";
-import { CircleCheck, Trash } from "lucide-react";
-import { cn } from "@/lib/utils";
 
-export interface Todo {
-  id: number;
-  title: string;
-  completed: boolean;
-}
+import React, { useState } from "react";
+import { Check, Trash, MoreHorizontal } from "lucide-react";
+import { Todo } from "@/components/recipes/recipe-display/types";
 
 interface TodoItemProps {
   todo: Todo;
-  onComplete: (id: number) => void;
-  onDelete: (id: number) => void;
-  onShowActions?: (id: number | null) => void;
-  showActions?: number | null;
-  className?: string;
+  onComplete: (id: string) => void;
+  onDelete: (id: string) => void;
+  showActions: boolean;
+  onShowActions: () => void;
+  onHideActions: () => void;
 }
 
-export function TodoItem({
+export const TodoItem: React.FC<TodoItemProps> = ({
   todo,
   onComplete,
   onDelete,
-  onShowActions,
   showActions,
-  className
-}: TodoItemProps) {
-  const x = useMotionValue(0);
+  onShowActions,
+  onHideActions,
+}) => {
+  const [isHovering, setIsHovering] = useState(false);
 
   return (
-    <motion.div layout className={cn("flex min-h-7 items-center gap-2", className)}>
-      <motion.button
-        className="flex h-4 w-4 items-center justify-center rounded-sm border bg-secondary text-secondary-foreground"
-        style={{ x }}
-        onClick={() => {
-          onComplete(todo.id);
-          onShowActions?.(null);
-        }}
-      >
-        {todo.completed && (
-          <svg viewBox="0 0 26 31" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-[8px]">
-            <motion.path
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              exit={{ pathLength: 0 }}
-              transition={{ duration: 0.6, type: "spring", bounce: 0 }}
-              d="M2.25781 13.903L6.2995 27.8624C6.54178 28.6992 7.66377 28.8476 8.11527 28.1026L23.9323 2.00293"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-            />
-          </svg>
-        )}
-      </motion.button>
-
-      <motion.p
-        animate={{ opacity: todo.completed ? 0.3 : 1 }}
-        transition={{ duration: 0.3 }}
-        className="relative flex select-none items-center text-base"
-        drag="x"
-        dragConstraints={{ left: 0, right: 0 }}
-        dragElastic={0.12}
-        onDrag={(e, info) => {
-          if (showActions) onShowActions?.(null);
-          x.set(decay(info.offset.x / 5, 30));
-        }}
-        onDragEnd={(e, info) => {
-          if (info.offset.x > 50) {
-            onComplete(todo.id);
-          } else if (info.offset.x < -20 && !todo.completed) {
-            onShowActions?.(todo.id);
-          }
-          animate(x, 0);
-        }}
-      >
-        {todo.title}
-        <AnimatePresence>
-          {todo.completed && (
-            <motion.span
-              initial={{ width: 0 }}
-              animate={{ width: "100%" }}
-              exit={{ width: 0 }}
-              transition={{ duration: 0.3 }}
-              className="absolute left-0 inline-block h-px bg-foreground"
-            />
-          )}
-        </AnimatePresence>
-      </motion.p>
-
-      <AnimatePresence initial={false}>
-        {showActions === todo.id && (
-          <div className="ml-auto flex items-center gap-px">
-            <motion.button
-              initial={{ x: 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 50, opacity: 0 }}
-              transition={{ duration: 0.5, type: "spring", bounce: 0 }}
-              className="rounded-md p-1 transition-colors hover:bg-secondary"
-              onClick={() => {
-                onComplete(todo.id);
-                onShowActions?.(null);
-              }}
+    <div 
+      className={`flex items-center justify-between p-2 rounded-lg transition-colors ${
+        todo.completed ? "bg-gray-100" : "bg-white"
+      } ${isHovering ? "bg-gray-50" : ""}`}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => {
+        setIsHovering(false);
+        onHideActions();
+      }}
+    >
+      <div className="flex items-center gap-3 flex-1">
+        <button
+          onClick={() => onComplete(todo.id)}
+          className={`flex-shrink-0 w-6 h-6 rounded-full border ${
+            todo.completed 
+              ? "bg-green-500 border-green-500 text-white flex items-center justify-center" 
+              : "border-gray-300"
+          }`}
+        >
+          {todo.completed && <Check className="h-4 w-4" />}
+        </button>
+        
+        <span className={`text-sm ${todo.completed ? "line-through text-gray-500" : ""}`}>
+          {todo.title}
+        </span>
+      </div>
+      
+      <div className="flex items-center">
+        {isHovering ? (
+          <button
+            onClick={onShowActions}
+            className="p-1 rounded-full hover:bg-gray-100"
+          >
+            <MoreHorizontal className="h-5 w-5 text-gray-500" />
+          </button>
+        ) : null}
+        
+        {showActions && (
+          <div className="absolute right-8 bg-white shadow-lg rounded-md border p-1">
+            <button
+              onClick={() => onDelete(todo.id)}
+              className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-gray-50 rounded w-full text-left"
             >
-              <CircleCheck size={20} />
-            </motion.button>
-            <motion.button
-              initial={{ x: 50, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 50, opacity: 0 }}
-              transition={{
-                duration: 0.5,
-                type: "spring",
-                bounce: 0,
-                delay: showActions ? 0.05 : 0,
-              }}
-              className="rounded-md p-1 transition-colors hover:bg-secondary"
-              onClick={() => {
-                onDelete(todo.id);
-                onShowActions?.(null);
-              }}
-            >
-              <Trash size={20} />
-            </motion.button>
+              <Trash className="h-4 w-4" />
+              Delete
+            </button>
           </div>
         )}
-      </AnimatePresence>
-    </motion.div>
+      </div>
+    </div>
   );
-}
-
-function decay(value: number, max: number) {
-  let entry = value / max;
-  let sigmoid = 2 / (1 + Math.exp(-entry)) - 1;
-  return sigmoid * max;
-}
+};

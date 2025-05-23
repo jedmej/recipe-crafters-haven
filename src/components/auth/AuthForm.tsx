@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import Link from "@/components/ui/link";
+import { Link } from "@/components/ui/link";
 
 type AuthMode = "signin" | "signup";
 
@@ -141,7 +141,7 @@ export function AuthForm() {
               <Label htmlFor="password" className="text-sm font-medium text-black">
                 Password
               </Label>
-              <Link href="/forgot-password" className="text-sm font-medium text-[#FA8922] hover:text-[#FA8922]/80">
+              <Link to="/forgot-password" className="text-sm font-medium text-[#FA8922] hover:text-[#FA8922]/80">
                 Forgot password?
               </Link>
             </div>

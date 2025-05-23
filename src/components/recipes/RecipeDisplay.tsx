@@ -30,7 +30,7 @@ export const RecipeDisplay = memo(
     const isMobile = useMediaQuery("(max-width: 768px)");
     
     // Handle the image_url/imageUrl property by checking both
-    const imageUrl = recipe.imageUrl || recipe.image_url;
+    const imageUrl = recipe.imageUrl || (recipe as any).image_url;
     
     // Create a Promise-returning wrapper for onImageUpdate if it exists
     const handleImageUpdate = onImageUpdate 

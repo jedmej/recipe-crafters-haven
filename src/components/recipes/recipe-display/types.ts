@@ -81,10 +81,10 @@ export interface TimeNutritionProps {
 
 export interface ActionButtonsRowProps {
   recipe: RecipeData;
-  onDelete: () => void;
   onAddToGroceryList?: () => void;
   isAddingToGroceryList?: boolean;
   onEditOrGenerate: () => void;
+  onDelete: () => void;
   setShowCookingMode: (show: boolean) => void;
 }
 
@@ -139,4 +139,11 @@ export interface RecipeContentProps {
   onEditOrGenerate: () => void;
   onDelete: () => void;
   setShowCookingMode: (show: boolean) => void;
-} 
+}
+
+// Define a Todo interface for the GroceryListItems component
+export interface Todo {
+  id: string;  // Changed from number to string
+  title: string;
+  completed: boolean;
+}

@@ -16,8 +16,19 @@ const CategoryItem = memo(
         .join(' ');
     }, []);
     
-    // Cast the variant to the correct type
-    const tagVariant = variant as TagVariant;
+    // Cast the variant to the correct type with safety checks
+    const getValidVariant = (variantStr: string): TagVariant => {
+      const validVariants: TagVariant[] = [
+        "default", "meal", "dietary", "difficulty", "cuisine", 
+        "cooking", "occasion", "course", "taste"
+      ];
+      
+      return validVariants.includes(variantStr as TagVariant) 
+        ? (variantStr as TagVariant) 
+        : "default";
+    };
+    
+    const tagVariant = getValidVariant(variant);
     
     // Determine the display value based on the input
     const displayContent = useMemo(() => {

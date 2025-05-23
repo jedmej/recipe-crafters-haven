@@ -2,6 +2,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Recipe } from '@/types/recipe';
 
+interface UseRecipeFiltersProps {
+  recipes: Recipe[];
+}
+
 export function useRecipeFilters(recipes: Recipe[]) {
   const [mealTypeFilters, setMealTypeFilters] = useState<string[]>([]);
   const [dietaryFilters, setDietaryFilters] = useState<string[]>([]);
@@ -113,22 +117,16 @@ export function useRecipeFilters(recipes: Recipe[]) {
 
   // Helper functions to safely check categories
   function hasMealType(categories: any, filters: string[]): boolean {
-    if (!categories) return false;
-    if (typeof categories !== 'object') return false;
-    
+    if (!categories || typeof categories !== 'object') return false;
     const mealType = categories.meal_type;
     if (!mealType) return false;
-    
     return filters.includes(String(mealType));
   }
 
   function hasDietaryRestrictions(categories: any, filters: string[]): boolean {
-    if (!categories) return false;
-    if (typeof categories !== 'object') return false;
-    
+    if (!categories || typeof categories !== 'object') return false;
     const restrictions = categories.dietary_restrictions;
     if (!restrictions) return false;
-    
     if (Array.isArray(restrictions)) {
       return restrictions.some(r => filters.includes(String(r)));
     }
@@ -136,37 +134,65 @@ export function useRecipeFilters(recipes: Recipe[]) {
   }
 
   function hasDifficultyLevel(categories: any, filters: string[]): boolean {
-    if (!categories) return false;
-    if (typeof categories !== 'object') return false;
-    
+    if (!categories || typeof categories !== 'object') return false;
     const level = categories.difficulty_level;
     if (!level) return false;
-    
     return filters.includes(String(level));
   }
 
   function hasCuisineType(categories: any, filters: string[]): boolean {
-    if (!categories) return false;
-    if (typeof categories !== 'object') return false;
-    
+    if (!categories || typeof categories !== 'object') return false;
     const cuisine = categories.cuisine_type;
     if (!cuisine) return false;
-    
     return filters.includes(String(cuisine));
   }
 
   function hasCookingMethod(categories: any, filters: string[]): boolean {
-    if (!categories) return false;
-    if (typeof categories !== 'object') return false;
-    
+    if (!categories || typeof categories !== 'object') return false;
     const method = categories.cooking_method;
     if (!method) return false;
-    
     if (Array.isArray(method)) {
       return method.some(m => filters.includes(String(m)));
     }
     return filters.includes(String(method));
   }
+
+  // Format utilities
+  const formatTime = useCallback((minutes: number) => {
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  }, []);
+
+  const formatCalories = useCallback((calories: number) => {
+    return `${calories} kcal`;
+  }, []);
+
+  // Filter toggle utility
+  const toggleFilter = useCallback((category: string, value: string, currentFilters: string[], setFilters: (filters: string[]) => void) => {
+    if (currentFilters.includes(value)) {
+      setFilters(currentFilters.filter(f => f !== value));
+    } else {
+      setFilters([...currentFilters, value]);
+    }
+  }, []);
+
+  // Get active filter count
+  const getActiveFilterCount = useCallback(() => {
+    return activeFilters.length + (cookTimeRange[0] !== 15 || cookTimeRange[1] !== 120 ? 1 : 0) + (caloriesRange !== 1000 ? 1 : 0);
+  }, [activeFilters, cookTimeRange, caloriesRange]);
+
+  // Reset all filters
+  const resetFilters = useCallback(() => {
+    setMealTypeFilters([]);
+    setDietaryFilters([]);
+    setDifficultyFilters([]);
+    setCuisineFilters([]);
+    setCookingMethodFilters([]);
+    setCookTimeRange([15, 120]);
+    setCaloriesRange(1000);
+  }, []);
 
   return {
     filteredRecipes,
@@ -186,5 +212,10 @@ export function useRecipeFilters(recipes: Recipe[]) {
     setCookingMethodFilters,
     setCookTimeRange,
     setCaloriesRange,
+    toggleFilter,
+    formatTime,
+    formatCalories,
+    getActiveFilterCount,
+    resetFilters
   };
 }

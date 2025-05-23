@@ -3,9 +3,10 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useImageGeneration } from '@/features/recipes/hooks/useImageGeneration';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { ArrowLeft } from "lucide-react";
 
 interface ImageGeneratorProps {
   prompt?: string;
@@ -102,7 +103,7 @@ const ImageGenerator: React.FC<ImageGeneratorProps> = ({
             disabled={isGenerating || !promptText.trim()}
             className="w-full"
           >
-            {isGenerating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isGenerating && <LoadingSpinner className="mr-2 h-4 w-4" />}
             {isGenerating ? 'Generating...' : 'Generate Image'}
           </Button>
         </div>

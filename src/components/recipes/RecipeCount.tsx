@@ -1,47 +1,41 @@
+
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 interface RecipeCountProps {
   filteredCount: number;
   totalCount: number;
   hasActiveFilters: boolean;
-  onClearFilters: () => void;
+  onClearFilters?: () => void;
 }
 
-export function RecipeCount({ 
-  filteredCount, 
-  totalCount, 
-  hasActiveFilters, 
-  onClearFilters 
+export function RecipeCount({
+  filteredCount,
+  totalCount,
+  hasActiveFilters,
+  onClearFilters,
 }: RecipeCountProps) {
   return (
-    <div className="flex items-center justify-center rounded-2xl">
-      <div className="flex items-center justify-center gap-2 text-center">
-        <span className="text-[16px] font-bold text-[#FA8922] font-archivo">
-          {filteredCount}
-        </span>
-        <span className="text-[16px] font-archivo text-[#222222]">
-          {filteredCount !== totalCount ? (
-            <>
-              filtered from{" "}
-              <span className="text-[16px] font-bold text-[#FA8922] font-archivo">
-                {totalCount}
-              </span>{" "}
-              total recipes
-            </>
-          ) : (
-            "total recipes"
-          )}
-        </span>
-      </div>
-      {hasActiveFilters && (
+    <div className="flex items-center gap-2">
+      <p className="text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">{filteredCount}</span>
+        {filteredCount !== totalCount && (
+          <> of <span className="font-medium text-foreground">{totalCount}</span></>
+        )}{" "}
+        recipes
+      </p>
+
+      {hasActiveFilters && onClearFilters && (
         <Button
           variant="ghost"
-          className="text-[16px] font-archivo font-medium text-[#222222] hover:text-[#FA8922] hover:bg-transparent px-4 py-2 h-auto ml-4"
+          size="sm"
           onClick={onClearFilters}
+          className="h-7 px-2 text-xs gap-1"
         >
-          Clear all filters
+          <X className="h-3.5 w-3.5" />
+          <span>Clear filters</span>
         </Button>
       )}
     </div>
   );
-} 
+}

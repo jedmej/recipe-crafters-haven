@@ -1,104 +1,134 @@
 
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { SearchIcon, SlidersHorizontal, X } from 'lucide-react';
-import { FilterPanel } from '@/components/recipes/FilterPanel';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ArrowRight } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface SearchSectionProps {
-  searchTerm: string;
-  setSearchTerm: (value: string) => void;
-  onSearch: () => void;
-  isLoading: boolean;
-  showAISearch?: boolean;
+  onSearch: (prompt: string) => void;
+  onQueryChange: (query: string) => void;
+  query: string;
+  isLoading?: boolean;
+  defaultExpanded?: boolean;
+  includeImageGeneration?: boolean;
+  onToggleImageGeneration?: (enabled: boolean) => void;
 }
 
-export const SearchSection = ({
-  searchTerm,
-  setSearchTerm,
+export function SearchSection({
   onSearch,
-  isLoading,
-  showAISearch = true,
-}: SearchSectionProps) => {
+  onQueryChange,
+  query,
+  isLoading = false,
+  defaultExpanded = false,
+  includeImageGeneration = true,
+  onToggleImageGeneration
+}: SearchSectionProps) {
+  const [isExpanded, setIsExpanded] = useState(defaultExpanded);
   const navigate = useNavigate();
-  const [showFilters, setShowFilters] = useState(false);
-  
+
+  // Reset expanded state when query changes
+  useEffect(() => {
+    if (!query) {
+      setIsExpanded(defaultExpanded);
+    }
+  }, [query, defaultExpanded]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSearch();
+    if (query.trim()) {
+      onSearch(query);
+    }
+  };
+
+  const handleFocus = () => {
+    setIsExpanded(true);
+  };
+
+  const handleGenerateClick = () => {
+    if (query.trim()) {
+      onSearch(query);
+    }
+  };
+
+  const handleUrlDetect = (value: string) => {
+    // Simple URL detection
+    if (value.startsWith('http://') || value.startsWith('https://')) {
+      // Provide a visual indication or option to import from URL
+      navigate(`/recipes/import-ai?url=${encodeURIComponent(value)}`);
+    }
+  };
+
+  // Create placeholder filters with undefined values for type safety
+  const emptyFilters = {
+    mealTypeFilters: [] as string[],
+    dietaryFilters: [] as string[],
+    difficultyFilters: [] as string[],
+    cuisineFilters: [] as string[],
+    cookingMethodFilters: [] as string[],
   };
 
   return (
-    <Card className="mb-6 bg-white rounded-3xl border-none shadow-sm">
-      <CardContent className="p-4 lg:p-6 pt-4 lg:pt-6">
-        <form onSubmit={handleSubmit}>
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="relative flex-1 w-full">
-              <Input
-                type="text"
-                placeholder="Search for recipes..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-12 rounded-full py-2 pl-12 pr-12"
-              />
-              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
-              {searchTerm && (
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  onClick={() => setSearchTerm('')}
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              )}
-            </div>
-            
-            <div className="flex gap-2">
-              <Button
-                type="submit"
-                disabled={isLoading || !searchTerm.trim()}
-                className="h-12 px-6 rounded-full"
-              >
-                {isLoading ? 'Searching...' : 'Search'}
-              </Button>
-              
-              {showAISearch && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-12 rounded-full"
-                  onClick={() => navigate('/recipes/inspire')}
-                >
-                  AI Search
-                </Button>
-              )}
-              
-              <Button
-                type="button"
-                variant={showFilters ? "default" : "outline"}
-                className="h-12 w-12 rounded-full flex items-center justify-center"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <SlidersHorizontal className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="relative">
+        {isExpanded ? (
+          <Textarea
+            value={query}
+            onChange={(e) => {
+              onQueryChange(e.target.value);
+              handleUrlDetect(e.target.value);
+            }}
+            placeholder="Describe the recipe you want to generate (e.g., 'A vegetarian pasta with mushrooms and spinach in a creamy sauce')"
+            className="min-h-[100px] resize-none"
+            autoFocus
+          />
+        ) : (
+          <Input
+            value={query}
+            onChange={(e) => onQueryChange(e.target.value)}
+            onFocus={handleFocus}
+            placeholder="Describe a recipe you want to generate..."
+            className="pr-10"
+          />
+        )}
+        {!isExpanded && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-2 top-1/2 transform -translate-y-1/2"
+            onClick={handleFocus}
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
 
-          {showFilters && (
-            <div className="mt-4">
-              <FilterPanel 
-                mealTypeFilters={[]}
-                dietaryFilters={[]}
-                difficultyFilters={[]}
-                cuisineFilters={[]}
-                cookingMethodFilters={[]}
+      {isExpanded && (
+        <div className="flex flex-col gap-4">
+          {includeImageGeneration && onToggleImageGeneration && (
+            <div className="flex items-center gap-2">
+              <Switch
+                id="generate-image"
+                onCheckedChange={onToggleImageGeneration}
+                defaultChecked={true}
               />
+              <Label htmlFor="generate-image">Generate an AI image for this recipe</Label>
             </div>
           )}
-        </form>
-      </CardContent>
-    </Card>
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={!query.trim() || isLoading}
+          >
+            {isLoading ? 'Generating...' : 'Generate Recipe'}
+          </Button>
+        </div>
+      )}
+    </form>
   );
-};
+}

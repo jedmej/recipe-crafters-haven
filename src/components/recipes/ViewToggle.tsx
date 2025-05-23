@@ -1,46 +1,39 @@
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { Grid, List } from "lucide-react";
+
+import { LayoutGrid, List } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface ViewToggleProps {
   view: "grid" | "list";
   onViewChange: (view: "grid" | "list") => void;
+  className?: string;
 }
 
-export function ViewToggle({ view, onViewChange }: ViewToggleProps) {
+export function ViewToggle({ view, onViewChange, className }: ViewToggleProps) {
   return (
-    <ToggleGroup
-      type="single"
-      value={view}
-      onValueChange={(value) => {
-        if (value === "grid" || value === "list") {
-          onViewChange(value);
-        }
-      }}
-      className="border rounded-full p-1 bg-white"
-    >
-      <ToggleGroupItem 
-        value="grid" 
-        className={cn(
-          "rounded-full transition-colors",
-          "data-[state=on]:bg-[#222222]",
-          "data-[state=on]:text-white",
-          "data-[state=off]:text-[#222222]"
-        )}
+    <div className={cn("flex items-center border rounded-lg overflow-hidden", className)}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className={`h-8 px-3 rounded-none ${
+          view === "grid" ? "bg-muted" : "hover:bg-transparent hover:text-foreground"
+        }`}
+        onClick={() => onViewChange("grid")}
       >
-        <Grid className="h-4 w-4" />
-      </ToggleGroupItem>
-      <ToggleGroupItem 
-        value="list" 
-        className={cn(
-          "rounded-full transition-colors",
-          "data-[state=on]:bg-[#222222]",
-          "data-[state=on]:text-white",
-          "data-[state=off]:text-[#222222]"
-        )}
+        <LayoutGrid className="h-4 w-4" />
+        <span className="sr-only">Grid view</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className={`h-8 px-3 rounded-none ${
+          view === "list" ? "bg-muted" : "hover:bg-transparent hover:text-foreground"
+        }`}
+        onClick={() => onViewChange("list")}
       >
         <List className="h-4 w-4" />
-      </ToggleGroupItem>
-    </ToggleGroup>
+        <span className="sr-only">List view</span>
+      </Button>
+    </div>
   );
-} 
+}

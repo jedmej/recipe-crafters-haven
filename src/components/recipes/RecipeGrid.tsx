@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useCallback } from "react";
 import { RecipeCard } from "./RecipeCard";
 import { FilterPanel } from "./FilterPanel";
@@ -14,7 +15,45 @@ interface RecipeGridProps {
   onSelectRecipe: (recipeId: string) => void;
 }
 
-export function RecipeGrid({ recipes, isLoading, isSearching, searchQuery, onSelectRecipe }) {
+interface RecipeCardProps {
+  recipe: Recipe;
+  onSelect: () => void;
+  isSelected?: boolean;
+  isSelectionMode?: boolean;
+  onClick?: (recipeId: string, event: React.MouseEvent) => void;
+  onLongPress?: (recipeId: string) => void;
+  variant?: "default" | "compact";
+}
+
+interface RecipeCountProps {
+  filteredCount: number;
+  totalCount: number;
+  hasActiveFilters: boolean;
+  onClearFilters?: () => void;
+}
+
+interface FilterPanelProps {
+  mealTypeFilters: string[];
+  dietaryFilters: string[];
+  difficultyFilters: string[];
+  cuisineFilters: string[];
+  cookingMethodFilters: string[];
+  cookTimeRange: number[];
+  caloriesRange: number;
+  formatTime: (minutes: number) => string;
+  formatCalories?: (calories: number) => string;
+  activeFilters: string[];
+  setMealTypeFilters: (filters: string[]) => void;
+  setDietaryFilters: (filters: string[]) => void;
+  setDifficultyFilters: (filters: string[]) => void;
+  setCuisineFilters: (filters: string[]) => void;
+  setCookingMethodFilters: (filters: string[]) => void;
+  setCookTimeRange: (range: number[]) => void;
+  setCaloriesRange: (calories: number) => void;
+  toggleFilter?: (category: string, value: string, currentFilters: string[], setFilters: (filters: string[]) => void) => void;
+}
+
+export function RecipeGrid({ recipes, isLoading, isSearching, searchQuery, onSelectRecipe }: RecipeGridProps) {
   const [view, setView] = useState<"grid" | "list">("grid");
   const {
     filteredRecipes,
@@ -78,11 +117,19 @@ export function RecipeGrid({ recipes, isLoading, isSearching, searchQuery, onSel
       setFilters([...currentFilters, value]);
     }
   };
+  
+  const formatCalories = (calories: number) => {
+    return `${calories} kcal`;
+  };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <RecipeCount count={filteredRecipes.length} total={recipes.length} isFiltered={isFiltered} />
+        <RecipeCount 
+          filteredCount={filteredRecipes.length} 
+          totalCount={recipes.length} 
+          hasActiveFilters={isFiltered} 
+        />
         
         <div className="flex items-center gap-4">
           <FilterPanel
@@ -94,6 +141,7 @@ export function RecipeGrid({ recipes, isLoading, isSearching, searchQuery, onSel
             cookTimeRange={cookTimeRange}
             caloriesRange={caloriesRange}
             formatTime={formatTime}
+            formatCalories={formatCalories}
             activeFilters={activeFilters}
             setMealTypeFilters={setMealTypeFilters}
             setDietaryFilters={setDietaryFilters}
@@ -114,7 +162,7 @@ export function RecipeGrid({ recipes, isLoading, isSearching, searchQuery, onSel
             <RecipeCard
               key={recipe.id}
               recipe={recipe}
-              isGrid={isGrid}
+              variant={isGrid ? "default" : "compact"}
               onSelect={() => onSelectRecipe(recipe.id)}
             />
           ))}

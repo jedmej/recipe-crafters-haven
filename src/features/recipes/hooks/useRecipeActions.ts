@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { categorizeIngredient } from '@/features/groceries/utils/categorization';
+import { categorizeIngredient, prepareIngredientsForStorage } from '@/features/groceries/utils/categorization';
 import { useImageGeneration } from './useImageGeneration';
 import { RecipeData } from '@/types/recipe';
 import { scaleAndConvertIngredient } from '../utils/ingredient-parsing';
@@ -69,13 +69,7 @@ export function useRecipeActions(
       });
 
       // Resolve all category promises
-      const groceryItems = await Promise.all(
-        processedIngredients.map(async (item) => ({
-          name: item.name,
-          checked: item.checked,
-          category: typeof item.category === 'string' ? item.category : await item.category
-        }))
-      );
+      const groceryItems = await prepareIngredientsForStorage(processedIngredients);
 
       // Get the current user
       const { data: { session } } = await supabase.auth.getSession();

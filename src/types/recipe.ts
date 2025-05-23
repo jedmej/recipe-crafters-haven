@@ -1,3 +1,4 @@
+
 export interface RecipeData {
   id?: string;
   title: string;
@@ -11,6 +12,7 @@ export interface RecipeData {
   portion_size?: number;
   source_url?: string;
   imageUrl?: string;
+  image_url?: string; // Supporting both property names
   language?: string;
   user_id?: string;
   created_at?: string;
@@ -27,6 +29,9 @@ export interface RecipeData {
     secondary_dietary_restrictions?: string[];
   };
 }
+
+// Adding the Recipe type as an alias to RecipeData for backward compatibility
+export type Recipe = RecipeData;
 
 export interface ScaledIngredient {
   quantity: number;

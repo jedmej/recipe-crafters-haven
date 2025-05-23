@@ -1,193 +1,167 @@
 
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Upload, AlertCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from '@/hooks/use-toast';
-import { useRecipeForm } from '../../hooks/useRecipeForm';
-import { PageLayout } from './PageLayout';
-import { useMutation } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { RecipeFormData } from '../../types';
-import { DEFAULT_RECIPE_FORM_DATA } from '../../utils/constants';
-import { SUPPORTED_LANGUAGES } from '@/types/recipe';
-import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { PageLayout } from "./PageLayout";
+import { useMutation } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { SUPPORTED_LANGUAGES } from "@/types/recipe";
+import { RecipeDisplay } from "@/components/recipes/RecipeDisplay";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useState as useUserPreferencesState } from 'react';
+import { useUserPreferences } from "@/hooks/use-user-preferences";
+import { MeasurementSystem } from "../../types";
 
 export function ImportRecipeContainer() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [importType, setImportType] = useState('url');
-  const [recipeUrl, setRecipeUrl] = useState('');
-  const [recipeText, setRecipeText] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const { preferences } = useUserPreferences();
+  const [url, setUrl] = useState("");
+  const [recipeData, setRecipeData] = useState<any>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [measurementSystem, setMeasurementSystem] = useState<MeasurementSystem>(
+    preferences.measurementSystem || 'metric'
+  );
+  const [language, setLanguage] = useState<string>(
+    preferences.language || 'en'
+  );
+  const [servings, setServings] = useState<number>(2);
 
-  const [preparedRecipe, setPreparedRecipe] = useState<RecipeFormData | null>(null);
-  const [language, setLanguage] = useState<string>(preferences.language || 'en');
+  // Import recipe mutation
+  const importMutation = useMutation({
+    mutationFn: async (url: string) => {
+      setIsGenerating(true);
+      
+      try {
+        const { data, error } = await supabase.functions.invoke("import-recipe", {
+          body: { url, language, measurementSystem },
+        });
 
-  const {
-    formData,
-    updateFormField,
-    handleSubmit,
-    isSubmitting
-  } = useRecipeForm({
-    initialData: preparedRecipe || DEFAULT_RECIPE_FORM_DATA,
-    mode: 'import',
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        if (!data) {
+          throw new Error("Failed to import the recipe. Please try another URL.");
+        }
+        
+        return data;
+      } catch (error) {
+        console.error("Error importing recipe:", error);
+        throw error;
+      } finally {
+        setIsGenerating(false);
+      }
+    },
     onSuccess: (data) => {
-      navigate(`/recipes/${data.id}`);
+      setRecipeData(data);
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Import Failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+      });
+    },
+  });
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!url) {
+      toast({
+        variant: "destructive",
+        title: "URL Required",
+        description: "Please enter a recipe URL to import.",
+      });
+      return;
     }
-  });
-
-  // Import mutation for URL
-  const importFromUrl = useMutation({
-    mutationFn: async () => {
-      if (!recipeUrl.trim()) {
-        throw new Error('Please enter a valid URL');
-      }
-
-      const { data, error } = await supabase.functions.invoke('ai-recipe-import', {
-        body: {
-          type: 'url',
-          content: recipeUrl,
-          language
-        }
-      });
-
-      if (error) throw error;
-      if (!data) throw new Error('No data returned from import function');
-
-      return data;
-    },
-    onSuccess: (data) => {
-      // Format categories for our form
-      const dietaryRestrictions = data.categories?.dietary_restrictions;
-      const cookingMethod = data.categories?.cooking_method;
-
-      const formattedRecipe: RecipeFormData = {
-        title: data.title || '',
-        description: data.description || '',
-        ingredients: Array.isArray(data.ingredients) ? data.ingredients : [],
-        instructions: Array.isArray(data.instructions) ? data.instructions : [],
-        prep_time: data.prep_time || 0,
-        cook_time: data.cook_time || 0,
-        estimated_calories: data.estimated_calories || 0,
-        servings: data.suggested_portions || 2,
-        language,
-        categories: {
-          meal_type: data.categories?.meal_type || 'dinner',
-          dietary_restrictions: Array.isArray(dietaryRestrictions) 
-            ? dietaryRestrictions 
-            : dietaryRestrictions ? [String(dietaryRestrictions)] : ['none'],
-          difficulty_level: data.categories?.difficulty_level || 'medium',
-          cuisine_type: data.categories?.cuisine_type || 'Other',
-          cooking_method: Array.isArray(cookingMethod)
-            ? cookingMethod
-            : cookingMethod ? [String(cookingMethod)] : ['baking']
-        }
-      };
-
-      setPreparedRecipe(formattedRecipe);
-    },
-    onError: (error: Error) => {
+    
+    try {
+      // Validate URL
+      new URL(url);
+      importMutation.mutate(url);
+    } catch (error) {
       toast({
         variant: "destructive",
-        title: "Import Failed",
-        description: error.message,
-      });
-    },
-  });
-
-  // Import mutation for text
-  const importFromText = useMutation({
-    mutationFn: async () => {
-      if (!recipeText.trim()) {
-        throw new Error('Please enter recipe content');
-      }
-
-      const { data, error } = await supabase.functions.invoke('ai-recipe-import', {
-        body: {
-          type: 'text',
-          content: recipeText,
-          language
-        }
-      });
-
-      if (error) throw error;
-      if (!data) throw new Error('No data returned from import function');
-
-      return data;
-    },
-    onSuccess: (data) => {
-      // Format categories for our form
-      const dietaryRestrictions = data.categories?.dietary_restrictions;
-      const cookingMethod = data.categories?.cooking_method;
-
-      const formattedRecipe: RecipeFormData = {
-        title: data.title || '',
-        description: data.description || '',
-        ingredients: Array.isArray(data.ingredients) ? data.ingredients : [],
-        instructions: Array.isArray(data.instructions) ? data.instructions : [],
-        prep_time: data.prep_time || 0,
-        cook_time: data.cook_time || 0,
-        estimated_calories: data.estimated_calories || 0,
-        servings: data.suggested_portions || 2,
-        language,
-        categories: {
-          meal_type: data.categories?.meal_type || 'dinner',
-          dietary_restrictions: Array.isArray(dietaryRestrictions) 
-            ? dietaryRestrictions 
-            : dietaryRestrictions ? [String(dietaryRestrictions)] : ['none'],
-          difficulty_level: data.categories?.difficulty_level || 'medium',
-          cuisine_type: data.categories?.cuisine_type || 'Other',
-          cooking_method: Array.isArray(cookingMethod)
-            ? cookingMethod
-            : cookingMethod ? [String(cookingMethod)] : ['baking']
-        }
-      };
-
-      setPreparedRecipe(formattedRecipe);
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: "destructive",
-        title: "Import Failed",
-        description: error.message,
-      });
-    },
-  });
-
-  const handleImport = () => {
-    setIsProcessing(true);
-    if (importType === 'url') {
-      importFromUrl.mutate(undefined, {
-        onSettled: () => setIsProcessing(false)
-      });
-    } else {
-      importFromText.mutate(undefined, {
-        onSettled: () => setIsProcessing(false)
+        title: "Invalid URL",
+        description: "Please enter a valid URL.",
       });
     }
   };
 
-  // When preparedRecipe changes, update formData
-  useEffect(() => {
-    if (preparedRecipe) {
-      Object.entries(preparedRecipe).forEach(([key, value]) => {
-        updateFormField(key as keyof RecipeFormData, value);
+  // Save recipe mutation
+  const saveRecipeMutation = useMutation({
+    mutationFn: async () => {
+      if (!recipeData) return null;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("You must be logged in to save recipes");
+      
+      // Prepare recipe data for database
+      const recipe = {
+        title: recipeData.title,
+        description: recipeData.description || "",
+        ingredients: recipeData.ingredients || [],
+        instructions: recipeData.instructions || [],
+        prep_time: recipeData.prep_time || 0,
+        cook_time: recipeData.cook_time || 0,
+        estimated_calories: recipeData.estimated_calories || 0,
+        servings: recipeData.servings || servings,
+        suggested_portions: recipeData.servings || servings,
+        image_url: recipeData.image_url,
+        source_url: url,
+        language: language,
+        user_id: session.user.id,
+        portion_description: "serving",
+        categories: recipeData.categories || {
+          meal_type: "dinner",
+          dietary_restrictions: "none",
+          difficulty_level: "medium",
+          cuisine_type: "Other",
+          cooking_method: "other",
+        },
+      };
+      
+      const { data, error } = await supabase
+        .from("recipes")
+        .insert([recipe])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data?.id) {
+        toast({
+          title: "Recipe Saved",
+          description: "The recipe has been imported and saved successfully!",
+        });
+        navigate(`/recipes/${data.id}`);
+      }
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: error instanceof Error ? error.message : "Failed to save recipe",
       });
-    }
-  }, [preparedRecipe]);
+    },
+  });
 
-  // Get language label
-  const getLanguageOption = (code: string) => {
-    return {
-      value: code,
-      label: SUPPORTED_LANGUAGES[code as keyof typeof SUPPORTED_LANGUAGES] || code
-    };
+  const findLanguageLabel = (value: string) => {
+    const language = SUPPORTED_LANGUAGES.find(lang => lang.value === value);
+    return language ? language.label : value;
+  };
+
+  const handleToggleMeasurementSystem = () => {
+    setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric');
   };
 
   return (
@@ -195,112 +169,128 @@ export function ImportRecipeContainer() {
       <Button
         variant="ghost"
         className="mb-6"
-        onClick={() => navigate('/recipes')}
+        onClick={() => navigate("/recipes")}
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back to Recipes
       </Button>
 
-      {!preparedRecipe ? (
-        <Card className="overflow-hidden rounded-lg">
-          <CardContent className="p-6">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold">Import Recipe</h1>
-              <p className="text-gray-500 mt-2">
-                Import a recipe from a URL or by pasting recipe text
-              </p>
-            </div>
-
-            <Tabs defaultValue="url" value={importType} onValueChange={setImportType}>
-              <TabsList className="mb-4">
-                <TabsTrigger value="url">From URL</TabsTrigger>
-                <TabsTrigger value="text">From Text</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="url" className="space-y-4">
-                <div>
-                  <label htmlFor="recipe-url" className="block mb-2 text-sm font-medium">
-                    Recipe URL
-                  </label>
-                  <input
-                    id="recipe-url"
-                    type="url"
-                    className="w-full p-3 border rounded-md"
-                    placeholder="https://example.com/recipe"
-                    value={recipeUrl}
-                    onChange={(e) => setRecipeUrl(e.target.value)}
-                  />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="text" className="space-y-4">
-                <div>
-                  <label htmlFor="recipe-text" className="block mb-2 text-sm font-medium">
-                    Recipe Text
-                  </label>
-                  <Textarea
-                    id="recipe-text"
-                    className="min-h-[300px]"
-                    placeholder="Paste your recipe here..."
-                    value={recipeText}
-                    onChange={(e) => setRecipeText(e.target.value)}
-                  />
-                </div>
-              </TabsContent>
-
-              <div className="my-4">
-                <label htmlFor="recipe-language" className="block mb-2 text-sm font-medium">
-                  Recipe Language
-                </label>
-                <select
-                  id="recipe-language"
-                  className="w-full p-3 border rounded-md"
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                >
-                  {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
-                    <option key={code} value={code}>
-                      {name}
-                    </option>
-                  ))}
-                </select>
+      {!recipeData ? (
+        <Card className="overflow-hidden rounded-[48px] max-w-xl mx-auto">
+          <CardContent className="p-8">
+            <div className="flex flex-col gap-8">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">Import Recipe from URL</h1>
+                <p className="text-muted-foreground">
+                  Enter the URL of a recipe you'd like to import. We'll extract the
+                  recipe details and allow you to save it to your collection.
+                </p>
               </div>
 
-              <div className="mt-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Recipe URL</label>
+                  <Input
+                    type="url"
+                    placeholder="https://example.com/recipe"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    disabled={isGenerating}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Language</label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      value={language}
+                      onChange={(e) => setLanguage(e.target.value)}
+                      disabled={isGenerating}
+                    >
+                      {SUPPORTED_LANGUAGES.map((lang) => (
+                        <option key={lang.value} value={lang.value}>
+                          {lang.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">Measurement System</label>
+                    <select
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      value={measurementSystem}
+                      onChange={(e) => setMeasurementSystem(e.target.value as MeasurementSystem)}
+                      disabled={isGenerating}
+                    >
+                      <option value="metric">Metric (g, ml)</option>
+                      <option value="imperial">Imperial (oz, cups)</option>
+                    </select>
+                  </div>
+                </div>
+
                 <Button
-                  onClick={handleImport}
-                  disabled={isProcessing || (!recipeUrl.trim() && !recipeText.trim())}
+                  type="submit"
                   className="w-full"
+                  disabled={isGenerating || !url}
                 >
-                  {isProcessing ? (
+                  {isGenerating ? (
                     <>
-                      <LoadingSpinner className="mr-2" />
-                      Importing...
+                      <LoadingSpinner size={20} className="mr-2" />
+                      Importing Recipe...
                     </>
                   ) : (
-                    <>
-                      <Upload className="mr-2 h-4 w-4" />
-                      Import Recipe
-                    </>
+                    "Import Recipe"
                   )}
                 </Button>
-              </div>
-            </Tabs>
-
-            <div className="mt-6 p-4 bg-blue-50 rounded-md flex items-start">
-              <AlertCircle className="h-5 w-5 text-blue-500 mr-2 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-blue-700">
-                <p className="font-medium">Tips:</p>
-                <ul className="list-disc pl-4 mt-1 space-y-1">
-                  <li>For URL imports, make sure the recipe page is publicly accessible</li>
-                  <li>When pasting text, include the ingredients and steps for best results</li>
-                  <li>The AI will try to extract all recipe details automatically</li>
-                </ul>
-              </div>
+              </form>
             </div>
           </CardContent>
         </Card>
-      ) : null}
+      ) : (
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <Button
+              onClick={() => saveRecipeMutation.mutate()}
+              disabled={saveRecipeMutation.isPending}
+              className="mb-4"
+            >
+              {saveRecipeMutation.isPending ? (
+                <>
+                  <LoadingSpinner size={16} className="mr-2" />
+                  Saving Recipe...
+                </>
+              ) : (
+                "Save Recipe"
+              )}
+            </Button>
+          </div>
+
+          <RecipeDisplay
+            recipe={{
+              ...recipeData,
+              id: "temp-id", // Temporary ID for the preview
+              imageUrl: recipeData.image_url,
+              language: language
+            }}
+            scaledRecipe={{
+              ...recipeData,
+              id: "temp-id",
+              imageUrl: recipeData.image_url,
+              language: language
+            }}
+            chosenPortions={servings}
+            onPortionsChange={setServings}
+            onSave={() => saveRecipeMutation.mutate()}
+            isSaving={saveRecipeMutation.isPending}
+            measurementSystem={measurementSystem}
+            onMeasurementSystemChange={handleToggleMeasurementSystem}
+            onEditOrGenerate={() => {}} // No edit needed for preview
+            onBack={() => setRecipeData(null)}
+          />
+        </div>
+      )}
     </PageLayout>
   );
 }

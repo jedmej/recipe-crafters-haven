@@ -60,6 +60,7 @@
     "express": "^4.18.2",
     "framer-motion": "^12.4.7",
     "jotai": "^2.12.1",
+    "lovable-tagger": "^1.1.8",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.3.0",
     "react": "^18.3.1",

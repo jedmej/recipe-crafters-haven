@@ -62,7 +62,7 @@ export function EditRecipeContainer() {
           course_category: data.categories.course_category as string | undefined,
           taste_profile: data.categories.taste_profile as string | string[] | undefined,
           secondary_dietary_restrictions: data.categories.secondary_dietary_restrictions as string[] | undefined
-        },
+        } : undefined,
         user_id: data.user_id
       };
       

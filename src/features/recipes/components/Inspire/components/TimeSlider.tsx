@@ -1,33 +1,47 @@
+
 import React from 'react';
-import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 
-interface TimeSliderProps {
-  cookingTime: number;
-  setCookingTime: (time: number) => void;
-  isGenerating: boolean;
+export interface TimeSliderProps {
+  value: number;
+  setValue: (value: number) => void;
+  title: string;
+  icon?: React.ReactNode;
+  unit: string;
+  max: number;
+  step?: number;
 }
 
 export const TimeSlider: React.FC<TimeSliderProps> = ({
-  cookingTime,
-  setCookingTime,
-  isGenerating
+  value,
+  setValue,
+  title,
+  icon,
+  unit,
+  max,
+  step = 1
 }) => {
+  const handleChange = (newValue: number[]) => {
+    setValue(newValue[0]);
+  };
+
   return (
-    <div className="space-y-4">
-      <Label className="font-medium">Cooking Time: {cookingTime} minutes</Label>
+    <div className="space-y-2">
+      <div className="flex items-center">
+        {icon && <span className="mr-2">{icon}</span>}
+        <span className="text-sm font-medium">{title}</span>
+      </div>
       <Slider
-        min={10}
-        max={120}
-        step={5}
-        value={[cookingTime]}
-        onValueChange={(value) => setCookingTime(value[0])}
-        disabled={isGenerating}
+        value={[value]}
+        onValueChange={handleChange}
+        max={max}
+        step={step}
+        className="my-4"
       />
-      <div className="flex justify-between text-sm text-muted-foreground">
-        <span>10 min</span>
-        <span>60 min</span>
-        <span>120 min</span>
+      <div className="flex justify-between text-xs text-gray-500">
+        <span>0 {unit}</span>
+        <span className="font-medium text-gray-700">{value} {unit}</span>
+        <span>{max} {unit}</span>
       </div>
     </div>
   );

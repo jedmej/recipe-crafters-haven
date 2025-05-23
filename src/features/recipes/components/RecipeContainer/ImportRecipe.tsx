@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -15,6 +16,7 @@ import { SUPPORTED_LANGUAGES } from "@/types/recipe";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { AiRecipeResponse } from "../../types";
+import { LanguageCode } from "@/hooks/use-user-preferences";
 
 export function ImportRecipeContainer() {
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ export function ImportRecipeContainer() {
   
   const [isImporting, setIsImporting] = useState(false);
   const [importUrl, setImportUrl] = useState("");
-  const [language, setLanguage] = useState(preferences.language || "en");
+  const [language, setLanguage] = useState<LanguageCode>(preferences.language || "en");
   const [importError, setImportError] = useState("");
   
   const {
@@ -75,12 +77,20 @@ export function ImportRecipeContainer() {
       updateFormField("language", language);
       
       if (typedData.categories) {
+        const dietaryRestrictions = Array.isArray(typedData.categories.dietary_restrictions) 
+          ? typedData.categories.dietary_restrictions.join(", ") 
+          : typedData.categories.dietary_restrictions || "";
+        
+        const cookingMethod = Array.isArray(typedData.categories.cooking_method)
+          ? typedData.categories.cooking_method.join(", ")
+          : typedData.categories.cooking_method || "";
+          
         updateFormField("categories", {
           meal_type: typedData.categories.meal_type || "",
-          dietary_restrictions: typedData.categories.dietary_restrictions?.join(", ") || "",
+          dietary_restrictions: dietaryRestrictions,
           difficulty_level: typedData.categories.difficulty_level || "",
           cuisine_type: typedData.categories.cuisine_type || "",
-          cooking_method: typedData.categories.cooking_method?.join(", ") || ""
+          cooking_method: cookingMethod
         });
       }
       
@@ -146,15 +156,15 @@ export function ImportRecipeContainer() {
                 <Label htmlFor="language">Import Language</Label>
                 <Select 
                   value={language} 
-                  onValueChange={setLanguage}
+                  onValueChange={(value) => setLanguage(value as LanguageCode)}
                   disabled={isImporting}
                 >
                   <SelectTrigger id="language">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
-                      <SelectItem key={code} value={code}>{name}</SelectItem>
+                    {SUPPORTED_LANGUAGES.map(lang => (
+                      <SelectItem key={lang.value} value={lang.value}>{lang.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -204,4 +214,4 @@ export function ImportRecipeContainer() {
       </div>
     </PageLayout>
   );
-} 
+}

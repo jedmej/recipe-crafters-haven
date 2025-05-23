@@ -1,3 +1,4 @@
+
 import { useNavigate, useParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { LoadingState } from "../UI/LoadingState";
 import { ErrorState } from "../UI/ErrorState";
 import { PageLayout } from "./PageLayout";
+import { RecipeFormData } from "../../types";
 
 export function EditRecipeContainer() {
   const { id } = useParams();
@@ -32,7 +34,25 @@ export function EditRecipeContainer() {
       if (error) throw error;
       if (!data) throw new Error('Recipe not found');
       
-      return data;
+      // Transform the database data to RecipeFormData
+      const recipeData: RecipeFormData = {
+        id: data.id,
+        title: data.title,
+        description: data.description || '',
+        ingredients: Array.isArray(data.ingredients) ? data.ingredients : [],
+        instructions: Array.isArray(data.instructions) ? data.instructions : [],
+        prep_time: data.prep_time || 0,
+        cook_time: data.cook_time || 0,
+        estimated_calories: data.estimated_calories || 0,
+        servings: data.servings || 1,
+        image_url: data.image_url,
+        source_url: data.source_url,
+        language: data.language,
+        categories: data.categories,
+        user_id: data.user_id
+      };
+      
+      return recipeData;
     },
     enabled: !!id
   });
@@ -104,4 +124,4 @@ export function EditRecipeContainer() {
       </Card>
     </PageLayout>
   );
-} 
+}

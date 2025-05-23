@@ -88,7 +88,13 @@ export const SearchSection = ({
 
           {showFilters && (
             <div className="mt-4">
-              <FilterPanel />
+              <FilterPanel 
+                mealTypeFilters={[]}
+                dietaryFilters={[]}
+                difficultyFilters={[]}
+                cuisineFilters={[]}
+                cookingMethodFilters={[]}
+              />
             </div>
           )}
         </form>

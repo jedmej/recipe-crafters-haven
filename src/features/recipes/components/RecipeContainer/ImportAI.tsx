@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -6,11 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Bot, AlertCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SUPPORTED_LANGUAGES } from "@/features/recipes/types";
+import { SUPPORTED_LANGUAGES } from "@/types/recipe";
 import { useUserPreferences } from "@/hooks/use-user-preferences";
 import { PageLayout } from "./PageLayout";
 import { useAISearch } from "../../hooks/useAISearch";
 import { RecipeDisplay } from "@/components/recipes/RecipeDisplay";
+import { LanguageCode } from "@/hooks/use-user-preferences";
 
 export function ImportAIContainer() {
   const navigate = useNavigate();
@@ -23,7 +25,7 @@ export function ImportAIContainer() {
   
   // State for the URL input and language selection
   const [recipeUrl, setRecipeUrl] = useState(urlFromQuery || "");
-  const [language, setLanguage] = useState(preferences.language || "en");
+  const [language, setLanguage] = useState<LanguageCode>(preferences.language || "en");
   const [error, setError] = useState<string | null>(null);
   const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'imperial'>(
     preferences.measurementSystem || 'metric'
@@ -112,6 +114,11 @@ export function ImportAIContainer() {
       setIsRegenerating(false);
     }
   };
+  
+  const handleImageUpdate = async (imageUrl: string): Promise<void> => {
+    setSuggestedRecipe(prev => prev ? { ...prev, imageUrl } : null);
+    return Promise.resolve();
+  };
 
   return (
     <PageLayout>
@@ -150,15 +157,17 @@ export function ImportAIContainer() {
                 <label className="text-sm font-medium">Import Language</label>
                 <Select 
                   value={language} 
-                  onValueChange={setLanguage}
+                  onValueChange={(value) => setLanguage(value as LanguageCode)}
                   disabled={isSearching}
                 >
                   <SelectTrigger className="bg-white border-gray-200 h-[48px] rounded-[500px]">
                     <SelectValue placeholder="Select language" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
-                      <SelectItem key={code} value={code}>{name}</SelectItem>
+                    {SUPPORTED_LANGUAGES.map((lang) => (
+                      <SelectItem key={lang.value} value={lang.value}>
+                        {lang.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -197,7 +206,9 @@ export function ImportAIContainer() {
             isSaving={saveRecipe.isPending}
             onRegenerate={handleRegenerate}
             isRegenerating={isRegenerating}
-            onImageUpdate={(imageUrl) => setSuggestedRecipe(prev => prev ? { ...prev, imageUrl } : null)}
+            onImageUpdate={handleImageUpdate}
+            onEditOrGenerate={() => console.log("Edit clicked")}
+            onBack={() => navigate("/recipes")}
           />
         )}
       </div>

@@ -9,7 +9,6 @@ import { TimeSlider } from './components/TimeSlider';
 import { SectionDivider } from './components/SectionDivider';
 import { FilterButtons } from './FilterButtons';
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { RECIPE_CATEGORIES } from '@/types/recipe';
 import { Clock, Flame } from 'lucide-react';
 
 type InspireFormProps = {
@@ -120,7 +119,7 @@ export const InspireForm: React.FC<InspireFormProps> = ({
             <FilterButtons
               category="meal_type"
               title="Meal Type"
-              options={dynamicCategories.meal_type || RECIPE_CATEGORIES.meal_type}
+              options={dynamicCategories.meal_type || []}
               selectedFilters={convertSelectedFilters('meal_type')}
               toggleFilter={toggleFilter}
               isGenerating={isGenerating}
@@ -132,7 +131,7 @@ export const InspireForm: React.FC<InspireFormProps> = ({
             <FilterButtons
               category="dietary_restrictions"
               title="Dietary Restrictions"
-              options={dynamicCategories.dietary_restrictions || RECIPE_CATEGORIES.dietary_restrictions}
+              options={dynamicCategories.dietary_restrictions || []}
               selectedFilters={convertSelectedFilters('dietary_restrictions')}
               toggleFilter={toggleFilter}
               isGenerating={isGenerating}
@@ -144,7 +143,7 @@ export const InspireForm: React.FC<InspireFormProps> = ({
             <FilterButtons
               category="difficulty_level"
               title="Difficulty Level"
-              options={dynamicCategories.difficulty_level || RECIPE_CATEGORIES.difficulty_level}
+              options={dynamicCategories.difficulty_level || []}
               selectedFilters={convertSelectedFilters('difficulty_level')}
               toggleFilter={toggleFilter}
               isGenerating={isGenerating}
@@ -156,7 +155,7 @@ export const InspireForm: React.FC<InspireFormProps> = ({
             <FilterButtons
               category="cuisine_type"
               title="Cuisine Type"
-              options={dynamicCategories.cuisine_type || RECIPE_CATEGORIES.cuisine_type}
+              options={dynamicCategories.cuisine_type || []}
               selectedFilters={convertSelectedFilters('cuisine_type')}
               toggleFilter={toggleFilter}
               isGenerating={isGenerating}
@@ -168,7 +167,7 @@ export const InspireForm: React.FC<InspireFormProps> = ({
             <FilterButtons
               category="cooking_method"
               title="Cooking Method"
-              options={dynamicCategories.cooking_method || RECIPE_CATEGORIES.cooking_method}
+              options={dynamicCategories.cooking_method || []}
               selectedFilters={convertSelectedFilters('cooking_method')}
               toggleFilter={toggleFilter}
               isGenerating={isGenerating}

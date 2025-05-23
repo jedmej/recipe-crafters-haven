@@ -103,11 +103,11 @@ export function InspireContainer() {
             if (!value) return;
             
             if (typeof value === 'string') {
-              categories[key]?.add(value);
+              categories[key as keyof typeof categories]?.add(value);
             } else if (Array.isArray(value)) {
               value.forEach(val => {
                 if (typeof val === 'string') {
-                  categories[key]?.add(val);
+                  categories[key as keyof typeof categories]?.add(val);
                 }
               });
             }
@@ -123,7 +123,7 @@ export function InspireContainer() {
         // Merge with default categories from RECIPE_CATEGORIES
         Object.entries(RECIPE_CATEGORIES).forEach(([key, defaultValues]) => {
           const existingValues = dynamicCats[key] || [];
-          const combinedValues = [...new Set([...existingValues, ...defaultValues])].sort();
+          const combinedValues = [...new Set([...existingValues, ...Array.from(defaultValues)])].sort();
           dynamicCats[key] = combinedValues;
         });
         
@@ -208,6 +208,10 @@ export function InspireContainer() {
     mutationFn: async () => {
       if (!suggestedRecipe) throw new Error('No recipe to save');
       
+      // Get current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('You must be logged in to save a recipe');
+      
       // Format the recipe data for storage
       const saveData = {
         title: suggestedRecipe.title,
@@ -223,6 +227,7 @@ export function InspireContainer() {
         image_url: recipeImage || undefined,
         categories: suggestedRecipe.categories,
         language: preferences.language,
+        user_id: session.user.id // Add the user_id
       };
       
       const { data, error } = await supabase
@@ -316,7 +321,7 @@ export function InspireContainer() {
     setIsExpanded(!isExpanded);
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!query.trim()) {
       toast({
@@ -340,7 +345,7 @@ export function InspireContainer() {
   
   // Handler for updating recipe image
   const handleImageUpdate = async (imageUrl: string): Promise<void> => {
-    if (!suggestedRecipe) return;
+    if (!suggestedRecipe) return Promise.resolve();
     
     setRecipeImage(imageUrl);
     setSuggestedRecipe({
@@ -396,7 +401,7 @@ export function InspireContainer() {
       
       {isGenerating && (
         <div className="flex flex-col items-center justify-center py-12 space-y-4">
-          <LoadingSpinner size="lg" />
+          <LoadingSpinner />
           <p className="text-lg text-gray-700">Generating your recipe...</p>
         </div>
       )}

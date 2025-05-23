@@ -1,4 +1,3 @@
-
 import { RecipeData } from "@/types/recipe";
 import { ReactNode } from "react";
 
@@ -17,6 +16,7 @@ export interface RecipeDisplayProps {
   onEditOrGenerate: () => void;
   onBack: () => void;
   isGeneratingImage?: boolean;
+  onRegenerate?: () => void;
 }
 
 export interface CategoryItemProps {

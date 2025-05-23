@@ -1,31 +1,24 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from "@/components/ui/button";
-import { PencilSimple, Trash, Tag } from "@phosphor-icons/react";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { MeasurementSystem } from "@/lib/types";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
 
+// Import the necessary modules and only access public properties
+import React from 'react';
+import { Button } from "@/components/ui/button";
+import { Trash2, Download, Edit, Share, Globe } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+
+// Define the props interface
 interface RecipeActionsProps {
   recipeId: string;
   isDeleting: boolean;
-  handleDelete: () => Promise<void>;
-  measurementSystem: MeasurementSystem;
+  handleDelete: () => void;
+  measurementSystem: 'metric' | 'imperial';
   toggleMeasurementSystem: () => void;
   recipe: {
     title: string;
     description: string;
     ingredients: string[];
     instructions: string[];
-    categories: {
-      meal_type: string;
-      dietary_restrictions: string;
-      difficulty_level: string;
-      cuisine_type: string;
-      cooking_method: string;
-    };
+    categories?: any;
   };
 }
 
@@ -37,149 +30,134 @@ export function RecipeActions({
   toggleMeasurementSystem,
   recipe
 }: RecipeActionsProps) {
-  const { toast } = useToast();
-  const [isGeneratingCategories, setIsGeneratingCategories] = React.useState(false);
-
-  const generateCategories = async () => {
-    setIsGeneratingCategories(true);
+  const navigate = useNavigate();
+  
+  // Function to generate and download a recipe PDF
+  const downloadRecipePDF = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("User not authenticated");
-
-      // Get the Supabase project URL and anon key
-      const supabaseUrl = supabase.supabaseUrl;
-      const supabaseKey = supabase.supabaseKey;
-
-      const response = await fetch(`${supabaseUrl}/functions/v1/recipe-chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify({
-          query: `Analyze this existing recipe and suggest appropriate categories. Title: ${recipe.title}, Description: ${recipe.description}, Ingredients: ${recipe.ingredients.join(', ')}, Instructions: ${recipe.instructions.join(', ')}`,
-          language: 'en',
-          // Include dummy values for required fields
-          recipeData: {
-            title: recipe.title,
-            description: recipe.description,
-            ingredients: recipe.ingredients,
-            instructions: recipe.instructions,
-            prep_time: 0,
-            cook_time: 0,
-            estimated_calories: 0,
-            suggested_portions: 1,
-            portion_description: "serving",
-            categories: {
-              meal_type: "",
-              dietary_restrictions: "",
-              difficulty_level: "",
-              cuisine_type: "",
-              cooking_method: ""
-            }
+      const { data, error } = await supabase.functions.invoke('recipe-export-pdf', {
+        body: {
+          recipe: {
+            ...recipe,
+            id: recipeId,
+            measurement_system: measurementSystem,
           }
-        })
+        }
       });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Failed to generate categories: ${errorText}`);
-      }
       
-      const data = await response.json();
-      console.log('Received response:', data);
+      if (error) throw error;
       
-      if (!data.success || !data.data || !data.data.categories) {
-        throw new Error('Invalid response format from AI service');
+      if (data && data.pdfUrl) {
+        // Create a download link
+        const link = document.createElement('a');
+        link.href = data.pdfUrl;
+        link.download = `${recipe.title.replace(/\s+/g, '-').toLowerCase()}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       }
-
-      const categories = data.data.categories;
-      
-      // Validate that we got all required categories
-      const requiredCategories = ['meal_type', 'dietary_restrictions', 'difficulty_level', 'cuisine_type', 'cooking_method'];
-      const missingCategories = requiredCategories.filter(cat => !categories[cat]);
-      
-      if (missingCategories.length > 0) {
-        throw new Error(`Missing categories: ${missingCategories.join(', ')}`);
-      }
-
-      // Update the recipe with new categories
-      const { error: updateError } = await supabase
-        .from('recipes')
-        .update({ categories })
-        .eq('id', recipeId);
-
-      if (updateError) {
-        console.error('Update error:', updateError);
-        throw new Error(`Failed to update recipe: ${updateError.message}`);
-      }
-
-      toast({
-        title: "Categories updated",
-        description: "Recipe categories have been regenerated successfully.",
-      });
-
-      // Refresh the page to show new categories
-      window.location.reload();
     } catch (error) {
-      console.error('Error generating categories:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to generate categories. Please try again.",
+      console.error("Error generating PDF:", error);
+      // You could add toast notification here
+    }
+  };
+
+  // Function to share recipe
+  const shareRecipe = () => {
+    // Get the current URL which should be the recipe detail page
+    const url = window.location.href;
+    
+    // Check if the Web Share API is supported
+    if (navigator.share) {
+      navigator.share({
+        title: recipe.title,
+        text: recipe.description,
+        url: url,
+      }).catch((error) => console.log('Error sharing', error));
+    } else {
+      // Fallback - copy to clipboard
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          // You could add toast notification here
+          console.log("URL copied to clipboard");
+        })
+        .catch(err => {
+          console.error('Failed to copy URL: ', err);
+        });
+    }
+  };
+
+  // Use environment variables directly instead of accessing protected properties
+  const translateRecipe = async () => {
+    try {
+      // Use supabase functions instead of direct URL/key access
+      const { data, error } = await supabase.functions.invoke('recipe-translate', {
+        body: {
+          recipe: {
+            ...recipe,
+            id: recipeId,
+          },
+          targetLanguage: 'es' // Hardcoded for this example, you can make it dynamic
+        }
       });
-    } finally {
-      setIsGeneratingCategories(false);
+      
+      if (error) throw error;
+      
+      // Handle the translated recipe data, for example navigate to it
+      if (data && data.id) {
+        navigate(`/recipes/${data.id}`);
+      }
+    } catch (error) {
+      console.error("Translation error:", error);
     }
   };
 
   return (
-    <div className="flex flex-col space-y-4 p-4">
-      {/* Recipe Controls Section */}
-      <div className="flex items-center justify-between">
-        <Label htmlFor="measurement" className="text-base font-medium">
-          Imperial:
-        </Label>
-        <Switch
-          id="measurement"
-          checked={measurementSystem === 'imperial'}
-          onCheckedChange={toggleMeasurementSystem}
-          className="data-[state=checked]:bg-primary"
-        />
-      </div>
-
-      {/* Action Buttons Section */}
-      <div className="flex flex-col gap-2 pt-2">
-        <Button
-          variant="outline"
-          className="h-12 text-base font-medium"
-          asChild
+    <div className="space-y-4">
+      <Button 
+        variant="outline" 
+        className="w-full"
+        onClick={() => navigate(`/recipes/edit/${recipeId}`)}
+      >
+        <Edit className="mr-2 h-4 w-4" />
+        Edit Recipe
+      </Button>
+      
+      <div className="grid grid-cols-2 gap-3">
+        <Button 
+          variant="outline" 
+          onClick={downloadRecipePDF}
         >
-          <Link to={`/recipes/${recipeId}/edit`} className="flex items-center justify-center">
-            <PencilSimple size={20} weight="duotone" className="mr-2" />
-            Edit
-          </Link>
+          <Download className="mr-2 h-4 w-4" />
+          Download
         </Button>
-        <Button
+        
+        <Button 
           variant="outline"
-          onClick={generateCategories}
-          disabled={isGeneratingCategories}
-          className="h-12 text-base font-medium"
+          onClick={shareRecipe}
         >
-          <Tag size={20} weight="duotone" className="mr-2" />
-          {isGeneratingCategories ? 'Generating...' : 'Generate Categories'}
+          <Share className="mr-2 h-4 w-4" />
+          Share
         </Button>
-        <Button
-          variant="destructive"
-          onClick={handleDelete}
+        
+        <Button 
+          variant="outline"
+          onClick={translateRecipe}
+        >
+          <Globe className="mr-2 h-4 w-4" />
+          Translate
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          className="text-destructive hover:bg-destructive/10"
           disabled={isDeleting}
-          className="h-12 text-base font-medium"
+          onClick={handleDelete}
         >
-          <Trash size={20} weight="duotone" className="mr-2" />
-          {isDeleting ? 'Deleting...' : 'Delete'}
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
         </Button>
       </div>
     </div>
   );
-} 
+}

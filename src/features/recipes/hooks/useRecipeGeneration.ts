@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,7 +24,7 @@ export function useRecipeGeneration(options: UseRecipeGenerationOptions = {}) {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("User not authenticated");
 
-      let imageUrl = recipe.image_url;
+      let imageUrl = recipe.imageUrl || recipe.image_url;
 
       // Generate image if enabled
       if (options.shouldGenerateImage) {
@@ -76,4 +77,4 @@ export function useRecipeGeneration(options: UseRecipeGenerationOptions = {}) {
     isGeneratingImage: mutation.isPending && options.shouldGenerateImage,
     recipeImage: null
   };
-} 
+}

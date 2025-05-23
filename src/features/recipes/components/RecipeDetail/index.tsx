@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent } from "@/components/ui/card";
@@ -58,6 +59,55 @@ export default function RecipeDetailPage() {
     );
   }
 
+  // Ensure categories is an object and extract values safely
+  const categories = typeof recipe.categories === 'object' && recipe.categories !== null 
+    ? recipe.categories 
+    : {};
+
+  const getMealType = () => {
+    if (!categories) return 'Other';
+    return typeof categories === 'object' && 'meal_type' in categories 
+      ? categories.meal_type 
+      : 'Other';
+  };
+
+  const getDietaryRestrictions = () => {
+    if (!categories) return 'None';
+    return typeof categories === 'object' && 'dietary_restrictions' in categories 
+      ? categories.dietary_restrictions 
+      : 'None';
+  };
+
+  const getDifficultyLevel = () => {
+    if (!categories) return 'Medium';
+    return typeof categories === 'object' && 'difficulty_level' in categories 
+      ? categories.difficulty_level 
+      : 'Medium';
+  };
+
+  const getCuisineType = () => {
+    if (!categories) return 'Other';
+    return typeof categories === 'object' && 'cuisine_type' in categories 
+      ? categories.cuisine_type 
+      : 'Other';
+  };
+
+  const getCookingMethod = () => {
+    if (!categories) return 'Other';
+    return typeof categories === 'object' && 'cooking_method' in categories 
+      ? categories.cooking_method 
+      : 'Other';
+  };
+
+  // Ensure ingredients and instructions are arrays
+  const safeIngredients = Array.isArray(recipe.ingredients) 
+    ? recipe.ingredients.map(item => typeof item === 'string' ? item : String(item))
+    : [];
+
+  const safeInstructions = Array.isArray(recipe.instructions)
+    ? recipe.instructions.map(item => typeof item === 'string' ? item : String(item))
+    : [];
+
   return (
     <div className="bg-gray-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -79,7 +129,7 @@ export default function RecipeDetailPage() {
                     <h1 className="text-3xl lg:text-4xl font-bold text-gray-900">{recipe.title}</h1>
                     <p className="text-gray-600 mt-4 text-lg">{recipe.description}</p>
                     
-                    {recipe.categories && (
+                    {categories && (
                       <div className="space-y-4 mt-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           <div className="space-y-2">
@@ -88,7 +138,7 @@ export default function RecipeDetailPage() {
                               Meal Type
                             </label>
                             <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                              {recipe.categories.meal_type}
+                              {getMealType()}
                             </span>
                           </div>
 
@@ -98,7 +148,7 @@ export default function RecipeDetailPage() {
                               Dietary Restrictions
                             </label>
                             <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                              {recipe.categories.dietary_restrictions}
+                              {getDietaryRestrictions()}
                             </span>
                           </div>
 
@@ -108,7 +158,7 @@ export default function RecipeDetailPage() {
                               Difficulty Level
                             </label>
                             <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                              {recipe.categories.difficulty_level}
+                              {getDifficultyLevel()}
                             </span>
                           </div>
 
@@ -118,7 +168,7 @@ export default function RecipeDetailPage() {
                               Cuisine Type
                             </label>
                             <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                              {recipe.categories.cuisine_type}
+                              {getCuisineType()}
                             </span>
                           </div>
 
@@ -128,7 +178,7 @@ export default function RecipeDetailPage() {
                               Cooking Method
                             </label>
                             <span className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
-                              {recipe.categories.cooking_method}
+                              {getCookingMethod()}
                             </span>
                           </div>
                         </div>
@@ -172,9 +222,9 @@ export default function RecipeDetailPage() {
                   recipe={{
                     title: recipe.title,
                     description: recipe.description,
-                    ingredients: recipe.ingredients,
-                    instructions: recipe.instructions,
-                    categories: recipe.categories
+                    ingredients: safeIngredients,
+                    instructions: safeInstructions,
+                    categories: categories
                   }}
                 />
               </CardContent>
@@ -221,7 +271,7 @@ export default function RecipeDetailPage() {
               <CardContent className="p-6 lg:p-8">
                 <h3 className="text-2xl font-semibold mb-6">Ingredients</h3>
                 <RecipeIngredients
-                  ingredients={recipe.ingredients}
+                  ingredients={safeIngredients}
                   scaleFactor={scaleFactor}
                   measurementSystem={measurementSystem}
                   desiredServings={desiredServings}
@@ -239,7 +289,7 @@ export default function RecipeDetailPage() {
               <CardContent className="p-6 lg:p-8">
                 <h3 className="text-2xl font-semibold mb-6">Instructions</h3>
                 <div className="space-y-4">
-                  {recipe.instructions.map((instruction, index) => (
+                  {safeInstructions.map((instruction, index) => (
                     <div key={index} className="flex items-start gap-4 text-lg text-gray-700">
                       <span className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 text-gray-700 font-medium">
                         {index + 1}
@@ -255,4 +305,4 @@ export default function RecipeDetailPage() {
       </div>
     </div>
   );
-} 
+}

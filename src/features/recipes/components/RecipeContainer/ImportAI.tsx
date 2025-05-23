@@ -1,217 +1,193 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Bot, AlertCircle } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { SUPPORTED_LANGUAGES } from "@/types/recipe";
-import { useUserPreferences } from "@/hooks/use-user-preferences";
-import { PageLayout } from "./PageLayout";
-import { useAISearch } from "../../hooks/useAISearch";
-import { RecipeDisplay } from "@/components/recipes/RecipeDisplay";
-import { LanguageCode } from "@/hooks/use-user-preferences";
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft } from 'lucide-react';
+import { PageLayout } from './PageLayout';
+import { RecipeDisplay } from '@/components/recipes/recipe-display';
+import { useRecipeGeneration } from '../../hooks/useRecipeGeneration';
+import { SUPPORTED_LANGUAGES } from '@/types/recipe';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
 
 export function ImportAIContainer() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const { toast } = useToast();
   const { preferences } = useUserPreferences();
   
-  // Get URL parameter from query string if it exists
-  const queryParams = new URLSearchParams(location.search);
-  const urlFromQuery = queryParams.get('url');
-  
-  // State for the URL input and language selection
-  const [recipeUrl, setRecipeUrl] = useState(urlFromQuery || "");
-  const [language, setLanguage] = useState<LanguageCode>(preferences.language || "en");
-  const [error, setError] = useState<string | null>(null);
+  // Recipe data state
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [ingredients, setIngredients] = useState<string[]>(['']);
+  const [instructions, setInstructions] = useState<string[]>(['']);
+  const [prepTime, setPrepTime] = useState(15);
+  const [cookTime, setCookTime] = useState(30);
+  const [estimatedCalories, setEstimatedCalories] = useState(500);
+  const [portions, setPortions] = useState(2);
   const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'imperial'>(
     preferences.measurementSystem || 'metric'
   );
+  const [language, setLanguage] = useState<keyof typeof SUPPORTED_LANGUAGES>(
+    (preferences.recipe_language as keyof typeof SUPPORTED_LANGUAGES) || 'en'
+  );
+  const [mealType, setMealType] = useState('dinner');
+  const [dietaryRestrictions, setDietaryRestrictions] = useState<string>('none');
+  const [difficultyLevel, setDifficultyLevel] = useState('medium');
+  const [cuisineType, setCuisineType] = useState('American');
+  const [cookingMethod, setCookingMethod] = useState<string>('baking');
   
-  // Use the same AI search hook that powers the search feature
-  const {
-    isSearching,
-    suggestedRecipe,
-    chosenPortions,
-    isRegenerating,
-    searchRecipe,
-    saveRecipe,
-    setIsSearching,
-    setSuggestedRecipe,
-    setChosenPortions,
-    setIsRegenerating,
-  } = useAISearch();
+  // Generation options
+  const [includeImage, setIncludeImage] = useState(true);
   
-  // Auto-import if URL is provided in query params
-  useEffect(() => {
-    if (urlFromQuery && !suggestedRecipe && !isSearching) {
-      // Set a small timeout to ensure component is fully mounted
-      const timer = setTimeout(() => {
-        handleImport({ preventDefault: () => {} } as React.FormEvent);
-      }, 100);
-      
-      return () => clearTimeout(timer);
+  // Recipe generation hook
+  const { 
+    generateAndSaveRecipe, 
+    isGenerating, 
+    isGeneratingImage 
+  } = useRecipeGeneration({
+    shouldGenerateImage: includeImage,
+    onSuccess: (recipeId) => {
+      navigate(`/recipes/${recipeId}`);
     }
-  }, [urlFromQuery, suggestedRecipe, isSearching]);
-  
-  // URL validation
-  const validateUrl = (url: string): boolean => {
-    try {
-      new URL(url);
-      return true;
-    } catch (e) {
-      return false;
-    }
-  };
-  
-  // Handle import submission
-  const handleImport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateUrl(recipeUrl)) {
-      setError("Please enter a valid URL");
+  });
+
+  // Handle saving the recipe
+  const handleSaveRecipe = async () => {
+    // Validate basic recipe data
+    if (!title.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Missing Title",
+        description: "Please provide a title for your recipe.",
+      });
       return;
     }
     
-    setError(null);
-    setIsSearching(true);
-    setSuggestedRecipe(null);
-    
-    try {
-      // Use the same searchRecipe mutation but with the URL as the query
-      await searchRecipe.mutateAsync({ 
-        query: `Extract recipe from this URL: ${recipeUrl}`, 
-        language 
+    if (ingredients.filter(i => i.trim()).length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Missing Ingredients",
+        description: "Please add at least one ingredient.",
       });
-    } catch (error: any) {
-      console.error('Import error:', error);
-      
-      // Handle specific error cases
-      if (error.message?.includes('503 Service Unavailable') || 
-          error.message?.includes('model is overloaded')) {
-        setError('The AI service is currently overloaded. Please try again in a few moments.');
-      } else if (error.message?.includes('500')) {
-        setError('An error occurred while processing your request. Please try again.');
-      } else {
-        setError('Sorry, we couldn\'t fetch this recipe from the URL. Please try another URL or enter it manually.');
-      }
-    } finally {
-      setIsSearching(false);
+      return;
     }
-  };
-  
-  const handleRegenerate = async () => {
-    if (!recipeUrl) return;
-    setIsRegenerating(true);
+    
+    if (instructions.filter(i => i.trim()).length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Missing Instructions",
+        description: "Please add at least one instruction step.",
+      });
+      return;
+    }
+
+    // Format categories object
+    const categories = {
+      meal_type: mealType,
+      dietary_restrictions: dietaryRestrictions,
+      difficulty_level: difficultyLevel,
+      cuisine_type: cuisineType,
+      cooking_method: cookingMethod,
+    };
+    
+    // Create the recipe data object
+    const recipeData = {
+      title,
+      description,
+      ingredients: ingredients.filter(i => i.trim()),
+      instructions: instructions.filter(i => i.trim()),
+      prep_time: prepTime,
+      cook_time: cookTime,
+      estimated_calories: estimatedCalories,
+      servings: portions,
+      suggested_portions: portions,
+      portion_description: 'servings',
+      language,
+      categories,
+    };
+    
+    // Generate and save the recipe
     try {
-      await handleImport({ preventDefault: () => {} } as React.FormEvent);
+      await generateAndSaveRecipe(recipeData);
     } catch (error) {
-      console.error('Regenerate error:', error);
-    } finally {
-      setIsRegenerating(false);
+      console.error('Error saving recipe:', error);
     }
   };
-  
+
+  // Toggle measurement system
+  const toggleMeasurementSystem = () => {
+    setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric');
+  };
+
+  // Helper function to convert language code to language name
+  const getLanguageName = (code: string) => {
+    return SUPPORTED_LANGUAGES[code as keyof typeof SUPPORTED_LANGUAGES] || code;
+  };
+
+  // Function to handle language selection
+  const handleLanguageChange = (value: string) => {
+    setLanguage(value as keyof typeof SUPPORTED_LANGUAGES);
+  };
+
   const handleImageUpdate = async (imageUrl: string): Promise<void> => {
-    setSuggestedRecipe(prev => prev ? { ...prev, imageUrl } : null);
     return Promise.resolve();
+  };
+
+  // Create the simplified recipe data for the preview
+  const previewRecipe = {
+    id: 'preview',
+    title,
+    description,
+    ingredients,
+    instructions,
+    prep_time: prepTime,
+    cook_time: cookTime,
+    estimated_calories: estimatedCalories,
+    servings: portions,
+    suggested_portions: portions,
+    portion_description: 'servings',
+    language,
+    categories: {
+      meal_type: mealType,
+      dietary_restrictions: dietaryRestrictions,
+      difficulty_level: difficultyLevel,
+      cuisine_type: cuisineType,
+      cooking_method: cookingMethod,
+    },
+    imageUrl: ''
   };
 
   return (
     <PageLayout>
-      <div className="space-y-6">
-        <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
-          <CardHeader>
-            <CardTitle className="flex items-center text-3xl font-bold">
-              <Bot className="mr-2 h-6 w-6" />
-              Import Recipe with AI
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-            
-            <form onSubmit={handleImport} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Recipe URL</label>
-                <Input
-                  placeholder="https://example.com/your-recipe"
-                  value={recipeUrl}
-                  onChange={(e) => setRecipeUrl(e.target.value)}
-                  disabled={isSearching}
-                  className="bg-white border-gray-200 h-[48px] rounded-[500px]"
-                />
-                <p className="text-sm text-muted-foreground">
-                  Enter the URL of any recipe you'd like to import
-                </p>
-              </div>
-              
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Import Language</label>
-                <Select 
-                  value={language} 
-                  onValueChange={(value) => setLanguage(value as LanguageCode)}
-                  disabled={isSearching}
-                >
-                  <SelectTrigger className="bg-white border-gray-200 h-[48px] rounded-[500px]">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SUPPORTED_LANGUAGES.map((lang) => (
-                      <SelectItem key={lang.value} value={lang.value}>
-                        {lang.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground">
-                  The AI will translate the recipe to this language
-                </p>
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white h-[48px] rounded-[500px]"
-                disabled={isSearching || !recipeUrl.trim()}
-              >
-                {isSearching ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Importing Recipe...
-                  </>
-                ) : (
-                  'Import Recipe'
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-        
-        {suggestedRecipe && (
+      <Button
+        variant="ghost"
+        className="mb-6"
+        onClick={() => navigate('/recipes')}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Recipes
+      </Button>
+
+      <Card className="overflow-hidden rounded-lg">
+        <CardContent className="p-0">
           <RecipeDisplay
-            recipe={suggestedRecipe}
-            scaledRecipe={suggestedRecipe}
-            chosenPortions={chosenPortions}
-            onPortionsChange={setChosenPortions}
+            recipe={previewRecipe}
+            scaledRecipe={previewRecipe}
+            chosenPortions={portions}
+            onPortionsChange={setPortions}
+            onSave={handleSaveRecipe}
+            isSaving={isGenerating}
             measurementSystem={measurementSystem}
-            onMeasurementSystemChange={() => setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric')}
-            onSave={() => saveRecipe.mutate()}
-            isSaving={saveRecipe.isPending}
-            onRegenerate={handleRegenerate}
-            isRegenerating={isRegenerating}
+            onMeasurementSystemChange={toggleMeasurementSystem}
             onImageUpdate={handleImageUpdate}
-            onEditOrGenerate={() => console.log("Edit clicked")}
-            onBack={() => navigate("/recipes")}
+            onEditOrGenerate={() => console.log("Edit or generate")}
+            onBack={() => navigate('/recipes')}
+            isGeneratingImage={isGeneratingImage}
+            onRegenerate={() => console.log("Regenerate recipe")}
           />
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </PageLayout>
   );
 }

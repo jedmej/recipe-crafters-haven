@@ -1,24 +1,34 @@
-import { useState } from 'react';
+
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Database } from '@/integrations/supabase/types';
-import { MeasurementSystem } from '@/lib/types';
+import { categorizeIngredient } from '@/features/groceries/utils/categorization';
+import { useImageGeneration } from './useImageGeneration';
+import { RecipeData } from '@/types/recipe';
 import { scaleAndConvertIngredient } from '../utils/ingredient-parsing';
-import { categorizeItem } from '@/features/groceries/utils/categorization';
 
-type Recipe = Database['public']['Tables']['recipes']['Row'];
+interface UseRecipeActionsProps {
+  recipeId?: string;
+  scaleFactor?: number;
+  measurementSystem?: 'metric' | 'imperial';
+}
 
-export function useRecipeActions(recipe: Recipe | undefined, scaleFactor: number, measurementSystem: MeasurementSystem) {
+export function useRecipeActions(
+  recipe?: RecipeData | null, 
+  scaleFactor = 1,
+  measurementSystem: 'metric' | 'imperial' = 'metric'
+) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [isDeleting, setIsDeleting] = useState(false);
-
+  const { generateImage } = useImageGeneration();
+  
+  // Delete recipe mutation
   const deleteRecipe = useMutation({
     mutationFn: async () => {
-      if (!recipe) throw new Error('Recipe not found');
+      if (!recipe?.id) throw new Error('Recipe ID is required');
+      
       const { error } = await supabase
         .from('recipes')
         .delete()
@@ -30,160 +40,215 @@ export function useRecipeActions(recipe: Recipe | undefined, scaleFactor: number
       queryClient.invalidateQueries({ queryKey: ['recipes'] });
       navigate('/recipes');
       toast({
-        title: "Recipe deleted",
-        description: "Your recipe has been successfully deleted.",
+        title: "Recipe Deleted",
+        description: "The recipe has been successfully deleted.",
       });
     },
     onError: (error: Error) => {
       toast({
         variant: "destructive",
-        title: "Error",
+        title: "Delete Failed",
         description: error.message,
       });
-    }
+    },
   });
 
+  // Add ingredients to grocery list mutation
   const addToGroceryList = useMutation({
     mutationFn: async () => {
-      if (!recipe) throw new Error("Recipe not found");
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      if (!recipe) throw new Error('Recipe is required');
 
-      const listTitle = `${recipe.title} - ${new Date().toLocaleDateString()}`;
-      const scaledIngredients = (recipe.ingredients as string[]).map(ingredient => 
-        scaleAndConvertIngredient(ingredient, scaleFactor, measurementSystem)
+      // Process the recipe ingredients to ensure they are properly scaled
+      const processedIngredients = recipe.ingredients.map(ingredient => {
+        const scaledIngredient = scaleAndConvertIngredient(ingredient, scaleFactor, measurementSystem);
+        return {
+          name: scaledIngredient,
+          checked: false,
+          category: categorizeIngredient(ingredient)
+        };
+      });
+
+      // Resolve all category promises
+      const groceryItems = await Promise.all(
+        processedIngredients.map(async (item) => ({
+          name: item.name,
+          checked: item.checked,
+          category: typeof item.category === 'string' ? item.category : await item.category
+        }))
       );
 
-      // First, categorize all ingredients using local categorization for immediate display
-      const localCategorizedIngredients = scaledIngredients.map(item => ({ 
-        name: item, 
-        checked: false,
-        category: categorizeItem(item)
-      }));
+      // Get the current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('You must be logged in to add to grocery list');
 
-      // Create the grocery list with local categorization first
+      // Create a new grocery list with the recipe's ingredients
       const { data, error } = await supabase
         .from('grocery_lists')
         .insert({
-          title: listTitle,
-          items: localCategorizedIngredients,
-          user_id: user.id,
-          recipe_id: recipe.id
+          title: `Ingredients for ${recipe.title}`,
+          user_id: session.user.id,
+          recipe_id: recipe.id,
+          image_url: recipe.image_url || recipe.imageUrl,
+          items: groceryItems
         })
-        .select('*')
+        .select('id')
         .single();
-      
+
       if (error) throw error;
-
-      // Then, in the background, update with AI categorization
-      setTimeout(async () => {
-        try {
-          // Get AI categories for all ingredients
-          const aiCategorizedIngredients = await Promise.all(
-            scaledIngredients.map(async (item) => {
-              try {
-                const category = await categorizeItem(item);
-                return { 
-                  name: item, 
-                  checked: false,
-                  category 
-                };
-              } catch (error) {
-                console.error(`Error getting AI category for ${item}:`, error);
-                return { 
-                  name: item, 
-                  checked: false,
-                  category: categorizeItem(item) 
-                };
-              }
-            })
-          );
-
-          // Check if there are any category changes
-          const hasChanges = aiCategorizedIngredients.some((aiItem, index) => 
-            aiItem.category !== localCategorizedIngredients[index].category
-          );
-
-          if (hasChanges) {
-            // Update the database with AI categories
-            await supabase
-              .from('grocery_lists')
-              .update({ items: aiCategorizedIngredients })
-              .eq('id', data.id);
-            
-            // Update the cache
-            queryClient.invalidateQueries({ queryKey: ['groceryLists', data.id] });
-            queryClient.invalidateQueries({ queryKey: ['allGroceryLists'] });
-          }
-        } catch (error) {
-          console.error('Error updating grocery list with AI categories:', error);
-        }
-      }, 100);
-
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['allGroceryLists'] });
       toast({
-        title: "Added to grocery list",
-        description: "Recipe ingredients have been added to your grocery list.",
+        title: "Added to Grocery List",
+        description: "Ingredients have been added to your grocery list.",
+      });
+      navigate(`/grocery-lists/${data.id}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to Add to Grocery List",
+        description: error.message,
+      });
+    },
+  });
+
+  // Favorite recipe mutation (toggle)
+  const toggleFavorite = useMutation({
+    mutationFn: async () => {
+      if (!recipe?.id) throw new Error('Recipe ID is required');
+      
+      // Get the current user
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('You must be logged in to favorite recipes');
+      
+      // Check if already favorited
+      const { data: existingFavorite, error: checkError } = await supabase
+        .from('user_favorites')
+        .select('id')
+        .eq('user_id', session.user.id)
+        .eq('recipe_id', recipe.id)
+        .single();
+      
+      if (checkError && checkError.code !== 'PGRST116') {
+        // Error other than "no rows returned"
+        throw checkError;
+      }
+      
+      if (existingFavorite) {
+        // Remove from favorites
+        const { error: deleteError } = await supabase
+          .from('user_favorites')
+          .delete()
+          .eq('id', existingFavorite.id);
+          
+        if (deleteError) throw deleteError;
+        return { added: false };
+      } else {
+        // Add to favorites
+        const { error: insertError } = await supabase
+          .from('user_favorites')
+          .insert({
+            user_id: session.user.id,
+            recipe_id: recipe.id
+          });
+          
+        if (insertError) throw insertError;
+        return { added: true };
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['user-favorites'] });
+      queryClient.invalidateQueries({ queryKey: ['recipes'] });
+      
+      toast({
+        title: data.added ? "Added to Favorites" : "Removed from Favorites",
+        description: data.added ? 
+          "This recipe has been added to your favorites." : 
+          "This recipe has been removed from your favorites.",
       });
     },
     onError: (error: Error) => {
-      console.error('Error creating grocery list:', error);
       toast({
         variant: "destructive",
-        title: "Error",
-        description: "Failed to add to grocery list. Please try again.",
+        title: "Failed to Update Favorites",
+        description: error.message,
       });
-    }
+    },
   });
 
+  // Update recipe image
   const updateRecipeImage = useMutation({
     mutationFn: async (imageUrl: string) => {
-      if (!recipe) throw new Error('Recipe not found');
+      if (!recipe?.id) throw new Error('Recipe ID is required');
+      
       const { error } = await supabase
         .from('recipes')
         .update({ image_url: imageUrl })
         .eq('id', recipe.id);
-
+      
       if (error) throw error;
       return imageUrl;
     },
-    onMutate: async (newImageUrl) => {
-      await queryClient.cancelQueries({ queryKey: ['recipes', recipe?.id] });
-      const previousRecipe = queryClient.getQueryData(['recipes', recipe?.id]);
-      queryClient.setQueryData(['recipes', recipe?.id], (old: Recipe | undefined) => {
-        if (!old) return old;
-        return { ...old, image_url: newImageUrl };
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['recipes', recipe?.id] });
+      toast({
+        title: "Image Updated",
+        description: "Recipe image has been updated.",
       });
-      return { previousRecipe };
     },
-    onError: (err, newImageUrl, context) => {
-      queryClient.setQueryData(['recipes', recipe?.id], context?.previousRecipe);
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to Update Image",
+        description: error.message,
+      });
+    },
+  });
+
+  // Generate recipe image
+  const generateRecipeImage = async () => {
+    if (!recipe) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to update recipe image. Please try again.",
+        description: "No recipe data available.",
       });
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['recipes', recipe?.id] });
+      return;
     }
-  });
 
-  const handleDelete = async () => {
-    if (window.confirm('Are you sure you want to delete this recipe?')) {
-      setIsDeleting(true);
-      await deleteRecipe.mutateAsync();
-      setIsDeleting(false);
+    try {
+      const prompt = `Professional food photography of ${recipe.title}. ${recipe.description || ''}`;
+      const imageUrl = await generateImage(prompt);
+      
+      // Update the recipe with the new image
+      await updateRecipeImage.mutateAsync(imageUrl);
+    } catch (error) {
+      console.error('Error generating recipe image:', error);
+      toast({
+        variant: "destructive",
+        title: "Image Generation Failed",
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  // Handle delete with confirmation
+  const handleDelete = () => {
+    if (confirm('Are you sure you want to delete this recipe? This action cannot be undone.')) {
+      deleteRecipe.mutate();
     }
   };
 
   return {
-    isDeleting,
+    isDeleting: deleteRecipe.isPending,
+    isAddingToGroceryList: addToGroceryList.isPending,
+    isFavoriting: toggleFavorite.isPending,
+    isUpdatingImage: updateRecipeImage.isPending,
     handleDelete,
     addToGroceryList,
-    updateRecipeImage
+    toggleFavorite,
+    updateRecipeImage,
+    generateRecipeImage
   };
-} 
+}

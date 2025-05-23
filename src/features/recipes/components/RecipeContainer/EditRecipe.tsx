@@ -39,8 +39,12 @@ export function EditRecipeContainer() {
         id: data.id,
         title: data.title,
         description: data.description || '',
-        ingredients: Array.isArray(data.ingredients) ? data.ingredients : [],
-        instructions: Array.isArray(data.instructions) ? data.instructions : [],
+        ingredients: Array.isArray(data.ingredients) 
+          ? data.ingredients.map(item => typeof item === 'string' ? item : String(item))
+          : [],
+        instructions: Array.isArray(data.instructions)
+          ? data.instructions.map(item => typeof item === 'string' ? item : String(item))
+          : [],
         prep_time: data.prep_time || 0,
         cook_time: data.cook_time || 0,
         estimated_calories: data.estimated_calories || 0,
@@ -48,7 +52,17 @@ export function EditRecipeContainer() {
         image_url: data.image_url,
         source_url: data.source_url,
         language: data.language,
-        categories: data.categories,
+        categories: data.categories ? {
+          meal_type: data.categories.meal_type as string,
+          dietary_restrictions: data.categories.dietary_restrictions as string | string[],
+          difficulty_level: data.categories.difficulty_level as string,
+          cuisine_type: data.categories.cuisine_type as string,
+          cooking_method: data.categories.cooking_method as string | string[],
+          occasion: data.categories.occasion as string | undefined,
+          course_category: data.categories.course_category as string | undefined,
+          taste_profile: data.categories.taste_profile as string | string[] | undefined,
+          secondary_dietary_restrictions: data.categories.secondary_dietary_restrictions as string[] | undefined
+        },
         user_id: data.user_id
       };
       

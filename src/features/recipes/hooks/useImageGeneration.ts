@@ -1,96 +1,131 @@
+
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import * as fal from '@fal-ai/serverless-client';
-
-fal.config({
-  credentials: import.meta.env.VITE_FAL_API_KEY,
-});
-
-const MAX_RETRIES = 3;
-const BASE_DELAY = 2000; // 2 seconds
-
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export function useImageGeneration() {
   const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
-
-  const generateImage = async (prompt: string, imageType: 'recipe' | 'avatar' = 'recipe'): Promise<string | null> => {
-    setIsLoading(true);
-    let lastError: any = null;
-
-    try {
-      for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-          if (attempt > 1) {
-            const delay = BASE_DELAY * Math.pow(2, attempt - 1);
-            console.log(`Image generation attempt ${attempt} - Waiting ${delay/1000}s before retry...`);
-            await sleep(delay);
+  
+  // Generate image mutation
+  const generateImageMutation = useMutation({
+    mutationFn: async ({ 
+      prompt, 
+      size = '1024x1024', 
+      quality = "standard" 
+    }: { 
+      prompt: string; 
+      size?: string; 
+      quality?: string; 
+    }) => {
+      try {
+        setIsGenerating(true);
+        
+        const { data, error } = await supabase.functions.invoke('generate-image', {
+          body: { 
+            prompt,
+            size,
+            quality,
           }
-
-          console.log(`Starting image generation attempt ${attempt} with prompt:`, prompt);
-          
-          const result = await fal.subscribe('fal-ai/recraft-20b', {
-            input: {
-              prompt: prompt,
-              image_size: "square_hd",
-              style: "realistic_image",
-              negative_prompt: "text, watermark, label, logo, title, words, letters, numbers, signature, date, writing, typography, font, caption, inscription, handwriting, calligraphy, script, alphabet, character, symbol, glyph"
-            },
-            pollInterval: 1000,
-            logs: true,
-            onQueueUpdate: (update) => {
-              if (update.status === "IN_PROGRESS") {
-                const latestMessage = update.logs[update.logs.length - 1]?.message;
-                if (latestMessage) {
-                  console.log('Image generation progress:', latestMessage);
-                  toast({
-                    title: `Generating ${imageType === 'avatar' ? 'Avatar' : 'Image'}`,
-                    description: latestMessage,
-                    duration: 2000,
-                  });
-                }
-              }
-            }
-          });
-
-          console.log('Image generation result:', result);
-
-          // Check if result exists and has the expected structure
-          if (!result) {
-            throw new Error('No response from image generation service');
-          }
-
-          // Access the image URL from the correct path in the response
-          const imageUrl = result?.images?.[0]?.url;
-          if (!imageUrl) {
-            throw new Error('No image URL in response');
-          }
-
-          return imageUrl;
-        } catch (error) {
-          console.error(`Image generation attempt ${attempt} failed:`, error);
-          lastError = error;
-          
-          if (attempt === MAX_RETRIES) {
-            toast({
-              title: `${imageType === 'avatar' ? 'Avatar' : 'Image'} Generation Failed`,
-              description: error.message || 'Failed to generate image. Please try again.',
-              variant: 'destructive',
-            });
-            return null;
-          }
+        });
+        
+        if (error) throw new Error(error.message);
+        
+        if (!data || !data.imageUrl) {
+          throw new Error('Failed to generate image: No URL returned');
         }
+        
+        return data.imageUrl;
+      } catch (error) {
+        console.error('Error generating image:', error);
+        throw error;
+      } finally {
+        setIsGenerating(false);
       }
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Image Generation Failed",
+        description: error.message,
+      });
+    },
+  });
 
-      return null;
-    } finally {
-      setIsLoading(false);
+  // Upload image to storage
+  const uploadImageMutation = useMutation({
+    mutationFn: async (file: File) => {
+      try {
+        setIsLoading(true);
+        
+        // First upload to storage
+        const fileExt = file.name.split('.').pop();
+        const filePath = `recipe-images/${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('recipe-images')
+          .upload(filePath, file);
+          
+        if (uploadError) throw uploadError;
+        
+        // Get public URL
+        const { data: urlData } = await supabase.storage
+          .from('recipe-images')
+          .getPublicUrl(uploadData.path);
+          
+        if (!urlData) {
+          throw new Error('Failed to get public URL for uploaded image');
+        }
+        
+        return urlData.publicUrl;
+      } catch (error) {
+        console.error('Error uploading image:', error);
+        throw error;
+      } finally {
+        setIsLoading(true);
+      }
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Image Upload Failed",
+        description: error.message,
+      });
+    },
+  });
+
+  // Callable function to generate an image
+  const generateImage = async (
+    prompt: string, 
+    type: 'recipe' | 'profile' = 'recipe'
+  ): Promise<string> => {
+    try {
+      // Enhance prompt based on type
+      let enhancedPrompt = prompt;
+      if (type === 'recipe') {
+        enhancedPrompt = `Professional food photography: ${prompt}, appetizing presentation, soft natural lighting`;
+      }
+      
+      const imageUrl = await generateImageMutation.mutateAsync({ prompt: enhancedPrompt });
+      return imageUrl;
+      
+    } catch (error) {
+      console.error('Error in generateImage:', error);
+      toast({
+        variant: "destructive",
+        title: "Image Generation Failed",
+        description: error instanceof Error ? error.message : "Failed to generate image",
+      });
+      throw error;
     }
   };
 
   return {
     generateImage,
-    isLoading,
+    uploadImage: uploadImageMutation.mutate,
+    isGenerating: isGenerating || generateImageMutation.isPending,
+    isUploading: isLoading || uploadImageMutation.isPending,
   };
-} 
+}

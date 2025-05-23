@@ -1,24 +1,11 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Database } from '@/integrations/supabase/types';
 import { categorizeItem, categorizeItemLocally } from '../utils/categorization';
-
-interface GroceryItem {
-  name: string;
-  checked: boolean;
-  category?: string;
-}
-
-type GroceryList = Omit<Database['public']['Tables']['grocery_lists']['Row'], 'items'> & {
-  items: GroceryItem[];
-  recipe?: {
-    id: string;
-    title: string;
-    image_url: string;
-  } | null;
-};
+import { GroceryItem, GroceryList } from '../types';
 
 export function useGroceryList(id: string | undefined) {
   const navigate = useNavigate();
@@ -139,9 +126,10 @@ export function useGroceryList(id: string | undefined) {
         return item;
       }));
 
+      // Cast to any to work around the Json type constraints
       const { error } = await supabase
         .from('grocery_lists')
-        .update({ items: itemsForStorage })
+        .update({ items: itemsForStorage as any })
         .eq('id', id);
       
       if (error) throw error;
@@ -396,7 +384,7 @@ export function useGroceryList(id: string | undefined) {
       // Then update the database with a single mutation to avoid loops
       await supabase
         .from('grocery_lists')
-        .update({ items: updatedItems })
+        .update({ items: updatedItems as any })
         .eq('id', id);
       
       // Invalidate the query to ensure fresh data

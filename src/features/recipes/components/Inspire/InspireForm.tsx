@@ -1,213 +1,213 @@
+
 import React from 'react';
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { TimeSlider } from './components/TimeSlider';
+import { SectionDivider } from './components/SectionDivider';
 import { FilterButtons } from './FilterButtons';
-import { FILTER_CATEGORIES } from "@/features/recipes/utils/constants";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Sparkle } from "@phosphor-icons/react/dist/ssr";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { RECIPE_CATEGORIES } from '@/types/recipe';
+import { Clock, Flame } from 'lucide-react';
 
-interface FilterState {
-  mealType: string[];
-  dietaryRestrictions: string[];
-  difficultyLevel: string[];
-  cuisineType: string[];
-  cookingMethod: string[];
-  occasion: string[];
-  courseCategory: string[];
-  tasteProfile: string[];
-  customValues: Record<string, string>;
-  dynamicCategories: Record<string, string[]>;
-}
-
-interface InspireFormProps {
-  useIngredients: boolean;
-  setUseIngredients: (use: boolean) => void;
-  ingredients: string;
-  setIngredients: (ingredients: string) => void;
-  cookingTime: number;
-  setCookingTime: (time: number) => void;
-  filters: FilterState;
+type InspireFormProps = {
+  query: string;
+  setQuery: (value: string) => void;
+  excludeIngredients: string;
+  setExcludeIngredients: (value: string) => void;
+  maxPrepTime: number;
+  setMaxPrepTime: (value: number) => void;
+  maxCalories: number;
+  setMaxCalories: (value: number) => void;
+  includeGeneratedImage: boolean;
+  setIncludeGeneratedImage: (value: boolean) => void;
+  selectedFilters: Record<string, string[]>;
   toggleFilter: (category: string, option: string) => void;
+  customValues: Record<string, string>;
   setCustomValue: (category: string, value: string) => void;
   isGenerating: boolean;
-  handleGenerateRecipe: (e: React.FormEvent) => void;
-  shouldGenerateImage: boolean;
-  setShouldGenerateImage: (value: boolean) => void;
-}
+  isExpanded: boolean;
+  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  handleToggleExpand: () => void;
+  dynamicCategories: Record<string, string[]>;
+};
 
 export const InspireForm: React.FC<InspireFormProps> = ({
-  useIngredients,
-  setUseIngredients,
-  ingredients,
-  setIngredients,
-  cookingTime,
-  setCookingTime,
-  filters,
+  query,
+  setQuery,
+  excludeIngredients,
+  setExcludeIngredients,
+  maxPrepTime,
+  setMaxPrepTime,
+  maxCalories,
+  setMaxCalories,
+  includeGeneratedImage,
+  setIncludeGeneratedImage,
+  selectedFilters,
   toggleFilter,
+  customValues,
   setCustomValue,
   isGenerating,
-  handleGenerateRecipe,
-  shouldGenerateImage,
-  setShouldGenerateImage,
+  isExpanded,
+  handleSubmit,
+  handleToggleExpand,
+  dynamicCategories,
 }) => {
-  const selectedTags = Object.entries(filters)
-    .filter(([key]) => key !== 'customValues' && key !== 'dynamicCategories')
-    .flatMap(([category, selectedOptions]) => 
-      selectedOptions.map(option => ({
-        category,
-        option: option === 'Other' ? filters.customValues[category] || option : option,
-        originalOption: option
-      }))
-    )
-    .filter(tag => tag.option);
-
-  const handleRemoveAllTags = () => {
-    selectedTags.forEach(({ category, originalOption }) => {
-      toggleFilter(category, originalOption);
-    });
+  // Convert Record<string, string[]> to string[] for proper type compatibility
+  const convertSelectedFilters = (category: string): string[] => {
+    const filters = selectedFilters[category];
+    return Array.isArray(filters) ? filters : [];
   };
 
   return (
-    <Card className="overflow-hidden rounded-[48px] mb-8 bg-[#F5F5F5] border-none">
-      <CardContent className="p-6">
-        <h1 className="text-3xl font-bold mb-6">Get Inspired with AI</h1>
-        
-        <form onSubmit={handleGenerateRecipe} className="space-y-8">
-          {/* Cooking time slider */}
-          <TimeSlider
-            cookingTime={cookingTime}
-            setCookingTime={setCookingTime}
-            isGenerating={isGenerating}
-          />
-          
-          {/* Ingredients section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Switch 
-                id="use-ingredients" 
-                checked={useIngredients} 
-                onCheckedChange={setUseIngredients}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div>
+        <Input 
+          placeholder="Describe what kind of recipe you want, e.g. 'a healthy vegetarian dinner'"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full rounded-full h-12 text-lg"
+        />
+      </div>
+
+      {isExpanded && (
+        <>
+          <SectionDivider title="Include & Exclude" />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">Ingredients to Exclude</label>
+              <Textarea 
+                placeholder="Enter ingredients you don't want, separated by commas"
+                value={excludeIngredients}
+                onChange={(e) => setExcludeIngredients(e.target.value)}
+                className="h-20"
               />
-              <Label htmlFor="use-ingredients" className="font-medium">Use custom ingredients</Label>
             </div>
-            
-            {useIngredients && (
-              <div className="space-y-2">
-                <Label htmlFor="ingredients">Ingredients (comma separated)</Label>
-                <Input
-                  id="ingredients"
-                  placeholder="e.g., chicken, rice, tomatoes, olive oil"
-                  value={ingredients}
-                  onChange={(e) => setIngredients(e.target.value)}
-                  disabled={isGenerating}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Add ingredients you want to use in your recipe
-                </p>
-              </div>
-            )}
-          </div>
-          
-          {/* Filters section */}
-          <div className="space-y-4">
-            <h3 className="font-medium">Filters</h3>
-            
-            <div className="flex flex-col gap-6 w-full">
-              {Object.entries(FILTER_CATEGORIES).map(([category, { title, options }]) => (
-                <FilterButtons
-                  key={category}
-                  category={category}
-                  title={title}
-                  options={options}
-                  selectedFilters={filters[category as keyof FilterState]}
-                  toggleFilter={toggleFilter}
-                  isGenerating={isGenerating}
-                  customValues={filters.customValues}
-                  setCustomValue={setCustomValue}
-                  dynamicCategories={filters.dynamicCategories}
-                />
-              ))}
-            </div>
-          </div>
-          
-          {/* Generate Image toggle */}
-          <div className="flex items-center gap-2">
-            <Switch 
-              id="generate-image-inspire" 
-              checked={shouldGenerateImage} 
-              onCheckedChange={setShouldGenerateImage}
-              disabled={isGenerating}
-            />
-            <Label htmlFor="generate-image-inspire" className="font-medium">Generate Image</Label>
           </div>
 
-          {/* Selected Tags Display */}
-          {selectedTags.length > 0 && (
-            <div className="rounded-[24px] p-4 bg-white space-y-2">
-              <div className="flex justify-between items-center">
-                <h3 className="text-sm font-medium text-gray-700">Selected Filters</h3>
-                <button
-                  type="button"
-                  onClick={handleRemoveAllTags}
-                  className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                  disabled={isGenerating}
-                >
-                  Remove all
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {selectedTags.map(({ category, option, originalOption }) => (
-                  <div
-                    key={`${category}-${option}`}
-                    className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#FA8923] text-white text-sm"
-                  >
-                    <span>{option}</span>
-                    <button
-                      type="button"
-                      onClick={() => toggleFilter(category, originalOption)}
-                      className="p-0.5 hover:bg-white/20 rounded-full"
-                      disabled={isGenerating}
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          <SectionDivider title="Recipe Details" />
           
-          {/* Submit button */}
-          <Button
-            type="submit"
-            disabled={isGenerating}
-            className="w-full rounded-[500px] bg-[#FA8923] hover:bg-[#FA8923]/90 text-white h-12"
-            variant="primary"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating Recipe...
-              </>
-            ) : (
-              <>
-                <Sparkle className="mr-2 h-4 w-4" weight="duotone" />
-                Create Recipe
-              </>
-            )}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <TimeSlider 
+                value={maxPrepTime} 
+                setValue={setMaxPrepTime}
+                title="Max Preparation Time"
+                icon={<Clock className="mr-2 h-4 w-4" />}
+                unit="minutes"
+                max={180}
+              />
+            </div>
+            <div>
+              <TimeSlider 
+                value={maxCalories} 
+                setValue={setMaxCalories}
+                title="Max Calories (per serving)"
+                icon={<Flame className="mr-2 h-4 w-4" />}
+                unit="kcal"
+                max={2000}
+                step={50}
+              />
+            </div>
+          </div>
+
+          <SectionDivider title="Categories" />
+
+          <div className="space-y-6">
+            <FilterButtons
+              category="meal_type"
+              title="Meal Type"
+              options={dynamicCategories.meal_type || RECIPE_CATEGORIES.meal_type}
+              selectedFilters={convertSelectedFilters('meal_type')}
+              toggleFilter={toggleFilter}
+              isGenerating={isGenerating}
+              customValues={customValues}
+              setCustomValue={setCustomValue}
+              dynamicCategories={dynamicCategories}
+            />
+            
+            <FilterButtons
+              category="dietary_restrictions"
+              title="Dietary Restrictions"
+              options={dynamicCategories.dietary_restrictions || RECIPE_CATEGORIES.dietary_restrictions}
+              selectedFilters={convertSelectedFilters('dietary_restrictions')}
+              toggleFilter={toggleFilter}
+              isGenerating={isGenerating}
+              customValues={customValues}
+              setCustomValue={setCustomValue}
+              dynamicCategories={dynamicCategories}
+            />
+            
+            <FilterButtons
+              category="difficulty_level"
+              title="Difficulty Level"
+              options={dynamicCategories.difficulty_level || RECIPE_CATEGORIES.difficulty_level}
+              selectedFilters={convertSelectedFilters('difficulty_level')}
+              toggleFilter={toggleFilter}
+              isGenerating={isGenerating}
+              customValues={customValues}
+              setCustomValue={setCustomValue}
+              dynamicCategories={dynamicCategories}
+            />
+            
+            <FilterButtons
+              category="cuisine_type"
+              title="Cuisine Type"
+              options={dynamicCategories.cuisine_type || RECIPE_CATEGORIES.cuisine_type}
+              selectedFilters={convertSelectedFilters('cuisine_type')}
+              toggleFilter={toggleFilter}
+              isGenerating={isGenerating}
+              customValues={customValues}
+              setCustomValue={setCustomValue}
+              dynamicCategories={dynamicCategories}
+            />
+            
+            <FilterButtons
+              category="cooking_method"
+              title="Cooking Method"
+              options={dynamicCategories.cooking_method || RECIPE_CATEGORIES.cooking_method}
+              selectedFilters={convertSelectedFilters('cooking_method')}
+              toggleFilter={toggleFilter}
+              isGenerating={isGenerating}
+              customValues={customValues}
+              setCustomValue={setCustomValue}
+              dynamicCategories={dynamicCategories}
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="includeGeneratedImage"
+              checked={includeGeneratedImage}
+              onCheckedChange={setIncludeGeneratedImage}
+            />
+            <label htmlFor="includeGeneratedImage" className="text-sm font-medium text-gray-700">
+              Generate recipe image
+            </label>
+          </div>
+        </>
+      )}
+
+      <div className="flex justify-between">
+        <Button 
+          type="button" 
+          variant="outline" 
+          onClick={handleToggleExpand} 
+          className="rounded-full"
+        >
+          {isExpanded ? "Fewer options" : "More options"}
+        </Button>
+        <Button 
+          type="submit" 
+          disabled={isGenerating || !query.trim()} 
+          className="rounded-full"
+        >
+          {isGenerating ? <LoadingSpinner /> : "Generate Recipe"}
+        </Button>
+      </div>
+    </form>
   );
 };

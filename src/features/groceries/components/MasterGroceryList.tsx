@@ -1,3 +1,4 @@
+
 // src/features/groceries/components/MasterGroceryList.tsx
 import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -15,14 +16,15 @@ import { Link } from "react-router-dom";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { SquaresFour, Notebook, ArrowSquareOut, TrashSimple } from "@phosphor-icons/react";
+import { GroceryItem, GroceryList } from "../types";
 
-// Item categories for organization
+// Item categories (same as in MasterGroceryList)
 const ITEM_CATEGORIES = [
   "All Items",
   "Produce",
   "Dairy",
   "Meat",
-  "Pantry",
+  "Pantry", 
   "Spices",
   "Frozen",
   "Baking",
@@ -30,6 +32,18 @@ const ITEM_CATEGORIES = [
   "Beverages",
   "Other"
 ];
+
+// Create additional interface for the flattened item list
+interface FlatGroceryItem {
+  id: string;
+  name: string;
+  category: string;
+  listId: string;
+  listTitle: string;
+  recipeId?: string;
+  recipeTitle?: string;
+  checked: boolean;
+}
 
 export function MasterGroceryList() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,7 +69,7 @@ export function MasterGroceryList() {
         `);
       
       if (error) throw error;
-      return data;
+      return data as GroceryList[];
     }
   });
 
@@ -71,9 +85,13 @@ export function MasterGroceryList() {
       
       if (fetchError) throw fetchError;
       
-      // Update the specific item
+      // Update the specific item - handle both string and object items
       const updatedItems = (list.items as any[]).map(item => {
-        const itemObj = typeof item === 'string' ? { name: item, checked: false } : item;
+        // Convert string items to objects if needed
+        const itemObj: GroceryItem = typeof item === 'string' 
+          ? { name: item, checked: false } 
+          : item;
+          
         if (itemObj.name === itemName) {
           return { 
             ...itemObj, 
@@ -106,7 +124,9 @@ export function MasterGroceryList() {
             const updatedCategories = await Promise.all(
               itemsToUpdate.map(async (item) => {
                 try {
+                  console.log(`Getting AI category for: ${item.name}`);
                   const aiCategory = await categorizeItem(item.name);
+                  console.log(`AI categorized "${item.name}" as "${aiCategory}"`);
                   return { name: item.name, category: aiCategory };
                 } catch (error) {
                   console.error(`Error getting AI category for ${item.name}:`, error);
@@ -190,22 +210,24 @@ export function MasterGroceryList() {
     if (!lists) return [];
     
     return lists.flatMap(list => {
+      // Ensure items is always an array
       const items = Array.isArray(list.items) ? list.items : [];
-      return items.map(item => {
-        const itemName = typeof item === 'string' ? item : item.name;
-        const isChecked = typeof item === 'object' ? item.checked : false;
-        
+      
+      return items.map((item): FlatGroceryItem => {
+        // Handle both string items and object items
+        const itemObj: GroceryItem = typeof item === 'string' 
+          ? { name: item, checked: false } 
+          : item;
+          
         return {
-          id: `${list.id}-${itemName}`,
-          name: itemName,
-          category: typeof item === 'object' && item.category 
-            ? item.category 
-            : categorizeItemLocally(itemName),
+          id: `${list.id}-${itemObj.name}`,
+          name: itemObj.name,
+          category: itemObj.category || categorizeItemLocally(itemObj.name),
           listId: list.id,
           listTitle: list.title,
           recipeId: list.recipe?.id,
           recipeTitle: list.recipe?.title,
-          checked: isChecked
+          checked: !!itemObj.checked
         };
       });
     });
@@ -253,7 +275,7 @@ export function MasterGroceryList() {
     if (!filteredItems.length) return {};
     
     // Helper function to sort items (unchecked first, then checked)
-    const sortItems = (items) => {
+    const sortItems = (items: FlatGroceryItem[]) => {
       return [...items].sort((a, b) => {
         // First sort by checked status (unchecked first)
         if (a.checked !== b.checked) {
@@ -271,7 +293,7 @@ export function MasterGroceryList() {
         if (!acc[category]) acc[category] = [];
         acc[category].push(item);
         return acc;
-      }, {});
+      }, {} as Record<string, FlatGroceryItem[]>);
       
       // Sort items within each category
       Object.keys(grouped).forEach(category => {
@@ -286,7 +308,7 @@ export function MasterGroceryList() {
         if (!acc[recipeKey]) acc[recipeKey] = [];
         acc[recipeKey].push(item);
         return acc;
-      }, {});
+      }, {} as Record<string, FlatGroceryItem[]>);
       
       // Sort items within each recipe
       Object.keys(grouped).forEach(recipe => {
@@ -321,7 +343,7 @@ export function MasterGroceryList() {
   };
 
   // Handle checkbox click
-  const handleToggleItem = (item) => {
+  const handleToggleItem = (item: FlatGroceryItem) => {
     updateItem.mutate({
       listId: item.listId,
       itemName: item.name,
@@ -331,13 +353,14 @@ export function MasterGroceryList() {
         // Check if all items in this recipe are now checked
         if (!item.checked) { // Only check when marking as checked
           setTimeout(() => {
-            const currentList = queryClient.getQueryData(['allGroceryLists']) as any[];
+            const currentList = queryClient.getQueryData(['allGroceryLists']) as GroceryList[];
             if (currentList) {
               const list = currentList.find(l => l.id === item.listId);
               if (list && list.items) {
-                const allChecked = list.items.every(i => 
-                  typeof i === 'string' ? false : i.checked
-                );
+                const allChecked = list.items.every(i => {
+                  if (typeof i === 'string') return false;
+                  return i.checked;
+                });
                 
                 if (allChecked) {
                   // All items are checked, remove the recipe
@@ -582,4 +605,4 @@ export function MasterGroceryList() {
       </CardContent>
     </Card>
   );
-}
+} 

@@ -1,76 +1,96 @@
+
 import { useState } from 'react';
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { CircleNotch, MagnifyingGlass } from "@phosphor-icons/react";
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { SearchIcon, SlidersHorizontal, X } from 'lucide-react';
+import { FilterPanel } from '@/components/recipes/FilterPanel';
 
 interface SearchSectionProps {
-  searchQuery: string;
-  setSearchQuery: (query: string) => void;
-  isGenerating: boolean;
-  handleSearch: (e: React.FormEvent) => void;
-  shouldGenerateImage: boolean;
-  setShouldGenerateImage: (value: boolean) => void;
+  searchTerm: string;
+  setSearchTerm: (value: string) => void;
+  onSearch: () => void;
+  isLoading: boolean;
+  showAISearch?: boolean;
 }
 
-export const SearchSection: React.FC<SearchSectionProps> = ({
-  searchQuery,
-  setSearchQuery,
-  isGenerating,
-  handleSearch,
-  shouldGenerateImage,
-  setShouldGenerateImage,
-}) => {
+export const SearchSection = ({
+  searchTerm,
+  setSearchTerm,
+  onSearch,
+  isLoading,
+  showAISearch = true,
+}: SearchSectionProps) => {
+  const navigate = useNavigate();
+  const [showFilters, setShowFilters] = useState(false);
+  
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSearch();
+  };
+
   return (
-    <Card className="overflow-hidden rounded-[48px] bg-[#F5F5F5] border-none">
-      <CardContent className="p-6">
-        <form onSubmit={handleSearch} className="space-y-6">
-          <div className="space-y-2">
-            <h1 className="text-3xl font-bold">Search for Recipes</h1>
-            <p className="text-muted-foreground">
-              Describe what kind of recipe you're looking for
-            </p>
-          </div>
-
-          <div className="flex gap-2">
-            <Input
-              placeholder="e.g., healthy vegetarian dinner under 30 minutes"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-              disabled={isGenerating}
-            />
-            <Button
-              type="submit"
-              disabled={isGenerating}
-              className="rounded-[500px] bg-[#FA8923] hover:bg-[#FA8923]/90 text-white"
-              variant="primary"
-            >
-              {isGenerating ? (
-                <>
-                  <CircleNotch className="mr-2 h-4 w-4 animate-spin" weight="duotone" />
-                  Searching...
-                </>
-              ) : (
-                <>
-                  <MagnifyingGlass className="mr-2 h-4 w-4" weight="duotone" />
-                  Search
-                </>
+    <Card className="mb-6 bg-white rounded-3xl border-none shadow-sm">
+      <CardContent className="p-4 lg:p-6 pt-4 lg:pt-6">
+        <form onSubmit={handleSubmit}>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex-1 w-full">
+              <Input
+                type="text"
+                placeholder="Search for recipes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full h-12 rounded-full py-2 pl-12 pr-12"
+              />
+              <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+              {searchTerm && (
+                <button
+                  type="button"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setSearchTerm('')}
+                >
+                  <X className="h-5 w-5" />
+                </button>
               )}
-            </Button>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                disabled={isLoading || !searchTerm.trim()}
+                className="h-12 px-6 rounded-full"
+              >
+                {isLoading ? 'Searching...' : 'Search'}
+              </Button>
+              
+              {showAISearch && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 rounded-full"
+                  onClick={() => navigate('/recipes/inspire')}
+                >
+                  AI Search
+                </Button>
+              )}
+              
+              <Button
+                type="button"
+                variant={showFilters ? "default" : "outline"}
+                className="h-12 w-12 rounded-full flex items-center justify-center"
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <SlidersHorizontal className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Switch 
-              id="generate-image-search" 
-              checked={shouldGenerateImage} 
-              onCheckedChange={setShouldGenerateImage}
-              disabled={isGenerating}
-            />
-            <Label htmlFor="generate-image-search" className="font-medium">Generate Image</Label>
-          </div>
+          {showFilters && (
+            <div className="mt-4">
+              <FilterPanel />
+            </div>
+          )}
         </form>
       </CardContent>
     </Card>

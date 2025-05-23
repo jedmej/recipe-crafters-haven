@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,19 @@ export default function AISearchPage() {
     } finally {
       setIsSearching(false);
     }
+  };
+
+  const handleMeasurementSystemChange = () => {
+    setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric');
+  };
+
+  const handleEditOrGenerate = () => {
+    // Placeholder for edit/generate functionality
+    console.log("Edit or generate clicked");
+  };
+  
+  const handleBack = () => {
+    navigate("/recipes");
   };
 
   return (
@@ -93,12 +107,16 @@ export default function AISearchPage() {
       {suggestedRecipe && (
         <RecipeDisplay
           recipe={suggestedRecipe}
-          portions={chosenPortions}
+          scaledRecipe={suggestedRecipe}
+          chosenPortions={chosenPortions}
           onPortionsChange={setChosenPortions}
           measurementSystem={measurementSystem}
-          onMeasurementSystemChange={setMeasurementSystem}
+          onMeasurementSystemChange={handleMeasurementSystemChange}
           onSave={() => saveRecipe.mutate()}
           isSaving={saveRecipe.isPending}
+          onEditOrGenerate={handleEditOrGenerate}
+          onBack={handleBack}
+          isGeneratingImage={isGeneratingImage}
         />
       )}
     </PageLayout>

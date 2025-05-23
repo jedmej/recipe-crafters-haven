@@ -1,652 +1,427 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Button } from "@/components/ui/button";
-import { useNavigate, useLocation } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
+import { ArrowLeft, MessageSquareText, Bot } from 'lucide-react';
+import { useMutation } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { v4 as uuidv4 } from 'uuid';
+import { RECIPE_CATEGORIES } from '@/types/recipe';
 import { useUserPreferences } from '@/hooks/use-user-preferences';
-import { PageLayout } from '../RecipeContainer/PageLayout';
-import { RecipeDisplay } from "@/components/recipes/RecipeDisplay";
-import { RecipeData } from "@/types/recipe";
-import { SearchSection } from './SearchSection';
-import { SectionDivider } from './components/SectionDivider';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { InspireForm } from './InspireForm';
-import { scaleRecipe } from '@/utils/recipe-scaling';
-import { useImageGeneration } from '@/features/recipes/hooks/useImageGeneration';
-import { RecipeLoadingAnimation } from '../UI/RecipeLoadingAnimation';
-import { useRecipeGeneration } from '../../hooks/useRecipeGeneration';
+import { RecipeDisplay } from '@/components/recipes/RecipeDisplay';
+import { PageLayout } from '../RecipeContainer/PageLayout';
+import { RecipeData } from '@/types/recipe';
 
-// Constants for language codes
-const LANGUAGE_NAMES = {
-  'en': 'English',
-  'es': 'Spanish', 
-  'fr': 'French',
-  'it': 'Italian',
-  'de': 'German',
-  'pl': 'Polish',
-  'ru': 'Russian',
-  'uk': 'Ukrainian'
-} as const;
-
-type GenerationMode = 'search' | 'inspire';
-
-interface FilterState {
-  mealType: string[];
-  healthFocus: string[];
-  dietaryRestrictions: string[];
-  difficultyLevel: string[];
-  cuisineType: string[];
-  cookingMethod: string[];
-  occasion: string[];
-  courseCategory: string[];
-  tasteProfile: string[];
-  customValues: Record<string, string>;
-  dynamicCategories: Record<string, string[]>;
-}
-
-interface CategoryFilters {
-  meal_type: string | null;
-  health_focus: string | null | string[];
-  dietary_restrictions: string | null | string[];
-  difficulty_level: string | null;
-  cuisine_type: string | null;
-  cooking_method: string | null | string[];
-  occasion: string | null;
-  course_category: string | null;
-  taste_profile: string | null | string[];
-}
-
-// Create a mutable version of filter categories that can be updated with new values
-let FILTER_CATEGORIES = {
-  mealType: {
-    title: "Meal Type",
-    options: [
-      "Breakfast",
-      "Brunch",
-      "Lunch",
-      "Dinner",
-      "Snacks",
-      "Dessert",
-      "Appetizer",
-      "Soup",
-      "Side Dish",
-      "Other"
-    ],
-    badgeClass: "bg-blue-100 text-blue-800"
-  },
-  dietaryRestrictions: {
-    title: "Dietary Restrictions",
-    options: [
-      "Vegetarian",
-      "Vegan",
-      "Gluten-free",
-      "Dairy-free",
-      "Keto",
-      "Paleo",
-      "Halal",
-      "Kosher",
-      "Nut-free",
-      "Low-Sodium",
-      "Other"
-    ],
-    badgeClass: "bg-green-100 text-green-800"
-  },
-  difficultyLevel: {
-    title: "Difficulty Level",
-    options: [
-      "Easy",
-      "Medium",
-      "Hard",
-      "Expert"
-    ],
-    badgeClass: "bg-yellow-100 text-yellow-800"
-  },
-  cuisineType: {
-    title: "Cuisine Type",
-    options: [
-      "Italian",
-      "Mexican",
-      "Chinese",
-      "Japanese",
-      "Thai",
-      "French",
-      "Middle Eastern",
-      "Indian",
-      "American",
-      "Mediterranean",
-      "Caribbean",
-      "Greek",
-      "Spanish",
-      "Other"
-    ],
-    badgeClass: "bg-purple-100 text-purple-800"
-  },
-  cookingMethod: {
-    title: "Cooking Method",
-    options: [
-      "Baking",
-      "Frying",
-      "Grilling",
-      "Roasting",
-      "Steaming",
-      "Boiling",
-      "Slow Cooking",
-      "Sous Vide",
-      "Other"
-    ],
-    badgeClass: "bg-red-100 text-red-800"
-  },
-  occasion: {
-    title: "Occasion",
-    options: [
-      "Everyday",
-      "Party",
-      "Holiday",
-      "Birthday",
-      "Other"
-    ],
-    badgeClass: "bg-pink-100 text-pink-800"
-  },
-  courseCategory: {
-    title: "Course Category",
-    options: [
-      "Soup",
-      "Salad",
-      "Main Course",
-      "Side Dish",
-      "Dessert",
-      "Beverage",
-      "Other"
-    ],
-    badgeClass: "bg-indigo-100 text-indigo-800"
-  },
-  // Taste/Flavor Profile
-  tasteProfile: {
-    title: "Taste/Flavor Profile",
-    options: [
-      "Sweet",
-      "Savory",
-      "Spicy",
-      "Sour",
-      "Salty",
-      "Bitter",
-      "Umami",
-      "Tangy",
-      "Mild",
-      "Other"
-    ],
-    badgeClass: "bg-orange-100 text-orange-800"
-  }
+// Helper function to ensure we're working with arrays
+const ensureArray = (value: string | string[] | undefined): string[] => {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
 };
 
 export function InspireContainer() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
   const { preferences } = useUserPreferences();
-  const location = useLocation();
   
-  // Get query parameters from URL if they exist
-  const queryParams = new URLSearchParams(location.search);
-  const queryFromUrl = queryParams.get('query');
-  const generateImageFromUrl = queryParams.get('generateImage') === 'true';
-  
-  // Search state
-  const [searchQuery, setSearchQuery] = useState(queryFromUrl || '');
-  
-  // Recipe inspiration form state
-  const [ingredients, setIngredients] = useState<string>("");
-  const [cookingTime, setCookingTime] = useState<number>(30);
-  const [filters, setFilters] = useState<FilterState>({
-    mealType: [],
-    healthFocus: [],
-    dietaryRestrictions: [],
-    difficultyLevel: [],
-    cuisineType: [],
-    cookingMethod: [],
+  // Form state
+  const [query, setQuery] = useState('');
+  const [excludeIngredients, setExcludeIngredients] = useState('');
+  const [maxPrepTime, setMaxPrepTime] = useState(60);
+  const [maxCalories, setMaxCalories] = useState(800);
+  const [includeGeneratedImage, setIncludeGeneratedImage] = useState(true);
+  const [selectedFilters, setSelectedFilters] = useState<Record<string, string[]>>({
+    meal_type: [],
+    dietary_restrictions: [],
+    difficulty_level: [],
+    cuisine_type: [],
+    cooking_method: [],
     occasion: [],
-    courseCategory: [],
-    tasteProfile: [],
-    customValues: {},
-    dynamicCategories: {}
+    course_category: [],
+    taste_profile: [],
   });
-  const [language, setLanguage] = useState<string>(preferences.language || 'en');
-  const [useIngredients, setUseIngredients] = useState<boolean>(false);
-  const [shouldGenerateImage, setShouldGenerateImage] = useState<boolean>(generateImageFromUrl);
-  
-  // Recipe detail view state
-  const [desiredServings, setDesiredServings] = useState(4);
+  const [customValues, setCustomValues] = useState<Record<string, string>>({});
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Recipe state
+  const [suggestedRecipe, setSuggestedRecipe] = useState<RecipeData | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [chosenPortions, setChosenPortions] = useState(2);
   const [measurementSystem, setMeasurementSystem] = useState<'metric' | 'imperial'>(
-    preferences.unitSystem || 'metric'
+    preferences.measurementSystem || 'metric'
   );
-
-  const [generatedRecipe, setGeneratedRecipe] = useState<RecipeData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  // Recipe generation hook
-  const {
-    generateAndSaveRecipe,
-    isGenerating: isGeneratingRecipe,
-    isGeneratingImage,
-    recipeImage
-  } = useRecipeGeneration({
-    onSuccess: () => {
-      setGeneratedRecipe(null);
-      setIsLoading(false);
-    },
-    onError: () => {
-      setIsLoading(false);
-    },
-    shouldGenerateImage
+  const [recipeImage, setRecipeImage] = useState<string | null>(null);
+  
+  // Dynamic categories for form filters
+  const [dynamicCategories, setDynamicCategories] = useState<Record<string, string[]>>({
+    meal_type: [],
+    dietary_restrictions: [],
+    difficulty_level: [],
+    cuisine_type: [],
+    cooking_method: [],
+    occasion: [],
+    course_category: [],
+    taste_profile: [],
   });
   
-  // Combine the local loading state with the hook's loading state
-  const isGenerating = isLoading || isGeneratingRecipe;
-
-  // Update language when user preferences change
+  // Load dynamic categories from the database
   useEffect(() => {
-    setLanguage(preferences.language || 'en');
-  }, [preferences.language]);
-  
-  // Auto-trigger search if query parameter is present
-  useEffect(() => {
-    if (queryFromUrl && !generatedRecipe && !isGenerating) {
-      // Set a small timeout to ensure component is fully mounted
-      const timer = setTimeout(() => {
-        handleSearch(new Event('submit') as React.FormEvent);
-      }, 100);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [queryFromUrl, generatedRecipe, isGenerating]);
-
-  // Function to update filter categories with new values
-  const updateFilterCategories = (category: string, newValue: string) => {
-    // Skip if the value is already in the options or is empty
-    if (!newValue || 
-        FILTER_CATEGORIES[category as keyof typeof FILTER_CATEGORIES].options.includes(newValue)) {
-      return false;
-    }
-    
-    // Add the new value to the options
-    FILTER_CATEGORIES = {
-      ...FILTER_CATEGORIES,
-      [category]: {
-        ...FILTER_CATEGORIES[category as keyof typeof FILTER_CATEGORIES],
-        options: [
-          ...FILTER_CATEGORIES[category as keyof typeof FILTER_CATEGORIES].options.filter(opt => opt !== "Other"),
-          newValue,
-          "Other" // Keep "Other" at the end
-        ]
+    const loadCategories = async () => {
+      try {
+        // Extract unique values for each category from the database
+        const { data: recipes, error } = await supabase
+          .from('recipes')
+          .select('categories')
+          .not('categories', 'is', null);
+        
+        if (error) {
+          console.error('Error loading categories:', error);
+          return;
+        }
+        
+        const categories: Record<string, Set<string>> = {
+          meal_type: new Set<string>(),
+          dietary_restrictions: new Set<string>(),
+          difficulty_level: new Set<string>(),
+          cuisine_type: new Set<string>(),
+          cooking_method: new Set<string>(),
+          occasion: new Set<string>(),
+          course_category: new Set<string>(),
+          taste_profile: new Set<string>(),
+        };
+        
+        recipes.forEach(recipe => {
+          if (!recipe.categories) return;
+          
+          // Extract and add categories
+          Object.entries(recipe.categories).forEach(([key, value]) => {
+            if (!value) return;
+            
+            if (typeof value === 'string') {
+              categories[key]?.add(value);
+            } else if (Array.isArray(value)) {
+              value.forEach(val => {
+                if (typeof val === 'string') {
+                  categories[key]?.add(val);
+                }
+              });
+            }
+          });
+        });
+        
+        // Convert Sets to Arrays and set the state
+        const dynamicCats: Record<string, string[]> = {};
+        Object.entries(categories).forEach(([key, valueSet]) => {
+          dynamicCats[key] = Array.from(valueSet).sort();
+        });
+        
+        // Merge with default categories from RECIPE_CATEGORIES
+        Object.entries(RECIPE_CATEGORIES).forEach(([key, defaultValues]) => {
+          const existingValues = dynamicCats[key] || [];
+          const combinedValues = [...new Set([...existingValues, ...defaultValues])].sort();
+          dynamicCats[key] = combinedValues;
+        });
+        
+        setDynamicCategories(dynamicCats);
+      } catch (error) {
+        console.error('Failed to load categories:', error);
       }
     };
     
-    // Also update the dynamic categories for suggestions
-    setFilters(prev => ({
-      ...prev,
-      dynamicCategories: {
-        ...prev.dynamicCategories,
-        [category]: [...(prev.dynamicCategories[category] || []), newValue]
-      }
-    }));
-    
-    return true;
-  };
-
-  // Filter management functions
-  const toggleFilter = (category: string, option: string) => {
-    setFilters(prev => {
-      const currentCategoryFilters = prev[category as keyof FilterState] || [];
+    loadCategories();
+  }, []);
+  
+  // API Mutations
+  
+  // Generate recipe mutation
+  const generateRecipe = useMutation({
+    mutationFn: async () => {
+      // Format filters
+      const formattedFilters: Record<string, string | string[]> = {};
       
-      // If this is the "Other" option
-      if (option === "Other") {
-        // If Other is already selected, deselect it
-        if (currentCategoryFilters.includes("Other")) {
-          const updatedFilters = currentCategoryFilters.filter(item => item !== "Other");
-          const updatedCustomValues = { ...prev.customValues };
-          delete updatedCustomValues[category];
-          
-          return {
-            ...prev,
-            [category]: updatedFilters,
-            customValues: updatedCustomValues
-          } as FilterState;
-        } 
-        // Otherwise select it, replacing any other selection in this category
-        else {
-          return {
-            ...prev,
-            [category]: ["Other"]
-          } as FilterState;
+      Object.entries(selectedFilters).forEach(([category, values]) => {
+        if (values.length === 0 && customValues[category]) {
+          formattedFilters[category] = customValues[category];
+        } else if (values.length > 0) {
+          formattedFilters[category] = values.length === 1 ? values[0] : values;
         }
+      });
+      
+      // Call the API to generate a recipe
+      const { data, error } = await supabase.functions.invoke('ai-recipe-generate', {
+        body: {
+          query,
+          excludeIngredients: excludeIngredients ? excludeIngredients.split(',').map(i => i.trim()) : [],
+          maxPrepTime,
+          maxCalories,
+          categories: formattedFilters,
+          language: preferences.language,
+        }
+      });
+      
+      if (error) {
+        throw new Error(`Failed to generate recipe: ${error.message}`);
       }
-      // If this is a custom value for an "Other" option
-      else if (currentCategoryFilters.includes("Other") && option !== "Other") {
-        return {
-          ...prev,
-          customValues: {
-            ...prev.customValues,
-            [category]: option
-          }
-        } as FilterState;
+      
+      return data;
+    },
+    onSuccess: (data) => {
+      const recipe: RecipeData = {
+        id: uuidv4(), // Generate a temporary ID
+        title: data.title,
+        description: data.description,
+        ingredients: data.ingredients,
+        instructions: data.instructions,
+        prep_time: data.prep_time,
+        cook_time: data.cook_time,
+        estimated_calories: data.estimated_calories,
+        suggested_portions: data.suggested_portions || 2,
+        portion_description: 'servings',
+        categories: data.categories,
+        language: preferences.language,
+      };
+      
+      setSuggestedRecipe(recipe);
+      setChosenPortions(recipe.suggested_portions || 2);
+      
+      // Generate image if requested
+      if (includeGeneratedImage) {
+        generateImage(recipe.title, recipe.description);
       }
-      // Regular option toggle behavior
-      else {
-        const updatedCategoryFilters = currentCategoryFilters.includes(option)
-          ? currentCategoryFilters.filter(item => item !== option)
-          : [option]; // Replace existing selection with new one
-        
-        return {
-          ...prev,
-          [category]: updatedCategoryFilters
-        } as FilterState;
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to generate recipe",
+        description: error.message,
+      });
+    },
+  });
+  
+  // Save recipe mutation
+  const saveRecipe = useMutation({
+    mutationFn: async () => {
+      if (!suggestedRecipe) throw new Error('No recipe to save');
+      
+      // Format the recipe data for storage
+      const saveData = {
+        title: suggestedRecipe.title,
+        description: suggestedRecipe.description,
+        ingredients: suggestedRecipe.ingredients,
+        instructions: suggestedRecipe.instructions,
+        prep_time: suggestedRecipe.prep_time || 0,
+        cook_time: suggestedRecipe.cook_time || 0,
+        estimated_calories: suggestedRecipe.estimated_calories || 0,
+        servings: chosenPortions,
+        suggested_portions: suggestedRecipe.suggested_portions || chosenPortions,
+        portion_description: 'servings',
+        image_url: recipeImage || undefined,
+        categories: suggestedRecipe.categories,
+        language: preferences.language,
+      };
+      
+      const { data, error } = await supabase
+        .from('recipes')
+        .insert(saveData)
+        .select('id')
+        .single();
+      
+      if (error) {
+        throw error;
       }
+      
+      return data.id;
+    },
+    onSuccess: (recipeId) => {
+      toast({
+        title: "Recipe Saved",
+        description: "Your recipe has been saved successfully.",
+      });
+      
+      // Navigate to the recipe detail page
+      navigate(`/recipes/${recipeId}`);
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Failed to save recipe",
+        description: error.message,
+      });
+    },
+  });
+  
+  // Generate image function
+  const generateImage = async (title: string, description: string) => {
+    setIsGeneratingImage(true);
+    
+    try {
+      // Generate a prompt for the image
+      const prompt = `A professional, appetizing food photo of: ${title}. ${description}. High resolution, top-down view, vibrant colors, soft natural lighting.`;
+      
+      const { data, error } = await supabase.functions.invoke('generate-image', {
+        body: { prompt }
+      });
+      
+      if (error) throw error;
+      
+      setRecipeImage(data.imageUrl);
+      
+      // Update the suggested recipe with the image URL
+      if (suggestedRecipe) {
+        setSuggestedRecipe({
+          ...suggestedRecipe,
+          imageUrl: data.imageUrl
+        });
+      }
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to generate image",
+        description: "Could not generate a recipe image. You can try again later.",
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+  
+  // Form handlers
+  const toggleFilter = (category: string, option: string) => {
+    setSelectedFilters(prev => {
+      const current = prev[category] || [];
+      const updated = current.includes(option)
+        ? current.filter(item => item !== option)
+        : [...current, option];
+      
+      return {
+        ...prev,
+        [category]: updated
+      };
     });
   };
-
-  // Function to set a custom value for a category
+  
   const setCustomValue = (category: string, value: string) => {
-    setFilters(prev => ({
+    setCustomValues(prev => ({
       ...prev,
-      customValues: {
-        ...prev.customValues,
-        [category]: value
-      }
+      [category]: value
     }));
   };
-
-  // Compound active filters for API call
-  const activeFilters = useMemo(() => {
-    const standardFilters = Object.entries(filters)
-      .filter(([key]) => key !== 'customValues')
-      .flatMap(([category, options]) => options)
-      .filter(option => option !== 'Other');
-    
-    // Add custom values if they exist
-    const customFilters = Object.entries(filters.customValues)
-      .map(([_, value]) => value)
-      .filter(Boolean);
-    
-    return [...standardFilters, ...customFilters];
-  }, [filters]);
-
-  // Event handlers
-  const handleGenerateRecipe = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Set isGenerating to true immediately to show the loading animation
-    // We'll rely on the mutation to handle any state resets on completion
-    setIsLoading(true);
-    
-    // Clear search query when using inspire section
-    setSearchQuery("");
-    
-    // Transform filters into categories object
-    const categoryFilters = {
-      meal_type: filters.mealType?.[0] === "Other" 
-        ? filters.customValues.mealType || null 
-        : filters.mealType?.[0] || null,
-      health_focus: filters.healthFocus?.[0] === "Other"
-        ? filters.customValues.healthFocus || null
-        : filters.healthFocus?.[0] || null,
-      dietary_restrictions: filters.dietaryRestrictions?.[0] === "Other" 
-        ? filters.customValues.dietaryRestrictions || null 
-        : filters.dietaryRestrictions?.[0] || null,
-      difficulty_level: filters.difficultyLevel?.[0] || null,
-      cuisine_type: filters.cuisineType?.[0] === "Other" 
-        ? filters.customValues.cuisineType || null 
-        : filters.cuisineType?.[0] || null,
-      cooking_method: filters.cookingMethod?.[0] === "Other" 
-        ? filters.customValues.cookingMethod || null 
-        : filters.cookingMethod?.[0] || null,
-      occasion: filters.occasion?.[0] === "Other" 
-        ? filters.customValues.occasion || null 
-        : filters.occasion?.[0] || null,
-      course_category: filters.courseCategory?.[0] === "Other" 
-        ? filters.customValues.courseCategory || null 
-        : filters.courseCategory?.[0] || null,
-      taste_profile: filters.tasteProfile?.[0] === "Other" 
-        ? filters.customValues.tasteProfile || null 
-        : filters.tasteProfile?.[0] || null
-    };
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("User not authenticated");
-
-      // Prepare input for AI edge function
-      const inputData = {
-        ingredients: useIngredients ? ingredients.split(',').map(i => i.trim()).filter(Boolean) : [],
-        targetLanguage: language,
-        cookingTime: cookingTime,
-        filters: activeFilters,
-        categoryFilters: categoryFilters,
-        measurementSystem: measurementSystem,
-        useIngredients: useIngredients,
-        generateAllCategories: true
-      };
-
-      // Call the AI edge function
-      const { data, error } = await supabase.functions.invoke('ai-recipe-generate', {
-        body: inputData
-      });
-
-      if (error) throw error;
-      if (!data) throw new Error('No recipe data returned');
-
-      // Process the generated recipe
-      const recipeData = data?.data || data;
-      await generateAndSaveRecipe(recipeData);
-    } catch (error) {
-      // Reset loading state on error
-      setIsLoading(false);
-      
-      toast({
-        variant: "destructive",
-        title: "Generation Failed",
-        description: "We couldn't generate a recipe with these criteria. Please try different options.",
-      });
-    }
+  
+  const handleToggleExpand = () => {
+    setIsExpanded(!isExpanded);
   };
-
-  const handleSearch = async (e: React.FormEvent) => {
+  
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!searchQuery.trim()) {
+    if (!query.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter a search query",
         variant: "destructive",
+        title: "Query Required",
+        description: "Please describe what kind of recipe you want.",
       });
       return;
     }
     
-    // Set isGenerating to true immediately to show the loading animation
-    setIsLoading(true);
+    setIsGenerating(true);
+    setSuggestedRecipe(null);
+    setRecipeImage(null);
     
-    // Clear any inspire section inputs
-    setIngredients("");
-    setCookingTime(30);
-    setFilters({
-      mealType: [],
-      healthFocus: [],
-      dietaryRestrictions: [],
-      difficultyLevel: [],
-      cuisineType: [],
-      cookingMethod: [],
-      occasion: [],
-      courseCategory: [],
-      tasteProfile: [],
-      customValues: {},
-      dynamicCategories: {}
+    generateRecipe.mutate(undefined, {
+      onSettled: () => {
+        setIsGenerating(false);
+      }
     });
-    setUseIngredients(false);
+  };
+  
+  // Handler for updating recipe image
+  const handleImageUpdate = async (imageUrl: string): Promise<void> => {
+    if (!suggestedRecipe) return;
     
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("User not authenticated");
-
-      console.log('Sending search request with query:', searchQuery);
-
-      const response = await supabase.functions.invoke('recipe-chat', {
-        body: { 
-          query: searchQuery, 
-          language,
-          generateAllCategories: true 
-        }
-      });
-
-      console.log('Raw Edge Function response:', response);
-
-      if (response.error) {
-        console.error('Edge Function error:', response.error);
-        throw response.error;
-      }
-
-      // Handle different response formats
-      let recipeData;
-      if (response.data?.success && response.data?.data) {
-        // Standard format: { success: true, data: { ... } }
-        recipeData = response.data.data;
-      } else if (response.data?.recipe) {
-        // Alternative format: { recipe: { ... } }
-        recipeData = response.data.recipe;
-      } else if (typeof response.data === 'object' && response.data !== null) {
-        // Direct format: { title: ..., description: ..., etc }
-        recipeData = response.data;
-      } else {
-        console.error('Unexpected response format:', response);
-        throw new Error('Unexpected response format from recipe generation');
-      }
-
-      console.log('Extracted recipe data:', recipeData);
-
-      // Validate required fields
-      if (!recipeData) {
-        throw new Error('No recipe data returned');
-      }
-
-      if (!recipeData.title) {
-        console.error('Recipe data missing title:', recipeData);
-        throw new Error('Recipe title is required but was not provided');
-      }
-
-      // Ensure the recipe data is properly formatted before saving
-      const formattedRecipe = {
-        title: recipeData.title.trim(),
-        description: recipeData.description?.trim() || null,
-        ingredients: Array.isArray(recipeData.ingredients) 
-          ? recipeData.ingredients.filter(Boolean).map(i => i.trim()) 
-          : [],
-        instructions: Array.isArray(recipeData.instructions) 
-          ? recipeData.instructions.filter(Boolean).map(i => i.trim()) 
-          : [],
-        cook_time: typeof recipeData.cook_time === 'number' ? recipeData.cook_time : null,
-        prep_time: typeof recipeData.prep_time === 'number' ? recipeData.prep_time : null,
-        estimated_calories: typeof recipeData.estimated_calories === 'number' ? recipeData.estimated_calories : null,
-        suggested_portions: typeof recipeData.suggested_portions === 'number' ? recipeData.suggested_portions : 4,
-        portion_size: typeof recipeData.portion_size === 'number' ? recipeData.portion_size : 4,
-        portion_description: recipeData.portion_description?.trim() || 'serving',
-        source_url: recipeData.source_url || null,
-        image_url: recipeData.image_url || null,
-        language: recipeData.language || language || 'en',
-        categories: {
-          meal_type: recipeData.categories?.meal_type || null,
-          dietary_restrictions: Array.isArray(recipeData.categories?.dietary_restrictions) 
-            ? recipeData.categories.dietary_restrictions[0] 
-            : recipeData.categories?.dietary_restrictions || null,
-          difficulty_level: recipeData.categories?.difficulty_level || null,
-          cuisine_type: recipeData.categories?.cuisine_type || null,
-          cooking_method: Array.isArray(recipeData.categories?.cooking_method)
-            ? recipeData.categories.cooking_method[0]
-            : recipeData.categories?.cooking_method || null
-        }
-      };
-
-      console.log('Formatted recipe:', formattedRecipe);
-
-      await generateAndSaveRecipe(formattedRecipe);
-    } catch (error) {
-      // Reset loading state on error
-      setIsLoading(false);
-      
-      console.error('Search error:', error);
-      toast({
-        variant: "destructive",
-        title: "Search Failed",
-        description: error instanceof Error ? error.message : "We couldn't generate a recipe from your search. Please try a different query.",
-      });
-    }
-  };
-
-  const handleImageSelected = (imageUrl: string) => {
     setRecipeImage(imageUrl);
-  };
-
-  const toggleMeasurementSystem = () => {
-    setMeasurementSystem(prev => prev === 'metric' ? 'imperial' : 'metric');
+    setSuggestedRecipe({
+      ...suggestedRecipe,
+      imageUrl
+    });
+    
+    return Promise.resolve();
   };
 
   return (
     <PageLayout>
-      <RecipeLoadingAnimation isVisible={isGenerating} />
+      <div className="flex items-center justify-between mb-6">
+        <Button
+          variant="outline"
+          onClick={() => navigate("/recipes")}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Recipes
+        </Button>
+      </div>
       
-      {/* Search and Inspire sections */}
-      {!generatedRecipe && (
-        <>
-          <SearchSection 
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            isGenerating={isGenerating}
-            handleSearch={handleSearch}
-            shouldGenerateImage={shouldGenerateImage}
-            setShouldGenerateImage={setShouldGenerateImage}
-          />
+      <Card className="overflow-hidden rounded-[48px] mb-8">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <Bot className="h-6 w-6 text-primary" />
+            <h1 className="text-2xl font-bold text-gray-900">AI Recipe Generator</h1>
+          </div>
           
-          <SectionDivider />
-          
-          <InspireForm
-            useIngredients={useIngredients}
-            setUseIngredients={setUseIngredients}
-            ingredients={ingredients}
-            setIngredients={setIngredients}
-            cookingTime={cookingTime}
-            setCookingTime={setCookingTime}
-            filters={filters}
+          <InspireForm 
+            query={query}
+            setQuery={setQuery}
+            excludeIngredients={excludeIngredients}
+            setExcludeIngredients={setExcludeIngredients}
+            maxPrepTime={maxPrepTime}
+            setMaxPrepTime={setMaxPrepTime}
+            maxCalories={maxCalories}
+            setMaxCalories={setMaxCalories}
+            includeGeneratedImage={includeGeneratedImage}
+            setIncludeGeneratedImage={setIncludeGeneratedImage}
+            selectedFilters={selectedFilters}
             toggleFilter={toggleFilter}
+            customValues={customValues}
             setCustomValue={setCustomValue}
             isGenerating={isGenerating}
-            handleGenerateRecipe={handleGenerateRecipe}
-            shouldGenerateImage={shouldGenerateImage}
-            setShouldGenerateImage={setShouldGenerateImage}
+            isExpanded={isExpanded}
+            handleSubmit={handleSubmit}
+            handleToggleExpand={handleToggleExpand}
+            dynamicCategories={dynamicCategories}
           />
-        </>
+        </CardContent>
+      </Card>
+      
+      {isGenerating && (
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <LoadingSpinner size="lg" />
+          <p className="text-lg text-gray-700">Generating your recipe...</p>
+        </div>
       )}
       
-      {/* Recipe display section */}
-      {generatedRecipe && (
+      {suggestedRecipe && !isGenerating && (
         <RecipeDisplay
-          recipe={{
-            ...generatedRecipe,
-            imageUrl: recipeImage
+          recipe={suggestedRecipe}
+          scaledRecipe={suggestedRecipe}
+          chosenPortions={chosenPortions}
+          onPortionsChange={setChosenPortions}
+          onSave={() => {
+            setIsSaving(true);
+            saveRecipe.mutate(undefined, {
+              onSettled: () => setIsSaving(false)
+            });
           }}
-          scaledRecipe={{
-            ...generatedRecipe,
-            imageUrl: recipeImage
-          }}
-          chosenPortions={desiredServings}
-          onPortionsChange={setDesiredServings}
+          isSaving={isSaving}
           measurementSystem={measurementSystem}
-          onMeasurementSystemChange={toggleMeasurementSystem}
-          onSave={() => generateAndSaveRecipe(generatedRecipe)}
-          isSaving={isGenerating}
-          onImageUpdate={handleImageSelected}
-          onEditOrGenerate={() => {
-            setGeneratedRecipe(null);
-          }}
-          onBack={() => {
-            setGeneratedRecipe(null);
-          }}
+          onMeasurementSystemChange={() => setMeasurementSystem(prev => 
+            prev === 'metric' ? 'imperial' : 'metric'
+          )}
+          onImageUpdate={handleImageUpdate}
           isGeneratingImage={isGeneratingImage}
+          onEditOrGenerate={() => console.log("Edit or generate clicked")}
+          onBack={() => navigate("/recipes")}
         />
       )}
     </PageLayout>

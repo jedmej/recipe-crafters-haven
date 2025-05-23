@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Loader2, Image as ImageIcon } from 'lucide-react';
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,6 +79,16 @@ export function AIRecipeSearch() {
     }
   };
 
+  const handleEditOrGenerate = () => {
+    // Placeholder for edit/generate functionality
+    console.log("Edit or generate clicked");
+  };
+  
+  const handleBack = () => {
+    // Placeholder for back functionality
+    console.log("Back clicked");
+  };
+
   return (
     <div className="space-y-6">
       <Card className="overflow-hidden rounded-[48px]">
@@ -105,7 +116,7 @@ export function AIRecipeSearch() {
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
-                      <SelectItem key={code} value={code}>
+                      <SelectItem key={code} value={code as LanguageCode}>
                         {name}
                       </SelectItem>
                     ))}
@@ -154,6 +165,8 @@ export function AIRecipeSearch() {
           )}
           onSave={() => saveRecipe.mutate()}
           isSaving={saveRecipe.isPending}
+          onEditOrGenerate={handleEditOrGenerate}
+          onBack={handleBack}
         />
       )}
 

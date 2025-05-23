@@ -45,3 +45,48 @@ export const createAsyncHandler = <T extends unknown[]>(
     }
   };
 };
+
+// Added validateImageUrl function that returns a Promise
+export const validateImageUrl = async (url: string, options: ValidateImageUrlOptions): Promise<boolean> => {
+  if (!url) {
+    options.toast({
+      variant: "destructive",
+      title: "Invalid URL",
+      description: "Please provide a valid image URL.",
+    });
+    return false;
+  }
+  
+  try {
+    const response = await fetch(url, { method: 'HEAD' });
+    
+    if (!response.ok) {
+      options.toast({
+        variant: "destructive",
+        title: "Invalid Image URL",
+        description: "The provided URL does not point to a valid image.",
+      });
+      return false;
+    }
+    
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.startsWith('image/')) {
+      options.toast({
+        variant: "destructive",
+        title: "Invalid Image",
+        description: "The provided URL does not point to a valid image.",
+      });
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error validating image URL:', error);
+    options.toast({
+      variant: "destructive",
+      title: "Error Validating URL",
+      description: "Failed to validate the image URL. Please try again.",
+    });
+    return false;
+  }
+};

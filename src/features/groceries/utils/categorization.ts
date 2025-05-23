@@ -29,11 +29,11 @@ const beverageItems = ['water', 'coffee', 'tea', 'juice', 'soda', 'milk', 'wine'
 const condimentItems = ['ketchup', 'mustard', 'mayonnaise', 'sauce', 'dressing', 'vinegar', 'oil', 'olive oil', 'vegetable oil', 'canola oil', 'cooking spray', 'soy sauce', 'hot sauce', 'salsa', 'bbq sauce', 'teriyaki', 'marinade', 'jam', 'jelly', 'peanut butter', 'almond butter', 'syrup'];
 
 /**
- * Categorizes an ingredient based on its text
+ * Categorizes an ingredient based on its text - local implementation
  * @param ingredient - The ingredient to categorize
  * @returns The category for the ingredient, defaults to 'Other'
  */
-export function categorizeIngredient(ingredient: string): string | Promise<string> {
+export function categorizeItemLocally(ingredient: string): string {
   // Convert to lowercase for easier matching
   const ingredientLower = ingredient.toLowerCase();
 
@@ -84,6 +84,16 @@ export function categorizeIngredient(ingredient: string): string | Promise<strin
 
   // If not found in any category
   return GROCERY_CATEGORIES.OTHER;
+}
+
+/**
+ * Uses AI to categorize an ingredient - mock implementation that forwards to local
+ * @param ingredient - The ingredient to categorize
+ * @returns A promise that resolves to the ingredient category
+ */
+export async function categorizeItem(ingredient: string): Promise<string> {
+  // For now, just use the local categorization
+  return Promise.resolve(categorizeItemLocally(ingredient));
 }
 
 /**

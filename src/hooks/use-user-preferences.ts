@@ -3,12 +3,14 @@ import { useState, useContext, createContext, useCallback, ReactNode } from 'rea
 import { MeasurementSystem } from '@/features/recipes/types';
 import { supabase } from '@/integrations/supabase/client';
 
+export type LanguageCode = 'en' | 'es' | 'fr' | 'de' | 'it' | 'pl' | 'ru' | 'uk';
+
 export interface UserPreferences {
   full_name: string;
   username: string;
   avatar_url: string;
   measurementSystem: MeasurementSystem;
-  language: string;
+  language: LanguageCode;
 }
 
 const defaultPreferences: UserPreferences = {
@@ -24,6 +26,7 @@ export interface UserPreferencesContextType {
   isLoading: boolean;
   error: Error | null;
   fetchUserPreferences: () => Promise<void>;
+  updatePreferences?: (preferences: Partial<UserPreferences>) => Promise<void>;
 }
 
 const UserPreferencesContext = createContext<UserPreferencesContextType>({
@@ -61,7 +64,7 @@ export const UserPreferencesProvider = ({ children }: { children: ReactNode }) =
           username: data.username || '',
           avatar_url: data.avatar_url || '',
           measurementSystem: (data.measurement_system || 'metric') as MeasurementSystem,
-          language: data.language || 'en'
+          language: (data.recipe_language || 'en') as LanguageCode
         });
       }
     } catch (err) {
@@ -72,20 +75,66 @@ export const UserPreferencesProvider = ({ children }: { children: ReactNode }) =
     }
   }, []);
 
-  // Create the provider value object
-  const providerValue: UserPreferencesContextType = {
+  const updatePreferences = useCallback(async (newPreferences: Partial<UserPreferences>) => {
+    try {
+      setIsLoading(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No authenticated user');
+      }
+
+      // Map from our preference model to the database model
+      const dbPreferences: Record<string, any> = {};
+      if (newPreferences.language !== undefined) {
+        dbPreferences.recipe_language = newPreferences.language;
+      }
+      if (newPreferences.measurementSystem !== undefined) {
+        dbPreferences.measurement_system = newPreferences.measurementSystem;
+      }
+      if (newPreferences.full_name !== undefined) {
+        dbPreferences.full_name = newPreferences.full_name;
+      }
+      if (newPreferences.username !== undefined) {
+        dbPreferences.username = newPreferences.username;
+      }
+      if (newPreferences.avatar_url !== undefined) {
+        dbPreferences.avatar_url = newPreferences.avatar_url;
+      }
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update(dbPreferences)
+        .eq('id', session.user.id);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setPreferences(prev => ({
+        ...prev,
+        ...newPreferences
+      }));
+    } catch (err) {
+      console.error('Error updating user preferences:', err);
+      setError(err instanceof Error ? err : new Error('Unknown error occurred'));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Create value object for the context
+  const contextValue: UserPreferencesContextType = {
     preferences,
     isLoading,
     error,
-    fetchUserPreferences
+    fetchUserPreferences,
+    updatePreferences
   };
-  
-  // Return the provider component
+
   return (
-    UserPreferencesContext.Provider({
-      value: providerValue,
-      children
-    })
+    <UserPreferencesContext.Provider value={contextValue}>
+      {children}
+    </UserPreferencesContext.Provider>
   );
 };
 

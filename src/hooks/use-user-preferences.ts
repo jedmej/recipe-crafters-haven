@@ -61,7 +61,7 @@ export const UserPreferencesProvider = ({ children }: { children: ReactNode }) =
           username: data.username || '',
           avatar_url: data.avatar_url || '',
           measurementSystem: (data.measurement_system || 'metric') as MeasurementSystem,
-          language: data.recipe_language || 'en'
+          language: data.language || 'en'
         });
       }
     } catch (err) {
@@ -72,16 +72,20 @@ export const UserPreferencesProvider = ({ children }: { children: ReactNode }) =
     }
   }, []);
 
+  // Create the provider value object
+  const providerValue: UserPreferencesContextType = {
+    preferences,
+    isLoading,
+    error,
+    fetchUserPreferences
+  };
+  
+  // Return the provider component
   return (
-    <UserPreferencesContext.Provider 
-      value={{ 
-        preferences, 
-        isLoading, 
-        error,
-        fetchUserPreferences
-      }}>
-      {children}
-    </UserPreferencesContext.Provider>
+    UserPreferencesContext.Provider({
+      value: providerValue,
+      children
+    })
   );
 };
 

@@ -1,5 +1,5 @@
 
-import { useState, useContext, createContext, useCallback, ReactNode } from 'react';
+import React, { useState, useContext, createContext, useCallback, ReactNode } from 'react';
 import { MeasurementSystem } from '@/features/recipes/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -36,6 +36,7 @@ const UserPreferencesContext = createContext<UserPreferencesContextType>({
   fetchUserPreferences: async () => {}
 });
 
+// Non-JSX provider implementation
 export const UserPreferencesProvider = ({ children }: { children: ReactNode }) => {
   const [preferences, setPreferences] = useState<UserPreferences>(defaultPreferences);
   const [isLoading, setIsLoading] = useState(false);
@@ -130,11 +131,12 @@ export const UserPreferencesProvider = ({ children }: { children: ReactNode }) =
     fetchUserPreferences,
     updatePreferences
   };
-
-  return (
-    <UserPreferencesContext.Provider value={contextValue}>
-      {children}
-    </UserPreferencesContext.Provider>
+  
+  // Instead of returning JSX, we use the createElement function
+  return React.createElement(
+    UserPreferencesContext.Provider,
+    { value: contextValue },
+    children
   );
 };
 

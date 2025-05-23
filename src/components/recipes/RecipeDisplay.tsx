@@ -29,6 +29,16 @@ export const RecipeDisplay = memo(
     const [showCookingMode, setShowCookingMode] = useState(false);
     const isMobile = useMediaQuery("(max-width: 768px)");
     
+    // Handle the image_url/imageUrl property by checking both
+    const imageUrl = recipe.imageUrl || recipe.image_url;
+    
+    // Create a Promise-returning wrapper for onImageUpdate if it exists
+    const handleImageUpdate = onImageUpdate 
+      ? async (url: string): Promise<void> => {
+          return Promise.resolve(onImageUpdate(url));
+        }
+      : undefined;
+    
     return (
       <div className="w-full relative">
         {/* Back button for mobile */}
@@ -47,9 +57,9 @@ export const RecipeDisplay = memo(
         
         {/* Recipe Hero Image */}
         <RecipeImage 
-          imageUrl={recipe.image_url} 
+          imageUrl={imageUrl} 
           title={recipe.title}
-          onImageUpdate={onImageUpdate}
+          onImageUpdate={handleImageUpdate}
           isGeneratingImage={isGeneratingImage}
         />
         

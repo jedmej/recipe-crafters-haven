@@ -76,15 +76,13 @@ export const validateImageUrl = async (url: string, options: ValidateImageUrlOpt
 
 export const createAsyncHandler = <T extends unknown[]>(
   handler: AsyncHandler<T>,
-  errorOptions: Omit<ErrorHandlerOptions, 'toast'> & { toast: ReturnType<typeof useToast>['toast'] }
+  errorOptions: ErrorHandlerOptions
 ): AsyncHandler<T> => {
   return async (...args: T) => {
     try {
       await handler(...args);
     } catch (error) {
-      handleError(error, {
-        ...errorOptions,
-      });
+      handleError(error, errorOptions);
     }
   };
 };

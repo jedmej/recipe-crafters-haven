@@ -1,3 +1,4 @@
+
 import { RecipeData } from "@/types/recipe";
 import { ReactNode } from "react";
 
@@ -10,7 +11,7 @@ export interface RecipeDisplayProps {
   isSaving: boolean;
   measurementSystem: 'metric' | 'imperial';
   onMeasurementSystemChange: () => void;
-  onImageUpdate?: (imageUrl: string) => void;
+  onImageUpdate?: (imageUrl: string) => Promise<void>;
   onAddToGroceryList?: () => void;
   isAddingToGroceryList?: boolean;
   onEditOrGenerate: () => void;
@@ -115,6 +116,7 @@ export interface InstructionsSectionProps {
 
 export interface RecipeDescriptionProps {
   description: string;
+  className?: string;
 }
 
 export interface CookingModeWrapperProps {

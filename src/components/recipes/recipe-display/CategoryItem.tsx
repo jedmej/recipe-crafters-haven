@@ -3,6 +3,9 @@ import { memo, useCallback, useMemo } from "react";
 import { Tag } from "@/components/ui/tag";
 import { CategoryItemProps } from "./types";
 
+// Define the variant types explicitly to match what Tag component expects
+type TagVariant = "default" | "meal" | "dietary" | "difficulty" | "cuisine" | "cooking" | "occasion" | "course" | "taste";
+
 const CategoryItem = memo(
   ({ icon, label, value, variant }: CategoryItemProps) => {
     // Helper function to normalize a single category value
@@ -13,11 +16,14 @@ const CategoryItem = memo(
         .join(' ');
     }, []);
     
+    // Cast the variant to the correct type
+    const tagVariant = variant as TagVariant;
+    
     // Determine the display value based on the input
     const displayContent = useMemo(() => {
       if (!value) {
         return (
-          <Tag variant={variant as "default" | "meal" | "dietary" | "difficulty" | "cuisine" | "cooking" | "occasion" | "course" | "taste"}>
+          <Tag variant={tagVariant}>
             {variant === 'cooking' ? 'Other' : 'None'}
           </Tag>
         );
@@ -26,24 +32,24 @@ const CategoryItem = memo(
       if (Array.isArray(value)) {
         if (value.length > 0) {
           return value.map((item, index) => (
-            <Tag key={index} variant={variant as "default" | "meal" | "dietary" | "difficulty" | "cuisine" | "cooking" | "occasion" | "course" | "taste"}>
+            <Tag key={index} variant={tagVariant}>
               {normalizeValue(item)}
             </Tag>
           ));
         }
         return (
-          <Tag variant={variant as "default" | "meal" | "dietary" | "difficulty" | "cuisine" | "cooking" | "occasion" | "course" | "taste"}>
+          <Tag variant={tagVariant}>
             {variant === 'cooking' ? 'Other' : 'None'}
           </Tag>
         );
       }
       
       return (
-        <Tag variant={variant as "default" | "meal" | "dietary" | "difficulty" | "cuisine" | "cooking" | "occasion" | "course" | "taste"}>
+        <Tag variant={tagVariant}>
           {normalizeValue(value)}
         </Tag>
       );
-    }, [normalizeValue, value, variant]);
+    }, [normalizeValue, value, variant, tagVariant]);
     
     return (
       <div className="space-y-2">

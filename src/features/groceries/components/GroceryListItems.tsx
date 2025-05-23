@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { TodoItem } from "@/components/ui/to-do-item";
@@ -32,7 +33,7 @@ interface GroceryListItemsProps {
 }
 
 export function GroceryListItems({ items, onToggleItem }: GroceryListItemsProps) {
-  const [showActionsForId, setShowActionsForId] = useState<number | null>(null);
+  const [showActionsForId, setShowActionsForId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState("All Items");
   const [localItems, setLocalItems] = useState<GroceryItem[]>([]);
   const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
@@ -153,18 +154,20 @@ export function GroceryListItems({ items, onToggleItem }: GroceryListItemsProps)
 
   // Convert to todos format for TodoItem component
   const todos = filteredItems.map((item, index) => ({
-    id: index,
+    id: index.toString(), // Convert to string to fix the type error
     title: item.name,
     completed: item.checked
   }));
 
-  const handleComplete = (id: number) => {
-    const item = filteredItems[id];
+  const handleComplete = (id: string) => {
+    const index = parseInt(id, 10);
+    const item = filteredItems[index];
     onToggleItem({ ...item, checked: !item.checked });
   };
 
-  const handleDelete = (id: number) => {
-    const item = filteredItems[id];
+  const handleDelete = (id: string) => {
+    const index = parseInt(id, 10);
+    const item = filteredItems[index];
     onToggleItem({ ...item, checked: true });
   };
 

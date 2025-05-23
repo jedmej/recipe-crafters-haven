@@ -477,7 +477,8 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
       </div>
       
       {/* Add keyframes for the morphing animation */}
-      <style jsx global>{`
+      <style>
+        {`
         @keyframes scale-in {
           from { transform: scale(0.8); opacity: 0; }
           to { transform: scale(1); opacity: 1; }
@@ -485,7 +486,8 @@ export function CookingMode({ recipe, onClose }: CookingModeProps) {
         .animate-scale-in {
           animation: scale-in 0.3s ease-out forwards;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 }

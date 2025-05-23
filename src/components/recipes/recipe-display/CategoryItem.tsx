@@ -1,3 +1,4 @@
+
 import { memo, useCallback, useMemo } from "react";
 import { Tag } from "@/components/ui/tag";
 import { CategoryItemProps } from "./types";
@@ -16,7 +17,7 @@ const CategoryItem = memo(
     const displayContent = useMemo(() => {
       if (!value) {
         return (
-          <Tag variant={variant}>
+          <Tag variant={variant as "default" | "meal" | "dietary" | "difficulty" | "cuisine" | "cooking" | "occasion" | "course" | "taste"}>
             {variant === 'cooking' ? 'Other' : 'None'}
           </Tag>
         );
@@ -25,20 +26,20 @@ const CategoryItem = memo(
       if (Array.isArray(value)) {
         if (value.length > 0) {
           return value.map((item, index) => (
-            <Tag key={index} variant={variant}>
+            <Tag key={index} variant={variant as "default" | "meal" | "dietary" | "difficulty" | "cuisine" | "cooking" | "occasion" | "course" | "taste"}>
               {normalizeValue(item)}
             </Tag>
           ));
         }
         return (
-          <Tag variant={variant}>
+          <Tag variant={variant as "default" | "meal" | "dietary" | "difficulty" | "cuisine" | "cooking" | "occasion" | "course" | "taste"}>
             {variant === 'cooking' ? 'Other' : 'None'}
           </Tag>
         );
       }
       
       return (
-        <Tag variant={variant}>
+        <Tag variant={variant as "default" | "meal" | "dietary" | "difficulty" | "cuisine" | "cooking" | "occasion" | "course" | "taste"}>
           {normalizeValue(value)}
         </Tag>
       );
@@ -58,4 +59,4 @@ const CategoryItem = memo(
   }
 );
 
-export default CategoryItem; 
+export default CategoryItem;

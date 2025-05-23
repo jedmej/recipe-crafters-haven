@@ -1,3 +1,4 @@
+
 import { memo } from "react";
 import RecipeDescription from "./RecipeDescription";
 import ActionButtonsRow from "./ActionButtonsRow";
@@ -48,6 +49,7 @@ const RecipeContent = memo(
                 onAddToGroceryList={onAddToGroceryList}
                 isAddingToGroceryList={isAddingToGroceryList}
                 onEditOrGenerate={onEditOrGenerate}
+                onDelete={onDelete}
                 setShowCookingMode={setShowCookingMode}
               />
               
@@ -82,4 +84,4 @@ const RecipeContent = memo(
   }
 );
 
-export default RecipeContent; 
+export default RecipeContent;

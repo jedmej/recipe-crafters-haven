@@ -1,3 +1,4 @@
+
 import { SpinnerGap, Sparkle, UploadSimple, Link } from "@phosphor-icons/react";
 import { memo, useCallback, useRef, useState } from "react";
 import { useImageGeneration } from "@/features/recipes/hooks/useImageGeneration";
@@ -63,9 +64,9 @@ const ImageControls = memo(({
     };
 
     createAsyncHandler(processFile, {
-      toast,
       title: "Error",
-      description: "Failed to upload image. Please try again."
+      description: "Failed to upload image. Please try again.",
+      toast
     })();
   }, [onFileUpload, toast]);
 
@@ -87,9 +88,9 @@ const ImageControls = memo(({
     };
 
     createAsyncHandler(processUrl, {
-      toast,
       title: "Error",
-      description: "Failed to add image from URL. Please try again."
+      description: "Failed to add image from URL. Please try again.",
+      toast
     })();
   }, [imageState.urlInput, onUrlUpload, toast]);
 
@@ -155,4 +156,4 @@ const ImageControls = memo(({
   );
 });
 
-export default ImageControls; 
+export default ImageControls;

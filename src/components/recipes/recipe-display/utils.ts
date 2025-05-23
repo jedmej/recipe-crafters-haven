@@ -1,3 +1,4 @@
+
 import { useToast } from "@/hooks/use-toast";
 
 // Utility types for event handlers
@@ -75,7 +76,7 @@ export const validateImageUrl = async (url: string, options: ValidateImageUrlOpt
 
 export const createAsyncHandler = <T extends unknown[]>(
   handler: AsyncHandler<T>,
-  errorOptions: Omit<ErrorHandlerOptions, 'toast'>
+  errorOptions: Omit<ErrorHandlerOptions, 'toast'> & { toast: ReturnType<typeof useToast>['toast'] }
 ): AsyncHandler<T> => {
   return async (...args: T) => {
     try {
@@ -83,8 +84,7 @@ export const createAsyncHandler = <T extends unknown[]>(
     } catch (error) {
       handleError(error, {
         ...errorOptions,
-        toast: errorOptions.toast,
       });
     }
   };
-}; 
+};
